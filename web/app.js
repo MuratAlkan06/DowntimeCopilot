@@ -2,9 +2,9 @@
 import { isOffline, net, onNetChange, setSimulatedOffline } from './js/api.js';
 import { mount, h, fmtTime, fmtAgo } from './js/dom.js';
 import { store, set, on, ROLES, STALE_MINUTES } from './js/state.js';
-import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativeTimes } from './js/packets.js';
+import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativeTimes, refreshOnReconnect } from './js/packets.js';
 import { initDuring, flushQueue } from './js/during.js';
-import { initChecklist } from './js/checklists.js';
+import { initChecklist, loadChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 
 const $ = (id) => document.getElementById(id);
@@ -99,7 +99,12 @@ function init() {
 
   onNetChange((offline, info) => {
     renderOffline();
-    if (info.wentOnline) flushQueue();
+    if (!info.wentOnline) return;
+    flushQueue();
+    // Redraw what was drawn from the cache while offline (cached-copy notes, offline messages).
+    refreshOnReconnect();
+    loadChecklist();
+    if (store.phase === 'recovery') enterRecovery();
   });
   on('snapshotTime', renderSnapshot);
   // A newer snapshot (scheduler pull) re-evaluated the rules server-side: refresh list badges + readiness.

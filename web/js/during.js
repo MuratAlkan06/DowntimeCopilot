@@ -72,6 +72,10 @@ async function queuedCount() {
 
 async function renderPending() {
   const n = await queuedCount();
+  const badge = $('queue-count'); // header, next to "Simulate offline"; counts down as the queue drains
+  badge.hidden = !n;
+  badge.textContent = `${n} queued`;
+  badge.title = `${n} capture${n === 1 ? '' : 's'} waiting to upload from this device`;
   mount($('capture-pending'), n
     ? stateBox('offline', `${n} capture${n > 1 ? 's' : ''} queued on this device — will upload when connected.`,
       { label: 'Upload now', onClick: flushQueue })
@@ -126,6 +130,10 @@ async function submitCapture(e) {
       await queue.put({ ...meta, blob: file, name: file?.name, queued_at: new Date().toISOString() });
       queued = true;
       requestBackgroundSync();
+      // Stored safely: clear the form so the same paper is not queued twice under a new id.
+      $('capture-form').reset();
+      $('capture-preview').hidden = true;
+      syncFormType();
     } catch { queued = false; }
     mount(out, stateBox('offline', queued
       ? 'Offline — form saved on this device and queued for reading when connected. Keep the paper original.'
