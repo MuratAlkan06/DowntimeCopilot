@@ -19,7 +19,7 @@ import json
 import re
 from datetime import datetime
 
-from app import clock
+from app import clock, config
 from app.ai import client as ai
 from app.ai.guardrail import get_guardrail
 from contracts import (AuditEvent, CapturedRecord, Cost, Discrepancy, FieldFlag, FormType, Guardrail, PatientDigest,
@@ -28,21 +28,15 @@ from contracts import (AuditEvent, CapturedRecord, Cost, Discrepancy, FieldFlag,
 SECTIONS = ("situation", "background", "assessment", "recommendation")
 DONE = (RecordStatus.verified, RecordStatus.entered)
 
-# Same display names as the web client (web/js/dom.js FIELD_LABELS, state.js role labels).
-FIELD_LABELS = {
-    "bed": "Bed", "time": "Time", "temp_c": "Temp (°C)", "heart_rate": "Heart rate", "resp_rate": "Resp rate",
-    "bp_systolic": "BP systolic", "bp_diastolic": "BP diastolic", "spo2": "SpO2", "pain_score": "Pain score",
-    "initials": "Initials", "medication": "Medication", "dose": "Dose", "route": "Route", "time_given": "Time given",
-    "second_verifier": "Second verifier", "allergies": "Allergies", "height_cm": "Height (cm)",
-    "weight_kg": "Weight (kg)", "history": "History", "frequency": "Frequency",
-    "ordering_provider": "Ordering provider", "read_back": "Read-back", "provider_cosign": "Provider co-sign",
-    "response": "Response",
-}
+# Same display names as the web client (web/js/dom.js FIELD_LABELS, state.js role labels). Field labels live
+# in app/config.py so the rules engine writes discrepancy descriptions with them too (single source).
+FIELD_LABELS = config.FIELD_LABELS
 FORM_LABELS = {FormType.vitals_flowsheet: "Vitals flowsheet", FormType.downtime_mar: "Downtime MAR",
                FormType.verbal_order: "Verbal order", FormType.admission_note: "Admission note"}
 ROLE_LABELS = {"charge_nurse": "Charge nurse", "rn": "RN", "pharmacy": "Pharmacy", "unit_clerk": "Unit clerk",
                "system": "System"}
 HIDDEN_FIELDS = {"bed", "initials"}
+SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 _REF = r"(?:snapshot|captured|discrepancy|audit)\.[A-Za-z0-9_:-]+(?:\.[A-Za-z0-9_:-]+)*"
 _REFS_PAREN = re.compile(rf"\s*[(\[]\s*(?:(?:source|ref)s?:\s*)?{_REF}(?:\s*,\s*{_REF})*\s*[)\]]")
@@ -104,7 +98,7 @@ def facts(patients: list[PatientSnapshot], records: list[CapturedRecord], discs:
         if d.status != "open" or (d.record_id and (rec is None or rec.status not in DONE)):
             continue  # tied to a record nobody has verified yet: held back with it
         out.append({"ref": f"discrepancy.{d.discrepancy_id}", "patient_id": d.patient_id, "kind": "discrepancy",
-                    "text": f"{d.rule_id} ({d.severity.value}): {d.description}"})
+                    "severity": d.severity.value, "text": f"{d.rule_id} ({d.severity.value}): {d.description}"})
     for seq, e in events:
         ref, at = f"audit.{seq}", f"{e.ts:%H:%M}"
         if e.action == "downtime.start":
@@ -129,7 +123,7 @@ def _line(f: dict) -> dict:
 
 
 def _canned(patients: list[PatientSnapshot], fx: list[dict], held: int) -> dict:
-    beds = {p.patient_id: p.bed for p in patients}
+    who = {p.patient_id: f"{p.bed} · {p.name}" for p in patients}  # open items lead with the patient
     per = []
     for p in patients:
         mine = [f for f in fx if f["patient_id"] == p.patient_id]
@@ -148,8 +142,10 @@ def _canned(patients: list[PatientSnapshot], fx: list[dict], held: int) -> dict:
                f"({count['entered']} entered), {count['pending']} awaiting verification and not included. "
                f"{count['discrepancy']} open discrepanc{'y' if count['discrepancy'] == 1 else 'ies'} shown"
                + (f"; {held} more are held back until their records are verified." if held else ".")).replace("  ", " ")
-    items = [f["text"] for f in fx if f["kind"] == "discrepancy"] + \
-            [f"{f['text'].split(' captured ')[0]} for {beds.get(f['patient_id'], 'a patient')}: verify before backload"
+    # Safety items first, critical -> warning -> info (stable within a severity), then records to verify.
+    discs = sorted((f for f in fx if f["kind"] == "discrepancy"), key=lambda f: SEVERITY_ORDER.get(f["severity"], 3))
+    items = [f"{who.get(f['patient_id'], 'Unit')} — {f['text']}" for f in discs] + \
+            [f"{who.get(f['patient_id'], 'Unit')} — {f['text'].split(' captured ')[0]}: verify before backload"
              for f in fx if f["kind"] == "pending"]
     return {"unit_summary": summary.strip(), "per_patient": per, "open_items": items}
 

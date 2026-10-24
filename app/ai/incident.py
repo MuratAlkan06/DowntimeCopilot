@@ -12,13 +12,17 @@ import json
 from datetime import datetime
 
 from app.ai import client as ai
-from app.ai.digest import FORM_LABELS, ROLE_LABELS, display
+from app.ai.digest import FIELD_LABELS, FORM_LABELS, ROLE_LABELS, SEVERITY_ORDER, display
 from app.ai.guardrail import get_guardrail
 from contracts import AuditEvent, CapturedRecord, Cost, Discrepancy, Guardrail, PatientSnapshot
 
 LIFECYCLE = ("downtime.start", "capture.create", "backload.edit", "backload.verify", "backload.verify_rejected",
              "backload.entered", "recovery.restore", "recovery.restore_failed")
-SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
+
+
+def _shown(value: object) -> str:
+    """A corrected field's before/after value for people: None or empty reads "blank", never "None"."""
+    return "blank" if value is None or not str(value).strip() else str(value)
 
 
 def timeline(events: list[tuple[int, AuditEvent]], records: list[CapturedRecord], discs: list[Discrepancy],
@@ -46,8 +50,9 @@ def timeline(events: list[tuple[int, AuditEvent]], records: list[CapturedRecord]
         elif e.action == "capture.create":
             row(seq, e, "Paper form captured", form, d.get("patient_id") or pid)
         elif e.action == "backload.edit":
-            row(seq, e, "Reviewer corrected a field", f"{form}: {d.get('field')} {d.get('before')} -> {d.get('after')}",
-                pid)
+            field = FIELD_LABELS.get(d.get("field") or "", d.get("field"))
+            row(seq, e, "Reviewer corrected a field",
+                f"{form}: {field} {_shown(d.get('before'))} → {_shown(d.get('after'))}", pid)
         elif e.action == "backload.verify":
             step, need = d.get("step", 1), d.get("required", 1)
             label = "Verified" if step == need else f"Verification {step} of {need}"

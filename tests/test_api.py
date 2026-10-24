@@ -382,6 +382,10 @@ def test_digest_verified_only_display_names_and_provenance(api):
     # display names, never raw ids
     assert not re.search(r"\bpt-\d+|\brec-[0-9a-f]+|\bspo2\b|resp_rate|vitals_flowsheet|downtime_mar", text)
     assert "Bed 12" in text and "SpO2 89 (out of range)" in text
+    # open items lead with the patient; the R-REC-02 description carries display labels from emission
+    bed12 = next(p for p in get_store().latest_snapshot() if p.patient_id == "pt-12")
+    assert any(i.startswith(f"Bed 12 · {bed12.name} — R-REC-02 (warning): Out-of-range vitals (Resp rate 27, SpO2 89)")
+               for i in d.open_items), d.open_items
     # provenance: every line cites resolvable refs; verified record and audit events are cited by id / seq
     refs = {i.source_path for i in lines}
     seqs = {str(s) for s, _ in get_store().audit_log()}
@@ -435,6 +439,46 @@ def test_digest_drops_lines_without_resolvable_provenance(api, monkeypatch):
     assert [(i.text, i.source_path) for i in bed12.sbar.situation] == [("Bed 12 roster", "snapshot.pt-12.admitting_dx")]
     assert d.unit_summary == "Bed 12 SpO2 fine" and d.open_items == ["check Bed 12"]
     assert len(d.per_patient) == 12  # patients the model left out get the deterministic SBAR
+
+
+def _pt(pid: str, bed: str, name: str) -> PatientSnapshot:
+    return PatientSnapshot.model_validate({
+        "patient_id": pid, "mrn": f"SYN-{pid}", "name": name, "dob": "1960-01-01", "age": 66, "sex": "female",
+        "bed": bed, "admitting_dx": "test", "code_status": "Full code", "allergies": [], "medications": [],
+        "fall_risk": "low", "snapshot_time": "2026-10-24T02:47:00+00:00"})
+
+
+def test_canned_open_items_lead_with_patient_sorted_by_severity():
+    """Deterministic open items: "Bed · Name — RULE (severity): …", critical -> warning -> info, stable within a
+    severity; a discrepancy whose patient is not on the roster reads "Unit — "."""
+    from app.ai.digest import _canned, facts
+    pts = [_pt("pt-03", "Bed 3", "Ana Ruiz"), _pt("pt-16", "Bed 16", "Lee Park")]
+
+    def d(n, rule, pid, sev):
+        return Discrepancy(discrepancy_id=f"d-{n}", rule_id=rule, patient_id=pid, description=f"item {n}",
+                           severity=sev)
+
+    discs = [d(1, "DIFF-ADT", "pt-03", "info"), d(2, "R-REC-02", "pt-16", "warning"),
+             d(3, "R-REC-01", "pt-03", "critical"), d(4, "DIFF-ORDER", "pt-16", "warning"),
+             d(5, "DIFF-ALLERGY", "pt-99", "info")]
+    assert _canned(pts, facts(pts, [], discs, []), 0)["open_items"] == [
+        "Bed 3 · Ana Ruiz — R-REC-01 (critical): item 3",
+        "Bed 16 · Lee Park — R-REC-02 (warning): item 2",
+        "Bed 16 · Lee Park — DIFF-ORDER (warning): item 4",
+        "Bed 3 · Ana Ruiz — DIFF-ADT (info): item 1",
+        "Unit — DIFF-ALLERGY (info): item 5",
+    ]
+
+
+def test_incident_correction_row_renders_blank_not_none():
+    from app.ai.incident import timeline
+    ts = datetime(2026, 10, 24, 3, 0)
+    edits = [(5, AuditEvent(event_id="e5", ts=ts, actor_role="rn", action="backload.edit", target_type="captured_record",
+                            target_id="rec-x", details={"field": "initials", "before": None, "after": "JK"})),
+             (6, AuditEvent(event_id="e6", ts=ts, actor_role="rn", action="backload.edit", target_type="captured_record",
+                            target_id="rec-x", details={"field": "spo2", "before": "89", "after": ""}))]
+    assert [r["detail"] for r in timeline(edits, [], [], [])] == ["Paper record: Initials blank → JK",
+                                                                  "Paper record: SpO2 89 → blank"]
 
 
 def test_incident_timeline_filtered_in_seq_order_with_summary(api):

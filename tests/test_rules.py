@@ -136,6 +136,15 @@ def test_rec02_fires_once_window_closed_at_judgment_time():
     assert [d.rule_id for d in hits] == ["R-REC-02"] and "at 02:55" in hits[0].description
 
 
+def test_rec02_description_uses_display_labels():
+    """Written with display labels at emission, so the panel, digest and report never show "spo2=89"."""
+    vitals = rec("vitals_flowsheet", {"time": "02:55", "resp_rate": "27", "spo2": "89", "heart_rate": "92"},
+                 at=judged("03:00"), group="nursing_vitals")
+    (hit,) = run("R-REC-02", RecoveryContext({"pt-t": base()}, [vitals], now=judged("03:45")))
+    assert hit.description == ("Out-of-range vitals (Resp rate 27, SpO2 89) at 02:55 with no documented response "
+                               "within 30 min")
+
+
 def test_rec02_fires_exactly_at_window_close():
     assert len(run("R-REC-02", RecoveryContext({"pt-t": base()}, [vitals_0255()], now=judged("03:25")))) == 1
 

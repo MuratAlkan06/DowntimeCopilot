@@ -193,7 +193,9 @@ def r_rec_02(ctx: RecoveryContext) -> list[Discrepancy]:
     out = []
     for r in _records(ctx, FormType.vitals_flowsheet):
         f = fields(r)
-        abnormal = [f"{k}={v}" for k, v in f.items() if out_of_range(k, v)]
+        # Display labels at emission (config.FIELD_LABELS, single source): the discrepancy panel, digest and
+        # incident report all inherit "(Resp rate 27, SpO2 89)", never raw "resp_rate=27".
+        abnormal = [f"{config.FIELD_LABELS.get(k, k)} {v}" for k, v in f.items() if out_of_range(k, v)]
         if not abnormal or (f.get("response") or "").strip():
             continue
         t = record_time(r)
