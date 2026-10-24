@@ -207,3 +207,35 @@ TODO: verify the hardcoded PRICING table in app/ai/client.py against the current
 
   The demo uses the in-context path either way.
 - **Cost: $0.** Nothing was created, and the scratch ledger ended empty.
+
+## S13 drill mode and deterministic readiness score (2026-10-24)
+
+- **Scorer (`app/readiness.py`).** Pure: no model, boto, network, store or clock imports. The drill gathers the inputs and injects the clock. Tests enforce this with a source scan, the same mechanism as the rules test, and with a subprocess check that importing the module loads no `boto3`, `botocore`, `httpx`, `app.ai.*`, `app.store` or `app.sim_client`. There are four components, with weights in the module docstring that sum to 100:
+
+  | Component | Weight | What it measures |
+  |---|---|---|
+  | `snapshot_freshness` | 35 | Share of snapshot patients at most 30 unit-minutes old (the R-STALE-01 threshold, inclusive) |
+  | `packet_coverage` | 30 | Share of patients with a usable drill packet (guardrail passed, at least one non-omitted SBAR line) |
+  | `checklist_ack` | 15 | Share of the four unit roles (charge nurse, RN, pharmacy, unit clerk) that have a policy checklist and whose checklist someone in that role has opened. Read from the live audit (`checklist.view`, actor = role, found). This is the weakest-measured signal, because check marks are kept on the device, so it gets the lowest weight |
+  | `forms_templates` | 20 | Share of the three printable forms whose `data/forms/<form>.html` is non-empty and whose `.layout.json` parses with fields |
+
+  A component's score is 100 × ratio, rounded half up. The overall score is Σ weight × ratio, rounded half up once, computed with exact fractions so float drift cannot move a .5 boundary. An empty denominator scores 0.
+- **Isolation (`app/drill.py`).**
+  - Every drill builds a fresh `Store(":memory:")`. `app.store.use_store` is a ContextVar scoped to the drill's thread, so `get_store()` there, including `ai.call`'s cost and audit rows, resolves to the ephemeral store. Other threads, the sync worker among them, keep the live store. The ephemeral store has no worker and is closed at the end of the drill, so it is never wired to the S10 mirrors.
+  - The live store is only read (the checklist audit). It gains no row and no outbox item. Neither route is audited, because an audit row would itself be a live write with an outbox item to mirror. The drill does not appear in the live audit log; the trade-off was accepted for the byte-stable ruling.
+  - Packets are always DRY_RUN (`config.forced_dry_run`, a ContextVar on the same thread), so they are canned template SBAR whatever the process setting.
+  - Tests cover isolation four ways. (1) The live SQLite file's sha256, its outbox rows and its audit count are identical before and after a drill. (2) `base.get_mirror` and `worker.drain` are never reached. (3) Simulator calls are GET only, and the simulator's clock, outage and restored flags are unchanged. (4) A drill made to fail on the third packet returns 500 "live state untouched", leaves the live store byte-identical, keeps the previous result and releases the lock.
+- **Outage and restore are never triggered.** The drill reads `GET /clock` (a new side-effect-free `sim_client.read_clock`, with no kv write and no unit-clock sync) and `GET /bca/snapshot`. The outage is a synthetic `phase=downtime` kv entry in the ephemeral store. The restore is a second read-only pull, saved as the `restored` kind and run through `diff_restored` and the recovery rules with zero records. The restore step passes when every pre-downtime patient comes back. `POST /outage/start` and `POST /outage/restore` are never called. A drill during a simulator outage is refused with 409, because the feed is unreadable.
+- **Summary.** Two sentences come from the `readiness` job (Sonnet 4.6, prompt `app/ai/prompts/readiness.md`; canned in DRY_RUN). They are checked by `readiness.check_summary`, a deterministic check that needs no model call. It requires exactly 2 sentences ending in terminal punctuation, and every number in the summary must appear in the scorer's output (overall score, component scores, weights, the numbers in `detail`, or the scale of 100). A failure, or a model error, falls back to the canned summary, which passes by construction. The score never depends on the model, since it is computed before the call. The summary's cost row lands in the ephemeral store, so the live `/costs` does not show drill spend. The result reports it instead, as `drill.summary_model_id` and `drill.summary_usd`.
+- **Endpoints (non-contract).**
+  - `GET /readiness` returns `{score, components: {name: {score, weight, detail}}, last_drill_at, summary, drill: {steps[{name, ok, detail}], summary_source, summary_model_id, summary_usd, summary_check}}`. Before the first drill of the process, every value is null and `components` is `{}`. The result is kept in memory, so it does not survive a restart.
+  - `POST /readiness/drill` runs one drill and returns the same shape. A second concurrent drill gets 409.
+  - `last_drill_at` is the simulator time the drill read.
+  - `drill` is an addition to the gate's four keys: it holds the restore check and the evidence for the summary.
+- **Web.** The Readiness drill card sits under the R-STALE-01 readiness banner (Go to downtime view). It shows the overall score, the four components with score, weight and detail, the summary and the drill steps. The "Run drill" button is disabled with `aria-busy` while a drill runs. The card is hidden in print. Shell `v20`. It was checked at 375 px with no overflow. Screenshots are pending design review.
+- **Seeded score: 82.** Scratch stack on 8040/8041, `simulator.seed --fresh`. Snapshot freshness 92 (11 of 12; the seeded pt-14 feed lags 40 min), packet coverage 100 (12 of 12), checklist acknowledgment 0 (0 of 4: nobody has opened a checklist on a fresh seed), forms templates 100 (3 of 3).
+- **One live summary call (2026-10-24 ~10:59Z, us-east-1).** Scratch stack, `DRY_RUN=0`, scheduler and sync worker off, `SYNC_TABLE` and `AUDIO_BUCKET` unset.
+  - `POST /readiness/drill` returned 200 in 1.74 s, with score 82, `summary_source: "model"`, `summary_model_id: us.anthropic.claude-sonnet-4-6` and `summary_check: []`.
+  - The summary read: "The unit scored 82 out of 100 on today's downtime readiness drill. The weakest area is checklist acknowledgment, which scored 0 and requires immediate attention because 0 of 4 roles have opened their checklist."
+  - Live store sha256 `ca200f7f60e05ea9…` before and after. Audit, outbox, costs and pulls were 33, 1, 0 and 1 before and after (read with sqlite3 in read-only mode). The simulator's `/clock` was identical before and after (02:45, no outage, not restored).
+  - **Spend: $0.002094** (`summary_usd`, Sonnet 4.6 list estimate). Packets were DRY_RUN at $0. Nothing was created in AWS, so there is no teardown.
