@@ -243,6 +243,16 @@ def test_vo01_quiet_with_readback_and_cosign():
     assert run("R-VO-01", ctx) == []
 
 
+def test_vo01_flags_an_unassigned_order_critical_and_skips_a_rejected_one():
+    fields = {"medication": "heparin", "read_back": "yes", "provider_cosign": "signed"}
+    loose = rec("verbal_order", fields, patient_id=None, rid="r-loose", group="pharmacy_orders")
+    rejected = rec("verbal_order", fields, patient_id=None, rid="r-rej", group="pharmacy_orders")
+    rejected = rejected.model_copy(update={"status": "rejected"})
+    (hit,) = run("R-VO-01", RecoveryContext({"pt-t": base()}, [loose, rejected]))
+    assert (hit.patient_id, hit.record_id, hit.severity.value) == ("unassigned", "r-loose", "critical")
+    assert "heparin has no patient" in hit.description
+
+
 # ------------------------------------------------------------ registry + seeded data
 def test_registry_is_exactly_the_readme_table():
     assert set(RULES) == {"R-ALG-01", "R-DUP-01", "R-DUE-01", "R-STALE-01",

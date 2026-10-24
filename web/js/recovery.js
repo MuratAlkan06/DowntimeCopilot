@@ -34,10 +34,12 @@ function renderDiscrepancies() {
   })));
 }
 
-// Charge nurse review before end of shift (policy 7.5): open -> acknowledged -> resolved.
+// Charge nurse review before end of shift (policy 7.5): open -> acknowledged -> resolved. Updates the list
+// syncRestored or restore() put on screen in place; never re-fetches it (the review state is in each item).
 async function setDiscStatus(d, status, btn) {
   btn.disabled = true;
   const r = await api(`/discrepancies/${encodeURIComponent(d.discrepancy_id)}/status`, { method: 'POST', json: { status } });
+  if (discrepancies == null) return; // a reseed or a new outage cleared the view while this was saving
   if (!r.ok) {
     btn.disabled = false;
     mount($('recovery-status'), stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — not saved. Try again when connected.' : `Not saved (${r.error}).`));
@@ -45,6 +47,7 @@ async function setDiscStatus(d, status, btn) {
   }
   discrepancies = discrepancies.map((x) => (x.discrepancy_id === d.discrepancy_id ? r.data : x));
   renderDiscrepancies();
+  mount($('recovery-status'), restoredLine()); // clears an earlier "Not saved"
   loadAudit();
 }
 
@@ -76,8 +79,9 @@ const restoredLine = () => h('span', {}, `Systems restored ${fmtTime(store.resto
 let idleStatus = ''; // #recovery-status as shipped, shown again when the restore state clears
 
 /** The Recovery view follows store.restoredAt, which loadStatus hydrates from GET /status: a restore made on
- *  another device shows here as restored (its discrepancies from GET /discrepancies), and a reseed or a new
- *  outage puts the view back to "not restored". Fetches only while Recovery is open (enterRecovery re-runs it). */
+ *  another device shows here as restored (its discrepancies from GET /discrepancies, review status included), and
+ *  a reseed or a new outage puts the view back to "not restored". Fetches only while Recovery is open
+ *  (enterRecovery re-runs it). The one discrepancy fetch path besides restore(); setDiscStatus edits in place. */
 async function syncRestored() {
   if (!store.restoredAt) {
     if (discrepancies == null) return;
@@ -313,17 +317,19 @@ export async function loadSyncStatus() {
   if (s?.pending > 0 && store.phase === 'recovery') syncTimer = setTimeout(loadSyncStatus, 2000);
 }
 
-/** Discrepancies already stored on the server (after a reload), so review progress stays on screen. */
-async function loadDiscrepancies() {
-  if (!store.patients.size) { // after a reload straight into Recovery: names for the bed labels
-    const p = await api('/patients');
-    if (p.ok && Array.isArray(p.data)) p.data.forEach((x) => store.patients.set(x.patient_id, x));
-  }
-  const r = await api('/discrepancies');
-  if (r.ok && Array.isArray(r.data) && r.data.length) { discrepancies = r.data; renderDiscrepancies(); }
+/** A reload straight into Recovery loads no patient list (setPhase only loads it for Downtime): fetch it once
+ *  so discrepancies show bed labels, not patient ids. The discrepancies themselves come only from syncRestored
+ *  (GET /discrepancies, review state included) or restore(). */
+async function ensurePatients() {
+  if (store.patients.size) return;
+  const p = await api('/patients');
+  if (!p.ok || store.patients.size) return;
+  asList(p.data, 'patients', 'items').forEach((x) => store.patients.set(x.patient_id, x));
+  if (discrepancies?.length) renderDiscrepancies();
 }
 
 export function enterRecovery() {
+  ensurePatients();
   syncRestored();
   loadBackload();
   loadAudit();

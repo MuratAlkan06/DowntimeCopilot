@@ -1,8 +1,8 @@
 """Restore state reaches every device: web/js/packets.js loadStatus mirrors GET /status restored_at into
 store.restoredAt (the EHR banner's source), so a restore made elsewhere shows as restored and a new outage or a
 reseed clears it; web/js/recovery.js then shows the Recovery view as restored from GET /discrepancies, without
-a second POST /recovery/restore. Runs the real modules in node with a stubbed fetch and a minimal fake DOM
-(skipped if node is absent)."""
+a second POST /recovery/restore, and the charge nurse's review (acknowledge / resolve) edits that one list
+in place. Runs the real modules in node with a stubbed fetch and a minimal fake DOM (skipped if node is absent)."""
 from __future__ import annotations
 
 import json
@@ -21,7 +21,7 @@ PRELUDE = """
 class El {
   constructor(tag) { this.tag = tag; this.kids = []; this.attrs = {}; this.className = ''; }
   setAttribute(k, v) { this.attrs[k] = v; }
-  addEventListener() {}
+  addEventListener(t, fn) { (this.on ??= {})[t] = fn; }
   append(...ks) { this.kids.push(...ks); }
   replaceChildren(...ks) { this.kids = ks; }
   get textContent() { return this.kids.map((k) => k.textContent).join(''); }
@@ -45,9 +45,12 @@ const calls = [];
 let nextStatus = null; let cached = false;
 const DISC = [{ discrepancy_id: 'd1', rule_id: 'R-REC-01', patient_id: 'pt-02', severity: 'critical',
   description: 'heparin on paper, no order', status: 'open' }];
+const PATIENTS = [{ patient_id: 'pt-02', bed: 'Bed 2', name: 'Test Person' }];
 globalThis.fetch = async (path, init) => {
   calls.push(`${init?.method || 'GET'} ${path}`);
-  const body = path === '/status' ? nextStatus : path === '/discrepancies' ? DISC : [];
+  const review = init?.method === 'POST' && path.startsWith('/discrepancies/');
+  const body = path === '/status' ? nextStatus : path === '/discrepancies' ? DISC : path === '/patients' ? PATIENTS
+    : review ? { ...DISC[0], status: JSON.parse(init.body).status } : [];
   const headers = { 'content-type': 'application/json', ...(path === '/status' && cached ? { 'x-dc-fallback': '1' } : {}) };
   return new Response(JSON.stringify(body), { status: 200, headers });
 };
@@ -119,3 +122,36 @@ console.log(JSON.stringify({ ...seen, calls }));
     assert seen["cleared"] == idle
     assert seen["calls"].count("GET /discrepancies") == 1
     assert not any(c.startswith("POST") for c in seen["calls"])  # hydration never re-runs the restore
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_discrepancy_review_edits_the_one_hydrated_list(tmp_path):
+    """PR #37 reconciled: the Acknowledge / Resolve buttons ride syncRestored's single GET /discrepancies. Opening
+    Recovery again does not fetch the list a second time, each review is one POST that updates the item in place,
+    and a reload straight into Recovery still fetches the patient list once for the bed labels."""
+    seen = _run(tmp_path, """
+const $ = (id) => document.getElementById(id);
+R.initRecovery();
+S.set('phase', 'recovery');
+nextStatus = RECOVERY; await P.loadStatus(); await tick(); await tick();
+R.enterRecovery(); await tick(); await tick();  // the view opens again (tab switch, reconnect)
+const walk = (el) => [el, ...(el.kids || []).flatMap(walk)];
+const buttons = () => walk($('discrepancies')).filter((e) => e.tag === 'button');
+const step = () => ({ buttons: buttons().map((b) => b.textContent), disc: $('discrepancies').textContent,
+  status: $('recovery-status').textContent });
+const seen = { hydrated: step() };
+for (const label of ['Acknowledge', 'Resolve']) {
+  const btn = buttons().find((b) => b.textContent === label);
+  btn.on.click({ target: btn }); await tick(); await tick();
+  seen[label] = step();
+}
+console.log(JSON.stringify({ ...seen, calls }));
+""")
+    assert seen["hydrated"]["buttons"] == ["Acknowledge", "Resolve"]
+    assert "Bed 2 · Test Person" in seen["hydrated"]["disc"] and "critical · open" in seen["hydrated"]["disc"]
+    assert seen["Acknowledge"]["buttons"] == ["Resolve"] and "critical · acknowledged" in seen["Acknowledge"]["disc"]
+    assert seen["Resolve"]["buttons"] == [] and "critical · resolved" in seen["Resolve"]["disc"]
+    assert seen["Resolve"]["status"].startswith("Systems restored ")
+    calls = seen["calls"]
+    assert calls.count("GET /discrepancies") == 1 and calls.count("GET /patients") == 1
+    assert [c for c in calls if c.startswith("POST")] == ["POST /discrepancies/d1/status"] * 2
