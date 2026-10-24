@@ -2,7 +2,7 @@
 import { isOffline, net, onNetChange, setSimulatedOffline } from './js/api.js';
 import { mount, h, fmtTime, fmtAgo } from './js/dom.js';
 import { store, set, on, ROLES, STALE_MINUTES } from './js/state.js';
-import { loadPatients, goToDowntime, loadStatus, printAllPackets } from './js/packets.js';
+import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativeTimes } from './js/packets.js';
 import { initDuring, flushQueue } from './js/during.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 
@@ -100,7 +100,10 @@ function init() {
     if (info.wentOnline) flushQueue();
   });
   on('snapshotTime', renderSnapshot);
+  // A newer snapshot (scheduler pull) re-evaluated the rules server-side: refresh list badges + readiness.
+  on('snapshotTime', () => { if (store.phase === 'downtime') loadPatients(); });
   on('unitNow', renderSnapshot);
+  on('unitNow', refreshRelativeTimes);
   on('downtimeStartedAt', renderEhrBanner);
   on('restoredAt', renderEhrBanner);
 

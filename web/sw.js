@@ -1,12 +1,12 @@
 // Service worker: cache-first app shell, stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 
 const SHELL = [
   './', 'index.html', 'app.js', 'styles.css', 'print.css', 'manifest.webmanifest', 'icon.svg',
-  'js/api.js', 'js/dom.js', 'js/state.js', 'js/packets.js', 'js/records.js', 'js/during.js', 'js/recovery.js',
+  'js/api.js', 'js/dom.js', 'js/state.js', 'js/rules.js', 'js/packets.js', 'js/records.js', 'js/during.js', 'js/recovery.js',
 ];
 
 const SHELL_EXT = /\.(?:html|js|css|webmanifest|svg|png|ico)$/;

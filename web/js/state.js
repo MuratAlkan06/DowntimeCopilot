@@ -40,6 +40,8 @@ export const store = {
   // Unit (simulated) clock, last seen from GET /status. Never the browser clock.
   unitNow: ls.get('dc.unitNow'),
   patients: new Map(),
+  // Per-patient snapshot-rule hits from GET /rules/current ({patient_id: [{rule_id, text, due_at?, snapshot_time?}]}).
+  ruleHits: null,
 };
 
 const PERSISTED = { role: 'dc.role', phase: 'dc.phase', downtimeStartedAt: 'dc.downtimeStartedAt', restoredAt: 'dc.restoredAt', snapshotTime: 'dc.snapshotTime', unitNow: 'dc.unitNow' };

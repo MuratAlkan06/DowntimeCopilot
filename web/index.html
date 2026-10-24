@@ -60,6 +60,8 @@
           <button id="btn-go-downtime" class="btn btn-danger btn-lg" type="button">Go to downtime</button>
         </div>
       </div>
+      <!-- Readiness: per-patient snapshots older than 30 unit-minutes (R-STALE-01), from GET /rules/current. -->
+      <div id="readiness" class="banner banner-info readiness" role="status" hidden></div>
       <div class="split">
         <aside class="card list-pane" aria-labelledby="h-patients">
           <h2 id="h-patients" class="card-title">Patients</h2>
