@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Callable
 
+from app import config
 from app.rules.drug_classes import allergy_matches, drug_class, frequency_hours, same_medication
 from contracts import Alert, CapturedRecord, Discrepancy, FormType, Medication, PatientSnapshot, Severity
 
@@ -23,15 +24,9 @@ DUE_WINDOW = timedelta(minutes=60)
 STALE_AFTER = timedelta(minutes=30)
 RESPONSE_WINDOW = timedelta(minutes=30)
 
-# Unit parameters for the Vitals Flowsheet (policy 3.4). Inclusive normal ranges.
-VITAL_RANGES: dict[str, tuple[float, float]] = {
-    "temp_c": (36.0, 38.0),
-    "heart_rate": (50, 110),
-    "resp_rate": (10, 24),
-    "bp_systolic": (90, 160),
-    "bp_diastolic": (50, 100),
-    "spo2": (92, 100),
-}
+# Unit parameters for the Vitals Flowsheet (policy 3.4). Inclusive normal ranges; the defaults live in
+# app/config.py and are env-overridable (config.vital_ranges() is read at call time).
+VITAL_RANGES: dict[str, tuple[float, float]] = config.VITAL_RANGE_DEFAULTS
 
 AFFIRMATIVE = {"yes", "y", "true", "done", "confirmed", "read back and confirmed", "signed"}
 
@@ -63,13 +58,14 @@ class RecoveryContext:
 # ------------------------------------------------------------------ helpers
 
 def out_of_range(name: str, value: str | None) -> bool:
-    if name not in VITAL_RANGES or value is None:
+    ranges = config.vital_ranges()
+    if name not in ranges or value is None:
         return False
     try:
         v = float(str(value).strip())
     except ValueError:
         return False
-    lo, hi = VITAL_RANGES[name]
+    lo, hi = ranges[name]
     return not (lo <= v <= hi)
 
 
