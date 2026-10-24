@@ -7,6 +7,7 @@ First draft (Role 5). The script follows the README "Demo script". Times are tar
 - [ ] `source .env` with fresh keys (or `DRY_RUN=1` for mock mode); `make probe` still green for Bedrock, Textract, Transcribe
 - [ ] `make dev` running (simulator :8001, app :8000), then `make demo`: 12 patients seeded, app open at "Before" with a healthy EHR
 - [ ] Clean demo state (do this FIRST): stop the stack, delete the local store (`rm -f *.sqlite`), restart `make dev`, re-seed via `make demo` — the app store survives simulator resets, so stale backload records linger otherwise
+- [ ] Also clear the demo browser's site data for the app origin (or use a fresh browser profile) so the service-worker caches and local storage start clean
 - [ ] THEN advance the unit clock 15 minutes so Bed 12's insulin (due 04:00) enters the 60-minute window and fires R-DUE-01 as scripted: `curl -X POST localhost:8001/clock/advance -H 'Content-Type: application/json' -d '{"minutes":15}'` (re-seeding resets the clock to 02:45, so always advance after cleaning)
 - [ ] Printed vitals flowsheet filled in by hand, with one ambiguous field and one illegible field
 - [ ] Phone or tablet camera ready; microphone permission granted for the verbal-order read-back

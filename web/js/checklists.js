@@ -1,13 +1,22 @@
 // Role checklist (During phase). Items are parsed from the downtime policy server-side (GET /checklists);
 // check marks live in localStorage only (per role, per outage), never on the backend.
+// Keyed by the server's random outage id, not the outage start time: every demo reseed restarts the
+// unit clock at 02:45, so start times repeat across rehearsals. With no outage yet, marks stay in memory.
 import { api } from './api.js';
 import { h, mount, stateBox, fmtTime } from './dom.js';
 import { store, on, roleLabel } from './state.js';
 
 const $ = (id) => document.getElementById(id);
-const key = () => `dc.checklist.${store.role}.${store.downtimeStartedAt || 'none'}`;
-const loadChecked = () => { try { return new Set(JSON.parse(localStorage.getItem(key())) || []); } catch { return new Set(); } };
-const saveChecked = (s) => { try { localStorage.setItem(key(), JSON.stringify([...s])); } catch { /* private mode */ } };
+const key = () => `dc.checklist.${store.role}.${store.outageId}`;
+const ephemeral = new Map(); // role -> Set of checked ids while there is no outage id (never persisted)
+const loadChecked = () => {
+  if (!store.outageId) return new Set(ephemeral.get(store.role));
+  try { return new Set(JSON.parse(localStorage.getItem(key())) || []); } catch { return new Set(); }
+};
+const saveChecked = (s) => {
+  if (!store.outageId) { ephemeral.set(store.role, new Set(s)); return; }
+  try { localStorage.setItem(key(), JSON.stringify([...s])); } catch { /* private mode */ }
+};
 
 let items = [];
 
@@ -59,6 +68,6 @@ export async function loadChecklist() {
 export function initChecklist() {
   on('role', loadChecklist);
   on('unitNow', renderHeader);
-  on('downtimeStartedAt', render); // a new outage starts a fresh set of check marks
+  on('outageId', () => { ephemeral.clear(); render(); }); // a new outage starts a fresh set of check marks
   loadChecklist();
 }

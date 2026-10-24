@@ -1,6 +1,7 @@
 """Go to downtime: packets per patient, packet view, policy answers."""
 from __future__ import annotations
 
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, Body, Depends, HTTPException
@@ -51,6 +52,9 @@ def downtime_start(body: DowntimeStart | None = Body(default=None), role: str = 
     out.sort(key=packets.priority)
     store.set_kv("phase", "downtime")
     store.set_kv("outage_started_at", now.isoformat())
+    # Random per-outage id: every reseed restarts the unit clock at 02:45, so outage_started_at repeats
+    # across rehearsals and cannot key per-outage device state (role checklist check marks).
+    store.set_kv("outage_id", uuid.uuid4().hex)
     store.audit(role, "downtime.start", "unit", None, {"packets": len(out), "now": now.isoformat()})
     return out
 

@@ -35,6 +35,8 @@ export const store = {
   role: ls.get('dc.role') || 'charge_nurse',
   phase: ls.get('dc.phase') || 'downtime',
   downtimeStartedAt: ls.get('dc.downtimeStartedAt'),
+  // Server's random per-outage id (GET /status outage_id); null before any outage.
+  outageId: ls.get('dc.outageId'),
   restoredAt: ls.get('dc.restoredAt'),
   snapshotTime: ls.get('dc.snapshotTime'),
   // Unit (simulated) clock, last seen from GET /status. Never the browser clock.
@@ -44,7 +46,7 @@ export const store = {
   ruleHits: null,
 };
 
-const PERSISTED = { role: 'dc.role', phase: 'dc.phase', downtimeStartedAt: 'dc.downtimeStartedAt', restoredAt: 'dc.restoredAt', snapshotTime: 'dc.snapshotTime', unitNow: 'dc.unitNow' };
+const PERSISTED = { role: 'dc.role', phase: 'dc.phase', downtimeStartedAt: 'dc.downtimeStartedAt', outageId: 'dc.outageId', restoredAt: 'dc.restoredAt', snapshotTime: 'dc.snapshotTime', unitNow: 'dc.unitNow' };
 
 const listeners = new Map();
 export function on(evt, fn) {
