@@ -8,7 +8,7 @@ Source: `docs/probe-results.md`. Rows follow the README "Permission-aware fallba
 |---|---|---|---|
 | Claude on Bedrock | ALLOWED | If allowed: Sonnet 4.6 for packets, policy answers, digest; Haiku 4.5 fallback | Text and image OK on `us.` and `global.` profiles for Sonnet 4.6; Haiku 4.5 OK on `us.` |
 | Bedrock Guardrails | ALLOWED | If allowed: one guardrail, `ApplyGuardrail` on all output | Create + apply OK (`GUARDRAIL_INTERVENED` on dosing text). Probe guardrail is DRAFT; Role 3 creates the real one with a published version |
-| Knowledge Bases | ALLOWED (list only) | Start with full policy in context (P0); KB retrieval stays P2 | `ListKnowledgeBases` and `iam:ListRoles` OK; KB creation and service-role pass not verified |
+| Knowledge Bases | ALLOWED (list only); creation UNVERIFIED | Full policy in context (P0) stays the only path; KB retrieval skipped in S12 | `ListKnowledgeBases` and `iam:ListRoles` OK. S12 ladder stopped at step 1 (`iam:SimulatePrincipalPolicy` AccessDenied), so KB creation and service-role pass were never tried (see S12) |
 | Textract | ALLOWED | If allowed: second independent read of each form | `DetectDocumentText` OK (probe). `AnalyzeDocument` FORMS + QUERIES OK (S8 live run, see below) |
 | Transcribe | ALLOWED | If allowed: read-back audio to transcript; typed read-back kept as fallback | `ListTranscriptionJobs` probed; `StartTranscriptionJob` OK (S9 live run, see below) |
 | DynamoDB | ALLOWED | If allowed: action-log mirror + sync status, SQLite stays the local source of truth | Create table + put item OK (`sparthill-probe`). S10: mirror live on `downtime-copilot-sync-3f1199a0` (see below) |
@@ -188,3 +188,22 @@ Teardown: `python tools/sync_table.py teardown` deletes the sync table (then dro
 - **Spend.** Bedrock **$0.2480** (`/costs`: 33 calls; packets $0.1779, policy $0.0617, checker $0.0037, form reads $0.0042, structuring $0.0005). Calls the app does not meter, at list price: Textract AnalyzeDocument FORMS+QUERIES 3 pages × about $0.065 = about **$0.195**; Transcribe 1 job at the 15 s minimum × $0.024/min = about **$0.006**; ApplyGuardrail 5 checks, under $0.01. Total about **$0.45**.
 - **Teardown: n/a.** Transcribe cleaned up its own object and job, and the run created no cloud resources. The scratch store and the simulator on 8041 are local.
 TODO: verify the hardcoded PRICING table in app/ai/client.py against the current Bedrock pricing page before the freeze; Textract/Transcribe list prices quoted inline above are estimates.
+
+## S12 knowledge base for policy retrieval: skipped on permission (2026-10-24)
+
+- **Outcome B (skip).** The slice was capped at 45 minutes (issue #26, start 2026-10-24T10:42:16Z). The permission ladder stops at its first denial, and step 1 was denied. No AWS resource was created, so there is nothing to tear down. No code or test changed. Policy answers keep the full policy in context (`app/ai/policy.py`, the P0 path), with the same `PolicyAnswer` citations and the same grounding check.
+- **Ladder (us-east-1, caller `assumed-role/WSParticipantRole/Participant`).**
+  1. `aws iam simulate-principal-policy` on the caller's role for `bedrock:CreateKnowledgeBase`, `aoss:CreateCollection`, `iam:CreateRole` and `iam:PassRole`: **DENIED** at 10:42Z. Verbatim, with the account id redacted:
+     `An error occurred (AccessDenied) when calling the SimulatePrincipalPolicy operation: User: arn:aws:sts::[REDACTED]:assumed-role/WSParticipantRole/Participant is not authorized to perform: iam:SimulatePrincipalPolicy on resource: arn:aws:iam::[REDACTED]:role/WSParticipantRole because no identity-based policy allows the iam:SimulatePrincipalPolicy action`
+  2. `aws aoss list-collections` and `aws iam get-role`: not run, because the ladder stopped at step 1.
+  3. One real `CreateKnowledgeBase` with a real service role and storage config: not run. It runs only when every action simulates as allowed.
+- **What the denial shows.** The account denies the policy simulator. It does not deny the four KB actions, so whether KB creation is allowed is still unknown, not disproved. The contract makes the first denial final and rules out alternate roles, assume-role and policy edits. A blind create was not an option: a call with a dummy role fails validation before authorization and proves nothing, and a real one needs a service role plus a vector store. An OpenSearch Serverless collection bills for as long as it exists.
+- **Future work (P2, not scheduled).** In an account where the role may create a KB service role (or one is provided) and pass it to Bedrock:
+  - Index `data/policy/downtime_policy.md` as one document per policy section, with default chunking. Use the cheapest vector store the region offers.
+  - Add a retrieval path in `app/ai/policy.py` behind a `KB_ID` env flag. With the flag unset, the in-context path stays unchanged.
+  - Keep the `PolicyAnswer` citation format and the grounding check as they are.
+  - Record one live comparison on the same question (retrieval vs in-context).
+  - Tear the vector store down after the comparison and keep a script that recreates it.
+
+  The demo uses the in-context path either way.
+- **Cost: $0.** Nothing was created, and the scratch ledger ended empty.
