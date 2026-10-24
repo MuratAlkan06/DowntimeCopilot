@@ -1,6 +1,6 @@
 // Service worker: cache-first app shell, stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v9';
+const VERSION = 'v10';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 
@@ -24,7 +24,9 @@ const normQuestion = (q) => String(q ?? '').trim().replace(/\s+/g, ' ').toLowerC
 const replayKey = (origin, q) => `${origin}${POLICY}?replay=${encodeURIComponent(normQuestion(q))}`;
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL_CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' bypasses the HTTP cache, so a VERSION bump never installs a heuristically cached old file.
+  const fresh = SHELL.map((u) => new Request(u, { cache: 'reload' }));
+  event.waitUntil(caches.open(SHELL_CACHE).then((c) => c.addAll(fresh)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {

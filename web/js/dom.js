@@ -69,6 +69,16 @@ export function fmtAgo(ms) {
 
 export const labelize = (s) => String(s ?? '').replace(/_/g, ' ');
 
+// Display names for captured form fields (records and capture tables). Unknown names fall back to labelize.
+const FIELD_LABELS = {
+  bed: 'Bed', time: 'Time', temp_c: 'Temp (°C)', heart_rate: 'Heart rate', resp_rate: 'Resp rate',
+  bp_systolic: 'BP systolic', bp_diastolic: 'BP diastolic', spo2: 'SpO2', pain_score: 'Pain score', initials: 'Initials',
+  medication: 'Medication', dose: 'Dose', route: 'Route', time_given: 'Time given', second_verifier: 'Second verifier',
+  allergies: 'Allergies', height_cm: 'Height (cm)', weight_kg: 'Weight (kg)', history: 'History',
+  frequency: 'Frequency', ordering_provider: 'Ordering provider', read_back: 'Read-back', provider_cosign: 'Provider co-sign',
+};
+export const fieldLabel = (name) => FIELD_LABELS[name] || labelize(name).replace(/^./, (c) => c.toUpperCase());
+
 export const usd = (n) => (typeof n === 'number' ? `$${n.toFixed(n < 1 ? 4 : 2)}` : '—');
 
 /** Accept either a bare array or an envelope object holding the array under one of `keys`. */
