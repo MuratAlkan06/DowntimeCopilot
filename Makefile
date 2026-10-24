@@ -13,7 +13,7 @@ SIM_URL ?= http://localhost:$(SIM_PORT)
 APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup probe schemas forms dev demo test evals results guard export-audit
+.PHONY: setup probe schemas forms dev demo test evals results guard export-audit e2e
 
 setup:  ## venv + dependencies
 	python3 -m venv $(VENV)
@@ -51,6 +51,9 @@ export-audit:  ## audit log -> exports/ in AUDIO_BUCKET (local file in DRY_RUN).
 
 test:  ## unit tests
 	$(PY) -m pytest -q
+
+e2e:  ## the demo script end to end through the API, mock mode (tests/test_e2e.py)
+	DRY_RUN=1 $(PY) -m pytest -q tests/test_e2e.py
 
 evals:  ## ONE live run of evals/manifest.json -> evals/runs/<run-id>/ + RESULTS.md. Needs `source .env`, DRY_RUN=0, a fresh scratch STORE_PATH and the simulator on SIM_PORT (refuses otherwise)
 	$(PY) -m evals.run

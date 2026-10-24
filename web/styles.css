@@ -288,6 +288,7 @@ textarea.input { resize: vertical; }
 .packet-title { font-size: var(--fs-xl); font-weight: 700; }
 .packet-meta { font-size: var(--fs-sm); color: var(--c-muted); }
 .packet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.disc-actions { display: inline-flex; flex-wrap: wrap; gap: var(--sp-1); margin-left: auto; }
 .alerts, .disc-list { display: grid; gap: var(--sp-2); list-style: none; margin: 0; padding: 0; }
 .alert {
   display: flex; align-items: flex-start; gap: var(--sp-3);
