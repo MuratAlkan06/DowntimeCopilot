@@ -12,13 +12,32 @@ const PHASES = ['downtime', 'during', 'recovery'];
 
 // ---------------------------------------------------------------- phase navigation
 
+function canAccessPhase(phase) {
+  // Phase 1 (downtime) always accessible
+  if (phase === 'downtime') return true;
+  // Phase 2 (during) only accessible when offline
+  if (phase === 'during') return isOffline();
+  // Phase 3 (recovery) only accessible when systems restored
+  if (phase === 'recovery') return store.restoredAt !== null;
+  return false;
+}
+
 function setPhase(phase) {
   if (!PHASES.includes(phase)) phase = 'downtime';
+  // If phase is locked, stay on current phase
+  if (!canAccessPhase(phase)) {
+    phase = store.phase || 'downtime';
+  }
   set('phase', phase);
   document.body.dataset.phase = phase;
   document.querySelectorAll('.phase-tab').forEach((t) => {
-    const active = t.dataset.phase === phase;
+    const phaseVal = t.dataset.phase;
+    const accessible = canAccessPhase(phaseVal);
+    const active = phaseVal === phase;
     t.setAttribute('aria-current', active ? 'step' : 'false');
+    t.disabled = !accessible;
+    t.style.opacity = accessible ? '1' : '0.5';
+    t.style.cursor = accessible ? 'pointer' : 'not-allowed';
   });
   document.querySelectorAll('.view').forEach((v) => { v.hidden = v.dataset.view !== phase; });
   if (phase === 'downtime') loadPatients();
@@ -37,6 +56,8 @@ function renderOffline() {
   btn.setAttribute('aria-pressed', String(net.simulated));
   btn.textContent = net.simulated ? 'Go back online' : 'Simulate offline';
   document.body.classList.toggle('is-offline', off);
+  // Re-evaluate phase accessibility when offline state changes
+  setPhase(store.phase);
 }
 
 function renderEhrBanner() {
@@ -112,7 +133,11 @@ function init() {
   on('unitNow', renderSnapshot);
   on('unitNow', refreshRelativeTimes);
   on('downtimeStartedAt', renderEhrBanner);
-  on('restoredAt', renderEhrBanner);
+  on('restoredAt', () => {
+    renderEhrBanner();
+    // Re-evaluate phase accessibility when systems are restored
+    setPhase(store.phase);
+  });
 
   renderOffline();
   renderEhrBanner();
