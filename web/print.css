@@ -3,7 +3,7 @@
 
 body { background: #fff !important; color: #000 !important; font-size: 9.5pt; line-height: 1.3; }
 
-.skip-link, .app-header, .phase-nav, .banners, .action-bar, .list-pane, .no-print,
+.skip-link, .app-header, .phase-nav, .banners, .action-bar, .list-pane, .no-print, .cached-note,
 #view-during, #view-recovery, .state, .btn { display: none !important; }
 
 main, .view, .split { display: block !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
@@ -11,10 +11,17 @@ main, .view, .split { display: block !important; padding: 0 !important; margin: 
 .print-only { display: inline !important; }
 
 .packet { display: block !important; }
+
+/* "Print all packets": body.printing-all swaps the single packet pane for #print-all, one page per patient. */
+body:not(.printing-all) .print-all { display: none !important; }
+body.printing-all .split { display: none !important; }
+body.printing-all .print-all { display: block !important; }
+.print-all > .packet { break-after: page; page-break-after: always; }
+.print-all > .packet:last-child { break-after: auto; page-break-after: auto; }
 .packet > * { margin-bottom: 6pt; }
 .packet-head { display: block !important; border-bottom: 1.5pt solid #000; padding-bottom: 4pt; }
 .packet-title { font-size: 14pt; }
-.packet-meta, .cached-note { font-size: 8.5pt; color: #000 !important; }
+.packet-meta { font-size: 8.5pt; color: #000 !important; }
 
 .alert { border: 1pt solid #000 !important; border-left-width: 4pt !important; background: #fff !important; color: #000 !important; padding: 3pt 6pt !important; break-inside: avoid; }
 .rule-badge, .ha-badge { background: #fff !important; color: #000 !important; border: 1pt solid #000; }

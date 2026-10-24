@@ -1,12 +1,15 @@
 # Bedrock / AWS permission probe results
 
 - Date: 2026-10-23 17:56 PDT
+- Re-run: 2026-10-23 19:16 PDT (step-zero reconciliation): model routing reproduced unchanged; guardrail re-probed, see the correction below
 - Region: us-east-1
 - Command: `make probe` (`tools/bedrock_probe.py --extras`, local-only, distributed by DM)
 - Account: AWS Workshop Studio team account
 - Redaction: 12-digit account IDs (including ARN account segments and the probe bucket name) replaced with `[REDACTED]`. Enforced by `tools/guard.sh`.
 
 Resources the probe created and left in place for reuse: guardrail `sparthill-probe` (DRAFT), S3 bucket `sparthill-probe-[REDACTED]-us-east-1`, DynamoDB table `sparthill-probe`.
+
+Correction (re-run 19:16 PDT): the current DRAFT guardrail id is `jeb5uct6gv35`. The id in the raw output below (`0wnxjjzefh0n`) is no longer listed. On the re-run, create returned `ConflictException`: the `sparthill-probe` name already exists. That is a name collision, not a permission deny. The raw output is left as recorded.
 
 Not probed: Lambda, EventBridge, Transcribe `StartTranscriptionJob`, Knowledge Base creation.
 

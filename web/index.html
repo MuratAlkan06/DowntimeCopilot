@@ -56,6 +56,7 @@
         </div>
         <div class="action-buttons">
           <button id="btn-refresh-patients" class="btn btn-secondary" type="button">Refresh</button>
+          <button id="btn-print-all" class="btn btn-secondary" type="button">Print all packets</button>
           <button id="btn-go-downtime" class="btn btn-danger btn-lg" type="button">Go to downtime</button>
         </div>
       </div>
@@ -66,6 +67,8 @@
         </aside>
         <article id="packet" class="card packet-pane" aria-live="polite"></article>
       </div>
+      <!-- "Print all packets" renders every packet here, print only: one page per patient (print.css). -->
+      <div id="print-all" class="print-all" aria-hidden="true"></div>
     </section>
 
     <!-- Phase 2: During -->

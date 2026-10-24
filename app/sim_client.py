@@ -32,6 +32,13 @@ def pull_snapshot() -> list[PatientSnapshot]:
     return [PatientSnapshot.model_validate(p) for p in _call("GET", "/bca/snapshot").json()]
 
 
+def clock() -> dict:
+    """Simulator clock + EHR state ({now, outage, restored, ...}); raises SimUnavailable."""
+    status = _call("GET", "/clock").json()
+    get_store().set_kv("sim_now", status["now"])
+    return status
+
+
 def now() -> datetime:
     """Simulated clock; falls back to the last clock seen, then the latest snapshot time."""
     store = get_store()

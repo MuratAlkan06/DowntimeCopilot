@@ -1,6 +1,6 @@
 // Service worker: cache-first app shell, stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v2';
+const VERSION = 'v4';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 
@@ -34,6 +34,7 @@ const offlineResponse = () => new Response(JSON.stringify({ detail: 'Offline and
   status: 503, headers: { 'Content-Type': 'application/json', 'x-dc-offline': '1' },
 });
 
+// x-dc-cached-at marks cache provenance for the page; it is never rendered (UI shows unit time only).
 async function putStamped(cacheName, req, res) {
   if (!res || !res.ok) return;
   const cache = await caches.open(cacheName);

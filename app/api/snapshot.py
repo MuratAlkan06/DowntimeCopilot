@@ -1,6 +1,8 @@
 """Before: pull the BCA feed, store the snapshot locally, report status."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app import sim_client
@@ -9,6 +11,31 @@ from app.store import get_store
 from contracts import PatientSnapshot
 
 router = APIRouter(tags=["snapshot"])
+
+# README "Before": a snapshot every 15 minutes of UNIT (simulated) time, not wall-clock time.
+SNAPSHOT_EVERY = timedelta(minutes=15)
+
+
+def should_pull(phase: str, sim_now: datetime, newest_pre: datetime | None, *, ehr_up: bool = True,
+                every: timedelta = SNAPSHOT_EVERY) -> bool:
+    """Scheduler decision (pure). Only in the "before" phase with the EHR up, and only once `every`
+    simulated minutes have passed since the newest pre-outage snapshot. Never pulling in any other
+    phase is what keeps the pre-outage baseline that recovery and the digest diff against."""
+    if phase != "before" or not ehr_up:
+        return False
+    return newest_pre is None or sim_now - newest_pre >= every
+
+
+def scheduled_pull(role: str = "scheduler") -> bool:
+    """One scheduler tick: read the simulator clock, pull only if should_pull(). True if it pulled."""
+    store = get_store()
+    status = sim_client.clock()
+    newest = max((p.snapshot_time for p in store.latest_snapshot("pre")), default=None)
+    if not should_pull(store.get_kv("phase", "before") or "before", datetime.fromisoformat(status["now"]), newest,
+                       ehr_up=not (status.get("outage") or status.get("restored"))):
+        return False
+    pull_and_store(role)
+    return True
 
 
 def pull_and_store(role: str = "system") -> list[PatientSnapshot]:

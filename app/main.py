@@ -15,12 +15,14 @@ from app.api import audit, backload, capture, digest, downtime, snapshot
 log = logging.getLogger(__name__)
 
 
-async def _snapshot_loop(interval: int) -> None:
-    """In-app 15-minute snapshot puller (docs/decisions.md fallback for Lambda + EventBridge)."""
+async def _snapshot_loop(tick: int) -> None:
+    """In-app snapshot puller (docs/decisions.md fallback for Lambda + EventBridge). Ticks every `tick`
+    real seconds, but pulls on the SIMULATED clock: every 15 unit minutes, "before" phase only
+    (snapshot.should_pull)."""
     while True:
-        await asyncio.sleep(interval)
+        await asyncio.sleep(tick)
         try:
-            await asyncio.to_thread(snapshot.pull_and_store, "scheduler")
+            await asyncio.to_thread(snapshot.scheduled_pull, "scheduler")
         except sim_client.SimUnavailable as exc:
             log.info("scheduled snapshot skipped: %s", exc)
         except Exception:  # noqa: BLE001 - the scheduler must never die

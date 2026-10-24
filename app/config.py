@@ -33,8 +33,15 @@ def aws_region() -> str:
 
 
 def snapshot_interval_seconds() -> int:
-    """In-app scheduler (docs/decisions.md: Lambda + EventBridge UNKNOWN). 0 disables it."""
-    return int(os.environ.get("SNAPSHOT_INTERVAL_SECONDS", "900"))
+    """Real-seconds tick of the in-app scheduler (docs/decisions.md: Lambda + EventBridge UNKNOWN).
+    Each tick reads the simulator clock; the 15-minute snapshot cadence is in simulated minutes
+    (app.api.snapshot.should_pull). 0 disables the scheduler."""
+    return int(os.environ.get("SNAPSHOT_INTERVAL_SECONDS", "5"))
+
+
+def packet_concurrency() -> int:
+    """Max packet generations in flight during /downtime/start (bounded so Bedrock is not flooded)."""
+    return max(1, int(os.environ.get("PACKET_CONCURRENCY", "4")))
 
 
 def guardrail_mode() -> str:

@@ -128,7 +128,7 @@ function renderPacket(pk, patient, res) {
       ),
       h('div', { class: 'packet-actions no-print' },
         g.status ? chip(`Guardrail: ${g.status}`, /pass|ok|none|allowed/i.test(g.status) ? 'ok' : 'warn', (g.reasons || []).join('; ')) : null,
-        h('button', { class: 'btn btn-secondary', type: 'button', onclick: () => window.print() }, 'Print packet'),
+        h('button', { class: 'btn btn-secondary', type: 'button', onclick: printNow }, 'Print packet'),
       ),
     ),
     (pk.alerts || []).length
@@ -153,9 +153,58 @@ function renderPacket(pk, patient, res) {
     h('footer', { class: 'packet-foot' },
       `Every line cites its snapshot field. AI draft — verify before acting. `,
       pk.cost ? `Tokens ${pk.cost.tokens_in}/${pk.cost.tokens_out} · ${usd(pk.cost.usd)}` : '',
-      h('span', { class: 'print-only' }, ` · Printed ${new Date().toLocaleString()} · Synthetic data, not for clinical use.`),
+      h('span', { class: 'print-only print-stamp' }, printStamp()),
     ),
   );
+}
+
+// Print stamp uses the unit (simulated) clock from /status, the same clock as the packet header.
+const printStamp = () => ` · Printed ${fmtDateTime(store.unitNow, { unit: true })} · Synthetic data, not for clinical use.`;
+
+/** Unit clock, outage start and snapshot time from the server. Returns the status, or null if unreachable. */
+export async function loadStatus() {
+  const r = await api('/status');
+  if (!r.ok || !r.data || typeof r.data !== 'object') return null;
+  const s = r.data;
+  if (s.now) set('unitNow', s.now);
+  noteSnapshot(s.snapshot_time);
+  if (r.offline) return s; // cached copy: do not overwrite the outage markers from it
+  if (s.outage_started_at && s.outage_started_at !== store.downtimeStartedAt) set('downtimeStartedAt', s.outage_started_at);
+  if (s.phase === 'before' && !s.outage_started_at && (store.downtimeStartedAt || store.restoredAt)) {
+    set('downtimeStartedAt', null); // server was reset (seed --fresh): clear this device's stale markers
+    set('restoredAt', null);
+  }
+  return s;
+}
+
+async function printNow() {
+  await loadStatus();
+  document.querySelectorAll('.print-stamp').forEach((el) => { el.textContent = printStamp(); });
+  window.print();
+}
+
+/** Every packet, one printed page per patient (print.css: .print-all .packet breaks after each). */
+export async function printAllPackets() {
+  const btn = $('btn-print-all');
+  const status = $('downtime-status');
+  btn.disabled = true;
+  const r = await api('/packets');
+  btn.disabled = false;
+  const list = r.ok ? asList(r.data, 'packets') : [];
+  if (!list.length) {
+    mount(status, stateBox(r.ok ? 'empty' : (r.offline ? 'offline' : 'error'), r.ok
+      ? 'No packets yet. Tap "Go to downtime" first.'
+      : `Couldn't load packets to print (${r.error}).`));
+    return;
+  }
+  const holder = $('print-all');
+  mount(holder, list.map((pk) => renderPacket(pk, store.patients.get(pk.patient_id), r)));
+  document.body.classList.add('printing-all');
+  window.addEventListener('afterprint', () => {
+    document.body.classList.remove('printing-all');
+    holder.replaceChildren();
+  }, { once: true });
+  await printNow();
 }
 
 export async function goToDowntime() {
@@ -172,11 +221,14 @@ export async function goToDowntime() {
     await loadPatients();
     return;
   }
-  const d = r.data && typeof r.data === 'object' ? r.data : {};
-  set('downtimeStartedAt', d.started_at || d.downtime_started_at || new Date().toISOString());
+  // POST /downtime/start returns the packet list; the outage start (unit clock) comes from /status,
+  // falling back to the packets' generated_at (also unit clock). Never the browser clock.
+  const list = asList(r.data, 'packets');
+  const s = await loadStatus();
+  set('downtimeStartedAt', s?.outage_started_at || list[0]?.generated_at || store.downtimeStartedAt);
   set('restoredAt', null);
-  noteSnapshot(d.snapshot_time);
-  const n = asList(d, 'packets').length || d.packet_count || d.packets_generated;
+  noteSnapshot(list.map((p) => p.snapshot_time));
+  const n = list.length;
   mount(status, h('span', {}, `Downtime started ${fmtTime(store.downtimeStartedAt)}${n ? ` · ${n} packets generated` : ''}. Packets are cached for offline use.`));
   await loadPatients();
   prefetchPackets();
