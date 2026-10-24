@@ -1,0 +1,594 @@
+[
+  {
+    "admitting_dx": "Heart failure exacerbation",
+    "age": 78,
+    "allergies": [],
+    "bed": "Bed 2",
+    "code_status": "DNR/DNI",
+    "dob": "1948-03-14",
+    "fall_risk": "high",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G left forearm"
+    ],
+    "medications": [
+      {
+        "dose": "40 mg",
+        "frequency": "q12h",
+        "high_alert": false,
+        "last_given": "2026-10-23T18:00:00Z",
+        "name": "furosemide",
+        "next_due": "2026-10-24T06:00:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "25 mg",
+        "frequency": "q12h",
+        "high_alert": false,
+        "last_given": "2026-10-23T20:00:00Z",
+        "name": "metoprolol tartrate",
+        "next_due": "2026-10-24T08:00:00Z",
+        "route": "PO"
+      }
+    ],
+    "mrn": "SYN-100202",
+    "name": "Orla Placeholder",
+    "patient_id": "pt-02",
+    "pending_labs": [
+      "BMP 05:00",
+      "BNP 05:00"
+    ],
+    "sex": "female",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 61.2
+  },
+  {
+    "admitting_dx": "Community-acquired pneumonia",
+    "age": 54,
+    "allergies": [
+      {
+        "reaction": "anaphylaxis",
+        "severity": "severe",
+        "substance": "penicillin"
+      }
+    ],
+    "bed": "Bed 3",
+    "code_status": "Full code",
+    "dob": "1972-07-02",
+    "fall_risk": "low",
+    "isolation": "droplet",
+    "lines_drains": [
+      "PIV 18G right antecubital"
+    ],
+    "medications": [
+      {
+        "dose": "3 g",
+        "frequency": "q6h",
+        "high_alert": false,
+        "last_given": "2026-10-23T21:30:00Z",
+        "name": "ampicillin-sulbactam",
+        "next_due": "2026-10-24T03:30:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "650 mg",
+        "frequency": "q6h PRN fever",
+        "high_alert": false,
+        "last_given": "2026-10-23T22:10:00Z",
+        "name": "acetaminophen",
+        "next_due": null,
+        "route": "PO"
+      }
+    ],
+    "mrn": "SYN-100203",
+    "name": "Bram Synthetic",
+    "patient_id": "pt-03",
+    "pending_labs": [
+      "blood cultures x2",
+      "procalcitonin 06:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 88.0
+  },
+  {
+    "admitting_dx": "Urinary tract infection with sepsis",
+    "age": 65,
+    "allergies": [
+      {
+        "reaction": "rash",
+        "severity": "moderate",
+        "substance": "sulfonamide antibiotics"
+      }
+    ],
+    "bed": "Bed 5",
+    "code_status": "Full code",
+    "dob": "1960-11-19",
+    "fall_risk": "moderate",
+    "isolation": "contact",
+    "lines_drains": [
+      "PIV 20G left hand",
+      "Foley catheter"
+    ],
+    "medications": [
+      {
+        "dose": "800-160 mg",
+        "frequency": "q12h",
+        "high_alert": false,
+        "last_given": "2026-10-23T21:00:00Z",
+        "name": "sulfamethoxazole-trimethoprim",
+        "next_due": "2026-10-24T09:00:00Z",
+        "route": "PO"
+      },
+      {
+        "dose": "4 mg",
+        "frequency": "q6h PRN nausea",
+        "high_alert": false,
+        "last_given": null,
+        "name": "ondansetron",
+        "next_due": null,
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100205",
+    "name": "Cleo Mockridge",
+    "patient_id": "pt-05",
+    "pending_labs": [
+      "urine culture",
+      "lactate 04:00"
+    ],
+    "sex": "female",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 70.5
+  },
+  {
+    "admitting_dx": "Atrial fibrillation with rapid ventricular response",
+    "age": 71,
+    "allergies": [],
+    "bed": "Bed 7",
+    "code_status": "Full code",
+    "dob": "1955-01-30",
+    "fall_risk": "moderate",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G right forearm",
+      "telemetry"
+    ],
+    "medications": [
+      {
+        "dose": "80 mg",
+        "frequency": "q12h",
+        "high_alert": true,
+        "last_given": "2026-10-23T20:00:00Z",
+        "name": "enoxaparin",
+        "next_due": "2026-10-24T08:00:00Z",
+        "route": "SC"
+      },
+      {
+        "dose": "5 mg",
+        "frequency": "q12h",
+        "high_alert": true,
+        "last_given": null,
+        "name": "apixaban",
+        "next_due": "2026-10-24T09:00:00Z",
+        "route": "PO"
+      },
+      {
+        "dose": "30 mg",
+        "frequency": "q6h",
+        "high_alert": false,
+        "last_given": "2026-10-24T00:00:00Z",
+        "name": "diltiazem",
+        "next_due": "2026-10-24T06:00:00Z",
+        "route": "PO"
+      }
+    ],
+    "mrn": "SYN-100207",
+    "name": "Dov Fictiv",
+    "patient_id": "pt-07",
+    "pending_labs": [
+      "TSH",
+      "magnesium 05:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 84.3
+  },
+  {
+    "admitting_dx": "Post-op day 1 laparoscopic cholecystectomy",
+    "age": 45,
+    "allergies": [
+      {
+        "reaction": "nausea",
+        "severity": "mild",
+        "substance": "codeine"
+      }
+    ],
+    "bed": "Bed 8",
+    "code_status": "Full code",
+    "dob": "1981-05-08",
+    "fall_risk": "moderate",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G left forearm",
+      "JP drain right upper quadrant"
+    ],
+    "medications": [
+      {
+        "dose": "0.5 mg",
+        "frequency": "q3h PRN pain",
+        "high_alert": true,
+        "last_given": "2026-10-24T00:15:00Z",
+        "name": "hydromorphone",
+        "next_due": "2026-10-24T03:15:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "4 mg",
+        "frequency": "q6h PRN nausea",
+        "high_alert": false,
+        "last_given": "2026-10-23T23:40:00Z",
+        "name": "ondansetron",
+        "next_due": null,
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100208",
+    "name": "Esme Notreal",
+    "patient_id": "pt-08",
+    "pending_labs": [
+      "CBC 05:00"
+    ],
+    "sex": "female",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 66.0
+  },
+  {
+    "admitting_dx": "Left hip fracture, pre-op",
+    "age": 82,
+    "allergies": [
+      {
+        "reaction": "contact dermatitis",
+        "severity": "mild",
+        "substance": "latex"
+      }
+    ],
+    "bed": "Bed 9",
+    "code_status": "DNR",
+    "dob": "1944-09-22",
+    "fall_risk": "high",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G right hand",
+      "Foley catheter"
+    ],
+    "medications": [
+      {
+        "dose": "2 mg",
+        "frequency": "q4h PRN pain",
+        "high_alert": true,
+        "last_given": "2026-10-24T00:30:00Z",
+        "name": "morphine",
+        "next_due": "2026-10-24T04:30:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "1 g",
+        "frequency": "q6h",
+        "high_alert": false,
+        "last_given": "2026-10-24T00:00:00Z",
+        "name": "acetaminophen",
+        "next_due": "2026-10-24T06:00:00Z",
+        "route": "PO"
+      }
+    ],
+    "mrn": "SYN-100209",
+    "name": "Finn Sampleton",
+    "patient_id": "pt-09",
+    "pending_labs": [
+      "type and screen",
+      "INR 05:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 72.8
+  },
+  {
+    "admitting_dx": "Diabetic ketoacidosis, resolving",
+    "age": 59,
+    "allergies": [],
+    "bed": "Bed 11",
+    "code_status": "Full code",
+    "dob": "1967-02-11",
+    "fall_risk": "low",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 18G left antecubital",
+      "PIV 20G right forearm"
+    ],
+    "medications": [
+      {
+        "dose": "per DKA protocol",
+        "frequency": "titrate hourly",
+        "high_alert": true,
+        "last_given": "2026-10-24T02:00:00Z",
+        "name": "insulin regular infusion",
+        "next_due": "2026-10-24T03:00:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "20 mEq",
+        "frequency": "q4h per protocol",
+        "high_alert": true,
+        "last_given": "2026-10-24T01:00:00Z",
+        "name": "potassium chloride",
+        "next_due": "2026-10-24T05:00:00Z",
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100211",
+    "name": "Gita Dummyworth",
+    "patient_id": "pt-11",
+    "pending_labs": [
+      "BMP q2h next 04:00",
+      "POC glucose hourly"
+    ],
+    "sex": "female",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 58.4
+  },
+  {
+    "admitting_dx": "Left lower leg cellulitis; type 2 diabetes",
+    "age": 67,
+    "allergies": [
+      {
+        "reaction": "hives",
+        "severity": "moderate",
+        "substance": "penicillin"
+      }
+    ],
+    "bed": "Bed 12",
+    "code_status": "Full code",
+    "dob": "1959-06-05",
+    "fall_risk": "moderate",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G right forearm"
+    ],
+    "medications": [
+      {
+        "dose": "sliding scale",
+        "frequency": "AC/HS and 04:00",
+        "high_alert": true,
+        "last_given": "2026-10-23T21:00:00Z",
+        "name": "insulin lispro",
+        "next_due": "2026-10-24T04:00:00Z",
+        "route": "SC"
+      },
+      {
+        "dose": "5000 units",
+        "frequency": "q8h",
+        "high_alert": true,
+        "last_given": "2026-10-23T19:30:00Z",
+        "name": "heparin",
+        "next_due": "2026-10-24T03:30:00Z",
+        "route": "SC"
+      },
+      {
+        "dose": "1250 mg",
+        "frequency": "q12h",
+        "high_alert": false,
+        "last_given": "2026-10-23T18:00:00Z",
+        "name": "vancomycin",
+        "next_due": "2026-10-24T06:00:00Z",
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100212",
+    "name": "Hal Testa",
+    "patient_id": "pt-12",
+    "pending_labs": [
+      "vancomycin trough 05:30",
+      "POC glucose 04:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 92.4
+  },
+  {
+    "admitting_dx": "Asthma exacerbation",
+    "age": 33,
+    "allergies": [
+      {
+        "reaction": "bronchospasm",
+        "severity": "severe",
+        "substance": "aspirin"
+      }
+    ],
+    "bed": "Bed 14",
+    "code_status": "Full code",
+    "dob": "1992-12-01",
+    "fall_risk": "low",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 22G left hand"
+    ],
+    "medications": [
+      {
+        "dose": "40 mg",
+        "frequency": "q8h",
+        "high_alert": false,
+        "last_given": "2026-10-23T22:00:00Z",
+        "name": "methylprednisolone",
+        "next_due": "2026-10-24T06:00:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "2.5 mg",
+        "frequency": "q4h",
+        "high_alert": false,
+        "last_given": "2026-10-24T00:00:00Z",
+        "name": "albuterol",
+        "next_due": "2026-10-24T04:00:00Z",
+        "route": "nebulized"
+      }
+    ],
+    "mrn": "SYN-100214",
+    "name": "Ines Fauxley",
+    "patient_id": "pt-14",
+    "pending_labs": [
+      "peak flow 06:00"
+    ],
+    "sex": "female",
+    "snapshot_time": "2026-10-24T02:05:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 63.1
+  },
+  {
+    "admitting_dx": "COPD exacerbation (admitted 01:30)",
+    "age": 76,
+    "allergies": [],
+    "bed": "Bed 16",
+    "code_status": "Full code",
+    "dob": "1950-04-17",
+    "fall_risk": "moderate",
+    "isolation": null,
+    "lines_drains": [
+      "PIV saline lock right forearm"
+    ],
+    "medications": [
+      {
+        "dose": "40 mg",
+        "frequency": "daily",
+        "high_alert": false,
+        "last_given": null,
+        "name": "prednisone",
+        "next_due": "2026-10-24T09:00:00Z",
+        "route": "PO"
+      },
+      {
+        "dose": "500 mg",
+        "frequency": "daily",
+        "high_alert": false,
+        "last_given": null,
+        "name": "azithromycin",
+        "next_due": "2026-10-24T09:00:00Z",
+        "route": "PO"
+      }
+    ],
+    "mrn": "SYN-100216",
+    "name": "Jory Simms-Sim",
+    "patient_id": "pt-16",
+    "pending_labs": [
+      "ABG 04:00",
+      "CBC 05:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 68.9
+  },
+  {
+    "admitting_dx": "Alcohol withdrawal",
+    "age": 50,
+    "allergies": [],
+    "bed": "Bed 19",
+    "code_status": "Full code",
+    "dob": "1976-08-28",
+    "fall_risk": "high",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G left forearm"
+    ],
+    "medications": [
+      {
+        "dose": "1 mg",
+        "frequency": "q4h PRN per CIWA",
+        "high_alert": false,
+        "last_given": "2026-10-24T00:15:00Z",
+        "name": "lorazepam",
+        "next_due": "2026-10-24T04:15:00Z",
+        "route": "IV"
+      },
+      {
+        "dose": "100 mg",
+        "frequency": "daily",
+        "high_alert": false,
+        "last_given": null,
+        "name": "thiamine",
+        "next_due": "2026-10-24T09:00:00Z",
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100219",
+    "name": "Kai Madeup",
+    "patient_id": "pt-19",
+    "pending_labs": [
+      "magnesium 05:00",
+      "CMP 05:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 79.6
+  },
+  {
+    "admitting_dx": "Upper GI bleed",
+    "age": 63,
+    "allergies": [
+      {
+        "reaction": "hives",
+        "severity": "moderate",
+        "substance": "iodinated contrast"
+      }
+    ],
+    "bed": "Bed 21",
+    "code_status": "Full code",
+    "dob": "1963-10-09",
+    "fall_risk": "moderate",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 18G right antecubital",
+      "PIV 18G left antecubital"
+    ],
+    "medications": [
+      {
+        "dose": "8 mg/h",
+        "frequency": "continuous",
+        "high_alert": false,
+        "last_given": "2026-10-24T02:00:00Z",
+        "name": "pantoprazole infusion",
+        "next_due": null,
+        "route": "IV"
+      },
+      {
+        "dose": "50 mcg/h",
+        "frequency": "continuous",
+        "high_alert": false,
+        "last_given": "2026-10-24T02:00:00Z",
+        "name": "octreotide infusion",
+        "next_due": null,
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100221",
+    "name": "Lena Ficto",
+    "patient_id": "pt-21",
+    "pending_labs": [
+      "H&H 04:00",
+      "type and crossmatch 2 units"
+    ],
+    "sex": "female",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 74.0
+  }
+]

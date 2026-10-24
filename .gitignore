@@ -71,3 +71,5 @@ tools/bedrock_probe.py
 evals/fixtures/*.jpg
 evals/fixtures/*.jpeg
 evals/fixtures/*.png
+# Eval run bundles (scratch). One scrubbed baseline is committed under evals/baseline/.
+evals/runs/

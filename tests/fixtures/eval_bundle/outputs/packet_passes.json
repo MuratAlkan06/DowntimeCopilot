@@ -1,0 +1,132 @@
+{
+  "pt-12": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: moderate"
+        },
+        {
+          "source_path": "pending_labs[0]",
+          "text": "Pending lab: vancomycin trough 05:30"
+        },
+        {
+          "source_path": "pending_labs[1]",
+          "text": "Pending lab: POC glucose 04:00"
+        },
+        {
+          "source_path": "labs[0].glucose",
+          "text": "Glucose trending up"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0]",
+          "text": "insulin lispro sliding scale SC AC/HS and 04:00, next due 04:00 [HIGH-ALERT]"
+        },
+        {
+          "source_path": "medications[1]",
+          "text": "heparin 5000 units SC q8h, next due 03:30 [HIGH-ALERT]"
+        },
+        {
+          "source_path": "medications[2]",
+          "text": "vancomycin 1250 mg IV q12h, next due 06:00"
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "Line/drain: PIV 20G right forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 92.4 kg"
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].next_due",
+          "text": "Independent double-check before insulin lispro at 04:00 (policy 5.2)"
+        },
+        {
+          "source_path": "medications[1].next_due",
+          "text": "Independent double-check before heparin at 03:30 (policy 5.2)"
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "admitting_dx",
+          "text": "Bed 12: Hal Testa, 67 male, Left lower leg cellulitis; type 2 diabetes"
+        },
+        {
+          "source_path": "code_status",
+          "text": "Code status: Full code"
+        },
+        {
+          "source_path": "allergies[0]",
+          "text": "ALLERGY penicillin: hives (moderate)"
+        }
+      ]
+    },
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: moderate"
+        },
+        {
+          "source_path": "pending_labs[0]",
+          "text": "Pending lab: vancomycin trough 05:30"
+        },
+        {
+          "source_path": "pending_labs[1]",
+          "text": "Pending lab: POC glucose 04:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0]",
+          "text": "insulin lispro sliding scale SC AC/HS and 04:00, next due 04:00 [HIGH-ALERT]"
+        },
+        {
+          "source_path": "medications[1]",
+          "text": "heparin 5000 units SC q8h, next due 03:30 [HIGH-ALERT]"
+        },
+        {
+          "source_path": "medications[2]",
+          "text": "vancomycin 1250 mg IV q12h, next due 06:00"
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "Line/drain: PIV 20G right forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 92.4 kg"
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].next_due",
+          "text": "Independent double-check before insulin lispro at 04:00 (policy 5.2)"
+        },
+        {
+          "source_path": "medications[1].next_due",
+          "text": "Independent double-check before heparin at 03:30 (policy 5.2)"
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "admitting_dx",
+          "text": "Bed 12: Hal Testa, 67 male, Left lower leg cellulitis; type 2 diabetes"
+        },
+        {
+          "source_path": "code_status",
+          "text": "Code status: Full code"
+        },
+        {
+          "source_path": "allergies[0]",
+          "text": "ALLERGY penicillin: hives (moderate)"
+        }
+      ]
+    }
+  ]
+}

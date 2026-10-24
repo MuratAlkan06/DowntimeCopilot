@@ -13,7 +13,7 @@ SIM_URL ?= http://localhost:$(SIM_PORT)
 APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup probe schemas forms dev demo test evals guard export-audit
+.PHONY: setup probe schemas forms dev demo test evals results guard export-audit
 
 setup:  ## venv + dependencies
 	python3 -m venv $(VENV)
@@ -52,8 +52,11 @@ export-audit:  ## audit log -> exports/ in AUDIO_BUCKET (local file in DRY_RUN).
 test:  ## unit tests
 	$(PY) -m pytest -q
 
-evals:  ## generates RESULTS.md from live runs (never hand-edit it; refuses DRY_RUN and empty fixtures)
+evals:  ## ONE live run of evals/manifest.json -> evals/runs/<run-id>/ + RESULTS.md. Needs `source .env`, DRY_RUN=0, a fresh scratch STORE_PATH and the simulator on SIM_PORT (refuses otherwise)
 	$(PY) -m evals.run
+
+results:  ## regenerate RESULTS.md from the committed bundle (evals/baseline/<run-id>/ + evals/NOTES.md); pure, no network. BUNDLE=<dir> overrides
+	$(PY) -m evals.report $(BUNDLE)
 
 guard:  ## secret / probe guard (run before every commit)
 	bash tools/guard.sh
