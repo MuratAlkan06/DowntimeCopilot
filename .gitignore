@@ -61,3 +61,13 @@ Thumbs.db
 .super.engineering/
 .superconductor/
 .claude/
+
+# --- Project-local (never commit) ---
+# Probe is distributed by DM only; tools/guard.sh fails if it is ever tracked.
+tools/bedrock_probe.py
+*.sqlite
+*.db
+# Photographed eval forms stay local (may contain handwriting of real people).
+evals/fixtures/*.jpg
+evals/fixtures/*.jpeg
+evals/fixtures/*.png
