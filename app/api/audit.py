@@ -30,9 +30,17 @@ def costs(role: str = Depends(actor_role)) -> dict:
     if started:
         hours = max((sim_client.now() - datetime.fromisoformat(started)).total_seconds() / 3600, 0.0)
     total = round(sum(c["usd"] for c in calls), 6)
+    models: dict[str, dict] = {}
+    for c in calls:
+        m = models.setdefault(c["model_id"], {"calls": 0, "tokens_in": 0, "tokens_out": 0, "usd": 0.0})
+        m["calls"] += 1
+        m["tokens_in"] += c["tokens_in"]
+        m["tokens_out"] += c["tokens_out"]
+        m["usd"] = round(m["usd"] + c["usd"], 6)
     store.audit(role, "costs.view", "costs")
     return {
         "calls": calls,
+        "models": models,
         "total_usd": total,
         "tokens_in": sum(c["tokens_in"] for c in calls),
         "tokens_out": sum(c["tokens_out"] for c in calls),

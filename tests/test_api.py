@@ -56,6 +56,16 @@ def test_snapshot_pull_and_view(api):
     assert s["phase"] == "before" and s["patients"] == 12 and audited("status.view")
 
 
+def test_patients_list(api):
+    assert api.get("/patients").json() == []
+    api.post("/snapshot/pull")
+    r = api.get("/patients")
+    assert r.status_code == 200 and audited("patient.list")
+    patients = [PatientSnapshot.model_validate(p) for p in r.json()]
+    assert len(patients) == 12 and {"pt-12"} <= {p.patient_id for p in patients}
+    assert all(p.name and p.bed for p in patients)
+
+
 def test_downtime_start_packets_have_provenance(api):
     packets = go_to_downtime(api)
     assert len(packets) == 12 and audited("downtime.start") and audited("ai.call")
@@ -142,5 +152,7 @@ def test_audit_costs_sync(api):
     c = api.get("/costs").json()
     assert c["dry_run"] is True and len(c["calls"]) >= 12 and c["total_usd"] == 0.0 and audited("costs.view")
     assert all(call["model_id"].startswith("dry-run:us.") for call in c["calls"])
+    assert sum(m["calls"] for m in c["models"].values()) == len(c["calls"])
+    assert set(c["models"]) == {call["model_id"] for call in c["calls"]}
     s = api.post("/sync").json()
     assert s["mirror"] == "local" and s["pushed"] > 0 and audited("sync.push")

@@ -38,6 +38,13 @@ def snapshot_latest(role: str = Depends(actor_role)) -> list[PatientSnapshot]:
     return store.latest_snapshot()
 
 
+@router.get("/patients", response_model=list[PatientSnapshot])
+def patients_list(role: str = Depends(actor_role)) -> list[PatientSnapshot]:
+    store = get_store()
+    store.audit(role, "patient.list", "patient")
+    return store.latest_snapshot()
+
+
 @router.get("/status")
 def status(role: str = Depends(actor_role)) -> dict:
     store = get_store()
