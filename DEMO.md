@@ -5,8 +5,7 @@ First draft (Role 5). The script follows the README "Demo script". Times are tar
 ## Setup before the demo
 
 - [ ] `source .env` with fresh keys (or `DRY_RUN=1` for mock mode); `make probe` still green for Bedrock, Textract, Transcribe
-- [ ] `make dev` running (simulator :8001, app :8000), then `make demo`: 12 patients seeded, app open at "Before" with a healthy EHR
-- [ ] Clean demo state (do this FIRST): stop the stack, delete the local store (`rm -f *.sqlite`), restart `make dev`, re-seed via `make demo` — the app store survives simulator resets, so stale backload records linger otherwise
+- [ ] `make dev` running (simulator :8001, app :8000), then `make demo`: it empties the app store (`seed --fresh`, so no stale backload records linger), seeds 12 patients at "Before" with a healthy EHR, and prints the app URL. It opens a browser only with `DEMO_OPEN=1 make demo`
 - [ ] Also clear the demo browser's site data for the app origin (or use a fresh browser profile) so the service-worker caches and local storage start clean
 - [ ] THEN advance the unit clock 15 minutes so Bed 12's insulin (due 04:00) enters the 60-minute window and fires R-DUE-01 as scripted: `curl -X POST localhost:8001/clock/advance -H 'Content-Type: application/json' -d '{"minutes":15}'` (re-seeding resets the clock to 02:45, so always advance after cleaning)
 - [ ] Printed vitals flowsheet filled in by hand, with one ambiguous field and one illegible field
@@ -32,11 +31,11 @@ Safe-refusal beat (live only): *"How much insulin should I give for a blood suga
 
 ## Run of show
 
-1. **0:00 - 2:47 AM.** Banner: *EHR unreachable.* Priya taps **Go to downtime**. Packets appear; open Bed 12: penicillin allergy, insulin due at 04:00 marked high-alert, R-DUE-01 firing, every line showing its snapshot source.
-2. **0:15 - Policy question.** Ask: *"How do I get a stat lab with the order system down?"* Cited answer, section 4.2 of the downtime policy.
-3. **0:25 - Form capture.** A teammate hands over a vitals flowsheet they just filled in by hand. Photograph it. Two readers; eight fields agree, one disagreement flagged, one unreadable flagged. Verify the flagged ones.
-4. **0:45 - Verbal order.** Record a verbal order read-back. Transcript, then structured order, then *requires provider co-sign*, then the pharmacy backload group.
-5. **0:55 - Kill the network.** The app keeps working: packets, checklists, capture, queue.
+1. **0:00 - 2:47 AM.** On the **Go to downtime** tab, Priya taps **Declare downtime**. Banner: *EHR unreachable.* 12 packets appear (about 20 s live); open Bed 12: penicillin allergy, insulin due at 04:00 marked high-alert, R-DUE-01 firing, every line showing its snapshot source.
+2. **0:15 - Policy question.** Open **During**: the policy panel is first. Ask: *"How do I get a stat lab with the order system down?"* Chips *Grounded in policy* and *Guardrail: passed*, cited section 4.2 of the downtime policy (paragraph-level 4.2.x live).
+3. **0:25 - Form capture.** In **Capture a paper form**, choose *Vitals flowsheet* and photograph the form, then **Read form**. Each field shows its photo crop. Mock mode: 7 fields agree, 3 flagged for review (Resp rate disagreement, SpO2 out of range, Pain score unreadable). Live: Nova reads every field; Textract's second read of the printed form is still a follow-up (S4), so fields show single reads, with SpO2 and Pain score flagged. Edit a flagged value: the row turns *Corrected by reviewer* and the flagged count drops. Then **Verify**.
+4. **0:45 - Verbal order.** Choose *Verbal order (read-back)*, patient Bed 12. Record the read-back, or type it: *"Read back: heparin 5000 units SC every 12 hours, Dr. Okafor, read back confirmed"*. Structured order, then *R-VO-01 Requires provider co-sign before entry*, then the pharmacy backload group. Heparin is high-alert: **Verify (1 of 2)** shows *1 of 2 verifications* and asks a different person (switch role) for the second.
+5. **0:55 - Kill the network** (Wi-Fi off, or **Simulate offline**). The app keeps working: packets open from the cache, checklists render, re-asking a policy question already asked on this device replays its recorded answer, and a new capture is queued on the device. A shift digest already written also reopens offline. Back online, the queue uploads by itself.
 6. **1:05 - Systems restored.** Tap **Systems restored**. Backload queue: 14 items in three groups, 3 discrepancies (R-REC-01, R-REC-02). Verify one, mark entered, watch the audit log and sync status update.
 7. **1:20 - Handoff and evidence.** The shift digest writes itself for the 7 AM team. Close on `RESULTS.md`: extraction accuracy per reader and combined, packet faithfulness, grounding rate, cost per outage-hour.
 
