@@ -211,6 +211,11 @@ def diff_restored(pre: dict[str, PatientSnapshot], restored: dict[str, PatientSn
 @router.post("/recovery/restore", response_model=list[Discrepancy])
 def recovery_restore(role: str = Depends(actor_role)) -> list[Discrepancy]:
     store = get_store()
+    # Idempotent: a second "Systems restored" (another device, or one whose restore state was cleared) gets the
+    # stored result with 200, not a 409, so the client renders it like the first. It writes no recovery.restore
+    # audit row and does not re-pull or re-diff: one restore per outage in the audit log and incident timeline.
+    if store.get_kv("phase") == "recovery" and store.get_kv("restored_at"):
+        return store.list_discrepancies()
     pre = {p.patient_id: p for p in store.latest_snapshot("pre")}
     if not pre:
         raise HTTPException(409, "no pre-downtime snapshot stored")

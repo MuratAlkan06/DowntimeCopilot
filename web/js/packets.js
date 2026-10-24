@@ -248,10 +248,13 @@ export async function loadStatus() {
   noteSnapshot(s.snapshot_time);
   if ((s.outage_id || null) !== store.outageId) set('outageId', s.outage_id || null);
   if (s.outage_started_at && s.outage_started_at !== store.downtimeStartedAt) set('downtimeStartedAt', s.outage_started_at);
-  if (s.phase === 'before' && !s.outage_started_at && (store.downtimeStartedAt || store.restoredAt)) {
-    set('downtimeStartedAt', null); // server was reset (seed --fresh): clear this device's stale markers
-    set('restoredAt', null);
+  if (s.phase === 'before' && !s.outage_started_at && store.downtimeStartedAt) {
+    set('downtimeStartedAt', null); // server was reset (seed --fresh): clear this device's stale outage marker
   }
+  // Restore state mirrors the server: restored_at (unit clock) is set only in the recovery phase, so a restore
+  // made on another device (or before this device's storage was cleared) reaches the banner and Recovery view
+  // here too, and a reseed or a new outage clears a stale one.
+  if ((s.restored_at || null) !== (store.restoredAt || null)) set('restoredAt', s.restored_at || null);
   return s;
 }
 
