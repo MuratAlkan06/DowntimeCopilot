@@ -73,9 +73,14 @@
 
       <!-- Recovery/Backload section (only visible after restoration) -->
       <section id="recovery-section" hidden>
-        <div id="recovery-status" class="muted"></div>
-        <div class="action-buttons">
-          <button id="btn-refresh-backload" class="btn btn-secondary" type="button">Refresh</button>
+        <div class="action-bar">
+          <div>
+            <h2 class="view-title">Recovery</h2>
+            <p id="recovery-status" class="muted">Reconcile paper records with the restored EHR.</p>
+          </div>
+          <div class="action-buttons">
+            <button id="btn-refresh-backload" class="btn btn-secondary" type="button">Refresh</button>
+          </div>
         </div>
 
         <section class="card" aria-labelledby="h-disc">

@@ -208,6 +208,7 @@ function init() {
   setInterval(loadStatus, 30000);
   autoRoute();
   render();
+  if (store.restoredAt) enterRecovery();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')

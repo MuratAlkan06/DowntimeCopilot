@@ -256,7 +256,15 @@ export async function loadCosts() {
   );
 }
 
+async function loadDiscrepancies() {
+  const r = await api('/discrepancies');
+  if (!r.ok) return;
+  discrepancies = asList(r.data, 'discrepancies', 'items');
+  renderDiscrepancies();
+}
+
 export function enterRecovery() {
+  loadDiscrepancies();
   loadBackload();
   loadAudit();
   loadCosts();
