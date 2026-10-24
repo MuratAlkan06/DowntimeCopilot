@@ -129,3 +129,12 @@ def test_word_errors_minimal_edit_script():
 def test_apply_guardrail_count_is_policy_answers_in_bedrock_mode_only():
     assert run.guardrail_apply("bedrock", 5) == 5  # packets use the metered checker even in bedrock mode
     assert run.guardrail_apply("checker", 5) == 0
+
+
+def test_committed_results_regenerate_byte_identical_from_the_baseline():
+    root = Path(__file__).resolve().parent.parent
+    bundle = report.only_baseline()
+    assert report.render(bundle, root / "evals" / "NOTES.md").encode() == (root / "RESULTS.md").read_bytes()
+    assert f"`{run.digest(bundle)}`" in (root / "RESULTS.md").read_text()
+    for f in bundle.rglob("*"):
+        assert not f.is_file() or not run.guard_hits(f.read_text()), f
