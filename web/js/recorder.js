@@ -11,6 +11,12 @@ export function supported(env = globalThis) {
   return typeof env.MediaRecorder === 'function' && typeof env.navigator?.mediaDevices?.getUserMedia === 'function';
 }
 
+// Server rule (app/api/capture.py): a typed read-back wins; attached audio is saved but not transcribed.
+// True when both are present, so the form can say so before submit.
+export function typedOverridesAudio(audio, text) {
+  return Boolean(audio) && String(text ?? '').trim() !== '';
+}
+
 export function pickMime(MR) {
   return MIME_CANDIDATES.find((t) => { try { return MR.isTypeSupported?.(t); } catch { return false; } }) || '';
 }

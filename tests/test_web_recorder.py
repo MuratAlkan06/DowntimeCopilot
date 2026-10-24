@@ -87,3 +87,12 @@ def test_safari_style_mp4_recording(tmp_path):
         "console.log(JSON.stringify({ pick: R.pickMime(FakeMR), name: r.file.name, type: r.file.type }));"
     ))
     assert got == {"pick": "audio/mp4", "name": "readback.m4a", "type": "audio/mp4"}
+
+
+def test_typed_read_back_over_audio_is_announced_only_when_both_are_present(tmp_path):
+    got = run(tmp_path, (
+        "const clip = new File(['abc'], 'readback.webm', { type: 'audio/webm' });\n"
+        "console.log(JSON.stringify([R.typedOverridesAudio(clip, 'insulin 4 units'), R.typedOverridesAudio(clip, ''),"
+        " R.typedOverridesAudio(clip, '   '), R.typedOverridesAudio(null, 'insulin 4 units'), R.typedOverridesAudio(null, '')]));"
+    ))
+    assert got == [True, False, False, False, False]

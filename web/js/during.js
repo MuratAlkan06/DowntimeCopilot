@@ -4,7 +4,7 @@ import { h, mount, stateBox, chip, usd } from './dom.js';
 import { store, on } from './state.js';
 import { renderRecord } from './records.js';
 import { idbStore, drain, migrateLegacy, newId, SYNC_TAG } from './queue.js';
-import { createRecorder } from './recorder.js';
+import { createRecorder, typedOverridesAudio } from './recorder.js';
 
 const $ = (id) => document.getElementById(id);
 const SUGGESTIONS = [
@@ -71,18 +71,38 @@ const REC_TEXT = {
   unsupported: 'Recording is not available in this browser. Choose an audio file or type the read-back.',
 };
 
+// Typed-over-audio precedence (server rule): said before submit, never silently applied.
+const PRECEDENCE = 'Typed read-back will be used. The recording is saved with the order but not transcribed.';
+let precedenceShown = false;
+
+function attachedAudio() {
+  if ($('capture-type').value !== 'verbal_order') return null;
+  return recorder?.file || $('capture-file').files[0] || null;
+}
+
+function renderPrecedence() {
+  const show = typedOverridesAudio(attachedAudio(), $('capture-readback').value);
+  if (show === precedenceShown) return; // mount only on change, so the live region speaks once
+  precedenceShown = show;
+  mount($('readback-notice'), show ? stateBox('warn', PRECEDENCE) : null);
+}
+
 function renderRecorder() {
   const st = recorder.state;
   const toggle = $('rec-toggle');
+  const hadFocus = document.activeElement === toggle;
   toggle.hidden = st === 'unsupported';
+  // The Record control just disappeared (no microphone): land focus on the status line, not on <body>.
+  if (toggle.hidden && hadFocus) $('rec-status').focus();
   toggle.textContent = st === 'recording' ? 'Stop recording' : st === 'attached' ? 'Record again' : 'Record read-back';
   toggle.setAttribute('aria-pressed', String(st === 'recording'));
   toggle.className = `btn btn-sm ${st === 'recording' ? 'btn-danger' : 'btn-secondary'}`;
   $('rec-discard').hidden = st !== 'attached';
   $('rec-status').textContent = st === 'attached'
-    ? `Recording attached (${recorder.seconds} s). It is sent with this order.`
+    ? `Recording attached (${recorder.seconds} s) — used only if the typed box is empty.`
     : REC_TEXT[st];
   if (st === 'attached') { $('capture-file').value = ''; $('capture-preview').hidden = true; } // one audio source
+  renderPrecedence();
 }
 
 // Transcribe outcome (X-Transcribe) when the audio could not become a transcript: say so, typed read-back next.
@@ -96,8 +116,10 @@ const TRANSCRIBE_FALLBACK = {
   unconfigured: 'Transcription is not set up on this server',
 };
 
+const heard = (r) => r.headers?.get?.('x-transcribe') || '';
+
 function transcribeNote(r) {
-  const why = TRANSCRIBE_FALLBACK[r.headers?.get?.('x-transcribe') || ''];
+  const why = TRANSCRIBE_FALLBACK[heard(r)];
   return why ? stateBox('warn', `${why}. The audio is saved with this order and no field was filled in. `
     + 'Fill the fields in review from the audio, or type the read-back instead.') : null;
 }
@@ -132,7 +154,7 @@ function requestBackgroundSync() {
 export async function flushQueue() {
   if (isOffline()) { await renderPending(); return; }
   const result = await drain(queue, sendQueued, {
-    onSent: async (_item, r) => { mount($('capture-result'), transcribeNote(r), renderRecord(r.data)); await renderPending(); },
+    onSent: async (_item, r) => { mount($('capture-result'), transcribeNote(r), renderRecord(r.data, { transcribe: heard(r) })); await renderPending(); },
   });
   await renderPending();
   return result;
@@ -161,7 +183,7 @@ async function submitCapture(e) {
   const r = await api('/capture', { method: 'POST', form: buildForm(meta, file) });
   btn.disabled = false;
   if (r.ok && r.data?.record_id) {
-    mount(out, transcribeNote(r), renderRecord(r.data));
+    mount(out, transcribeNote(r), renderRecord(r.data, { transcribe: heard(r) }));
     recorder.discard();
     $('capture-form').reset();
     $('capture-preview').hidden = true;
@@ -197,6 +219,7 @@ function syncFormType() {
   const input = $('capture-file');
   input.accept = verbal ? 'audio/*,image/*' : 'image/*';
   $('capture-file-label').textContent = verbal ? 'Choose read-back audio (optional)' : 'Photograph or choose the form';
+  renderPrecedence();
 }
 
 function fillPatients() {
@@ -230,7 +253,9 @@ export function initDuring() {
     if (f && recorder.state === 'attached') recorder.discard(); // a chosen file replaces the recording
     const img = $('capture-preview');
     if (f && f.type.startsWith('image/')) { img.src = URL.createObjectURL(f); img.hidden = false; } else img.hidden = true;
+    renderPrecedence();
   });
+  $('capture-readback').addEventListener('input', renderPrecedence);
   $('capture-form').addEventListener('submit', submitCapture);
   mount($('capture-result'), h('p', { class: 'muted' }, 'Read fields appear here. Green = both readers agree; amber = flagged for human review.'));
   syncFormType();

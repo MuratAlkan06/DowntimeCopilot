@@ -121,13 +121,14 @@
             <div id="recorder" class="recorder" hidden>
               <button id="rec-toggle" class="btn btn-secondary btn-sm" type="button" aria-pressed="false">Record read-back</button>
               <button id="rec-discard" class="btn btn-quiet btn-sm" type="button" hidden>Discard recording</button>
-              <span id="rec-status" class="recorder-status" role="status" aria-live="polite"></span>
+              <span id="rec-status" class="recorder-status" role="status" aria-live="polite" tabindex="-1"></span>
             </div>
             <img id="capture-preview" class="capture-preview" alt="Preview of the selected form" hidden>
             <label id="readback-wrap" class="stack-tight" hidden>
-              <span class="field-label">Typed read-back (if no audio)</span>
+              <span class="field-label">Typed read-back — used instead of audio if filled</span>
               <textarea id="capture-readback" name="readback_text" class="input" rows="3" placeholder="Read back: insulin lispro 4 units subcut now, Dr. Okafor, read back confirmed"></textarea>
             </label>
+            <div id="readback-notice" aria-live="polite"></div>
             <button class="btn btn-primary" type="submit">Read form</button>
           </form>
           <div id="capture-pending" aria-live="polite"></div>
