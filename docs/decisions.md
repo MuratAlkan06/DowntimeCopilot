@@ -264,3 +264,4 @@ TODO: verify the hardcoded PRICING table in app/ai/client.py against the current
 - Merges are squash-only, with `--delete-branch`.
 - Admin-bypass merges (`gh pr merge --admin`) are owner-authorized per the owner's verbatim standing instruction recorded in issue [#31](https://github.com/MuratAlkan06/DowntimeCopilot/issues/31). Each use is logged here. The owner is to ratify at wake-up.
 - Uses to date (all merged by the owner account with review status `REVIEW_REQUIRED`): #22, #23, #24, #25, #27, #29.
+Known drift: the committed eval baseline (run 20261024T102817Z-a020e81) predates the (critical) lab markers; the first post-merge make evals run will show pt-09/pt-21 lab-text diffs vs that baseline — expected, not a regression.
