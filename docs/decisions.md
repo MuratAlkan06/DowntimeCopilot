@@ -258,6 +258,22 @@ TODO: verify the hardcoded PRICING table in app/ai/client.py against the current
   - backload: 3 records ({nursing_med_admin 1, nursing_vitals 1, pharmacy_orders 1}), equal to `/backload`;
   - critical labs: Bed 9 INR 05:00 and Bed 21 H&H 04:00.
 
+## S15 bilingual patient downtime notice (2026-10-24)
+
+- **Content.** A calm notice for patients and families at Bayview Community Hospital (fictional), in English and Spanish. It says the computer systems are temporarily down, care continues, staff are using established paper procedures, medications and treatments continue as planned, things may take a little longer, and questions go to the patient's nurse or the charge nurse. The text is static in `web/js/notice.js` and ships in the offline shell (`v23`). No model writes it and rendering makes no network call. Tests run the real module in node with `fetch` stubbed and assert zero calls; a second test serves the shell with `app.ai.client.call` and `_runtime` made to fail, and checks that the server has no notice route. The Spanish uses `usted`, short sentences and plain healthcare register ("su atención continúa", "procedimientos establecidos en papel", "el enfermero o la enfermera a cargo del turno"). Each language section carries its own `lang` attribute for screen readers.
+- **Two claims, kept apart.** The Spanish text is **Guardrail-checked, not native-reviewed**. The Guardrail check shows that the policy guardrail did not intervene on the text. It says nothing about whether the Spanish is accurate, natural or appropriate for patients. Only a native speaker's review can establish that. Per the gate ruling, the Spanish page shows "Traducción pendiente de revisión por hablante nativo. / Translation pending native-speaker review." as a small footer, on screen and in print. The English page has no label.
+- **Print: one page per language.** Following the gate's preference, "Print notice" on the notice view sets `body.printing-notice`, the same isolation pattern as the packets and the incident report. Every other view, the header, the nav, the banners and the buttons are hidden, and every other print leaves the notice out (`body:not(.printing-notice) #view-notice`). There is a page break after English, so the notice prints as an English page then a Spanish page, in large type (24 pt title, 16 pt text). The notice shows no unit time and no print stamp, because a patient notice should not show internal clocks: only the hospital name and the message. The layout was checked in the browser with `print.css` applied: only `#notice` is visible, `break-after` is `page` then `auto`, and the label is visible. The screen view was checked at 375 px with no horizontal overflow.
+- **UI.** A "Patient notice" button in the During view's action bar opens a notice view (`phase=notice`, with no tab of its own; During stays marked current). The view has "Back to During" and "Print notice" buttons. Going back to During is not counted as a deliberate checklist open (S13 readiness): only the During tab counts.
+- **Guardrail evidence (2026-10-24 ~11:48Z, us-east-1, one run).** `scripts/check_notice_guardrail.py` is a one-off evidence script, not part of the runtime path. It reads the exact text of each printed page from `notice.js` (hospital name, message and, for Spanish, the label) and sends it to ApplyGuardrail on the published guardrail **downtime-copilot-v1, version 1** (`source=OUTPUT`, `guard_content` only, with no grounding source or query, so the contextual grounding policy does not apply). It was run in a subshell with `.env` sourced and `DRY_RUN=0`.
+
+  | Language | Characters | Result | Policy units | Estimated cost |
+  |---|---|---|---|---|
+  | English | 430 | passed | topic 1 | $0.00015 |
+  | Spanish | 648 | passed | topic 1 | $0.00015 |
+
+  **Spend: about $0.0003** in total, at the $0.15 per 1,000 text-unit list price for the topic policy. This is below the ~$0.001 per language that was budgeted. ApplyGuardrail is not metered by `/costs`. No raw AWS response and no account ID was recorded. Nothing was created in AWS, so there is no teardown.
+- **Follow-up.** When a native speaker has reviewed the Spanish (and any corrections are made), remove the label (`REVIEW` / `REVIEW_LABEL` and `review: true` in `notice.js`, plus the label assertions in `tests/test_web_notice.py`), bump the shell version and re-run `scripts/check_notice_guardrail.py`. Any text change requires a re-run.
+
 ## Merge channel (2026-10-24)
 
 - Ruleset 25776772 requires 1 approving review for non-admin merges to `main`.

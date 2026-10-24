@@ -8,10 +8,12 @@ import { initChecklist, loadChecklist, openChecklist } from './js/checklists.js'
 import { initRecovery, enterRecovery } from './js/recovery.js';
 import { initReadiness, loadReadiness } from './js/readiness.js';
 import { COMMAND_ROLES, initCommand, enterCommand, leaveCommand } from './js/command.js';
+import { initNotice } from './js/notice.js';
 
 const $ = (id) => document.getElementById(id);
 // 'command' is the supervisor view (S14), not a phase step: its tab exists for COMMAND_ROLES only.
-const PHASES = ['downtime', 'during', 'recovery', 'command'];
+// 'notice' is the patient notice (S15), opened from During; it has no tab and keeps During marked current.
+const PHASES = ['downtime', 'during', 'recovery', 'command', 'notice'];
 const canCommand = () => COMMAND_ROLES.includes(store.role);
 
 // ---------------------------------------------------------------- phase navigation
@@ -21,7 +23,7 @@ function setPhase(phase) {
   set('phase', phase);
   document.body.dataset.phase = phase;
   document.querySelectorAll('.phase-tab').forEach((t) => {
-    const active = t.dataset.phase === phase;
+    const active = t.dataset.phase === (phase === 'notice' ? 'during' : phase);
     t.setAttribute('aria-current', active ? (t.dataset.phase === 'command' ? 'page' : 'step') : 'false');
   });
   document.querySelectorAll('.view').forEach((v) => { v.hidden = v.dataset.view !== phase; });
@@ -102,6 +104,7 @@ function init() {
   initRecovery();
   initReadiness();
   initCommand();
+  initNotice();
 
   document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => {
     setPhase(t.dataset.phase);
@@ -112,6 +115,8 @@ function init() {
   $('btn-go-downtime').addEventListener('click', goToDowntime);
   $('btn-print-all').addEventListener('click', printAllPackets);
   $('btn-refresh-patients').addEventListener('click', loadPatients);
+  $('btn-notice').addEventListener('click', () => setPhase('notice'));
+  $('btn-notice-back').addEventListener('click', () => setPhase('during'));
   $('sim-offline').addEventListener('click', () => setSimulatedOffline(!net.simulated));
 
   onNetChange((offline, info) => {

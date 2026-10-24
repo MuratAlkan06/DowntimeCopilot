@@ -49,7 +49,7 @@
 }
 
 body[data-phase="downtime"] { --phase: var(--c-crit); }
-body[data-phase="during"] { --phase: #b54708; }
+body[data-phase="during"], body[data-phase="notice"] { --phase: #b54708; }
 body[data-phase="recovery"] { --phase: var(--c-ok); }
 body[data-phase="command"] { --phase: var(--c-accent); }
 
@@ -431,6 +431,14 @@ tbody th { font-weight: 600; text-transform: capitalize; }
 .cc-group { display: flex; justify-content: space-between; gap: var(--sp-3); font-size: var(--fs-sm);
   padding: var(--sp-1) 0; border-bottom: 1px solid var(--c-border); }
 .cc-empty { font-size: var(--fs-sm); }
+
+/* ---------------------------------------------------------------- patient notice (S15) */
+.notice { display: grid; gap: var(--sp-4); }
+.notice-lang { display: grid; gap: var(--sp-3); max-width: 72ch; }
+.notice-hospital { font-size: var(--fs-sm); font-weight: 700; color: var(--c-accent); }
+.notice-title { font-size: var(--fs-xl); font-weight: 700; line-height: 1.25; }
+.notice-text { font-size: var(--fs-lg); }
+.notice-review { font-size: var(--fs-xs); color: var(--c-muted); border-top: 1px solid var(--c-border); padding-top: var(--sp-2); }
 
 /* ---------------------------------------------------------------- responsive */
 @media (max-width: 1100px) {
