@@ -37,10 +37,12 @@ export const store = {
   downtimeStartedAt: ls.get('dc.downtimeStartedAt'),
   restoredAt: ls.get('dc.restoredAt'),
   snapshotTime: ls.get('dc.snapshotTime'),
+  // Unit (simulated) clock, last seen from GET /status. Never the browser clock.
+  unitNow: ls.get('dc.unitNow'),
   patients: new Map(),
 };
 
-const PERSISTED = { role: 'dc.role', phase: 'dc.phase', downtimeStartedAt: 'dc.downtimeStartedAt', restoredAt: 'dc.restoredAt', snapshotTime: 'dc.snapshotTime' };
+const PERSISTED = { role: 'dc.role', phase: 'dc.phase', downtimeStartedAt: 'dc.downtimeStartedAt', restoredAt: 'dc.restoredAt', snapshotTime: 'dc.snapshotTime', unitNow: 'dc.unitNow' };
 
 const listeners = new Map();
 export function on(evt, fn) {

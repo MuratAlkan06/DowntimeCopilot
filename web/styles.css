@@ -74,6 +74,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .small { font-size: var(--fs-sm); }
 .mono { font-family: var(--font-mono); font-size: 0.9em; }
 .print-only { display: none; }
+.print-all { display: none; } /* filled only while "Print all packets" prints; see print.css */
 
 /* ---------------------------------------------------------------- header + phase nav */
 .app-header {

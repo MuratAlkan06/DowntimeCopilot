@@ -2,7 +2,7 @@
 import { isOffline, net, onNetChange, setSimulatedOffline } from './js/api.js';
 import { mount, h, fmtTime, fmtAgo } from './js/dom.js';
 import { store, set, on, ROLES, STALE_MINUTES } from './js/state.js';
-import { loadPatients, goToDowntime } from './js/packets.js';
+import { loadPatients, goToDowntime, loadStatus, printAllPackets } from './js/packets.js';
 import { initDuring, flushQueue } from './js/during.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 
@@ -60,14 +60,16 @@ function renderSnapshot() {
     mount(el, 'No snapshot received yet on this device.');
     return;
   }
+  // Age on the unit (simulated) clock from /status, the same clock R-STALE-01 uses; never Date.now().
   const t = new Date(store.snapshotTime);
-  const ageMs = Date.now() - t.getTime();
-  const stale = ageMs > STALE_MINUTES * 60000;
+  const now = store.unitNow ? new Date(store.unitNow) : null;
+  const ageMs = now && !isNaN(now) ? Math.max(0, now.getTime() - t.getTime()) : null;
+  const stale = ageMs != null && ageMs > STALE_MINUTES * 60000;
   el.className = `banner ${stale ? 'banner-warn' : 'banner-info'}`;
   mount(el,
     stale ? h('span', { class: 'rule-badge' }, 'R-STALE-01') : null,
     h('strong', {}, `Last snapshot ${fmtTime(store.snapshotTime, { unit: true })}`),
-    ` · ${fmtAgo(ageMs)}`,
+    ageMs != null ? ` · ${fmtAgo(ageMs)}` : '',
     stale ? ` — older than ${STALE_MINUTES} min. Confirm with the patient and paper record before acting.` : '');
 }
 
@@ -89,6 +91,7 @@ function init() {
 
   document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => setPhase(t.dataset.phase)));
   $('btn-go-downtime').addEventListener('click', goToDowntime);
+  $('btn-print-all').addEventListener('click', printAllPackets);
   $('btn-refresh-patients').addEventListener('click', loadPatients);
   $('sim-offline').addEventListener('click', () => setSimulatedOffline(!net.simulated));
 
@@ -97,13 +100,15 @@ function init() {
     if (info.wentOnline) flushQueue();
   });
   on('snapshotTime', renderSnapshot);
+  on('unitNow', renderSnapshot);
   on('downtimeStartedAt', renderEhrBanner);
   on('restoredAt', renderEhrBanner);
 
   renderOffline();
   renderEhrBanner();
   renderSnapshot();
-  setInterval(renderSnapshot, 30000);
+  loadStatus();
+  setInterval(loadStatus, 30000); // refreshes the unit clock; the banner re-renders on 'unitNow'
   setPhase(store.phase);
 
   if ('serviceWorker' in navigator) {
