@@ -4,8 +4,9 @@ import { mount, h, fmtTime, fmtAgo } from './js/dom.js';
 import { store, set, on, ROLES, STALE_MINUTES } from './js/state.js';
 import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativeTimes, refreshOnReconnect } from './js/packets.js';
 import { initDuring, flushQueue } from './js/during.js';
-import { initChecklist, loadChecklist } from './js/checklists.js';
+import { initChecklist, loadChecklist, openChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
+import { initReadiness, loadReadiness } from './js/readiness.js';
 
 const $ = (id) => document.getElementById(id);
 const PHASES = ['downtime', 'during', 'recovery'];
@@ -90,8 +91,14 @@ function init() {
   initDuring();
   initChecklist();
   initRecovery();
+  initReadiness();
 
-  document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => setPhase(t.dataset.phase)));
+  document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => {
+    setPhase(t.dataset.phase);
+    // The user navigated to the During view and now sees their checklist: a deliberate open (no auto), the
+    // only one readiness counts. setPhase alone is not, because boot calls it too (page load is background).
+    if (t.dataset.phase === 'during') openChecklist();
+  }));
   $('btn-go-downtime').addEventListener('click', goToDowntime);
   $('btn-print-all').addEventListener('click', printAllPackets);
   $('btn-refresh-patients').addEventListener('click', loadPatients);
@@ -103,7 +110,8 @@ function init() {
     flushQueue();
     // Redraw what was drawn from the cache while offline (cached-copy notes, offline messages).
     refreshOnReconnect();
-    loadChecklist();
+    loadChecklist({ auto: true }); // reconnect redraw: background, not an open
+    loadReadiness();
     if (store.phase === 'recovery') enterRecovery();
   });
   on('snapshotTime', renderSnapshot);

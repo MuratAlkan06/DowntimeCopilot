@@ -1,14 +1,14 @@
 // Service worker: network-first navigations (cached shell offline), cache-first shell assets,
 // stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v19';
+const VERSION = 'v21';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 
 const SHELL = [
   './', 'index.html', 'app.js', 'styles.css', 'print.css', 'manifest.webmanifest', 'icon.svg',
   'js/api.js', 'js/dom.js', 'js/state.js', 'js/rules.js', 'js/packets.js', 'js/records.js', 'js/during.js', 'js/checklists.js', 'js/recovery.js',
-  'js/queue.js', 'js/recorder.js',
+  'js/queue.js', 'js/recorder.js', 'js/readiness.js',
 ];
 
 const SHELL_EXT = /\.(?:html|js|css|webmanifest|svg|png|ico)$/;
@@ -103,13 +103,25 @@ async function staleWhileRevalidate(event) {
   try { return await network; } catch { return offlineResponse(); }
 }
 
+// `auto=1` only tells the server a GET was a background fetch (GET /checklists audits it as checklist.view, not
+// checklist.ack); the body is the same. The cache key drops it, so the declare-time pre-cache (auto=1) warms the
+// entry a deliberate open reads offline. Only touched when present: re-serializing would change other keys.
+// api.js fromCache must stay in step with this one.
+const dataKey = (req) => {
+  const u = new URL(req.url);
+  if (!u.searchParams.has('auto')) return req;
+  u.searchParams.delete('auto');
+  return u.href;
+};
+
 async function networkFirst(req) {
+  const key = dataKey(req);
   try {
     const res = await fetch(req);
-    await putStamped(DATA_CACHE, req, res.clone());
+    await putStamped(DATA_CACHE, key, res.clone());
     return res;
   } catch {
-    const cached = await caches.match(req, { ignoreVary: true });
+    const cached = await caches.match(key, { ignoreVary: true });
     return cached ? withHeaders(cached, { 'x-dc-fallback': '1' }) : offlineResponse();
   }
 }

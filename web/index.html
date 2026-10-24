@@ -63,6 +63,16 @@
       </div>
       <!-- Readiness: per-patient snapshots older than 30 unit-minutes (R-STALE-01), from GET /rules/current. -->
       <div id="readiness" class="banner banner-info readiness" role="status" hidden></div>
+      <!-- Readiness drill (S13): deterministic 0-100 score from GET /readiness; "Run drill" rehearses an outage
+           on a throwaway server-side store (POST /readiness/drill), never the live unit or the EHR. -->
+      <section id="drill-panel" class="card drill-panel" aria-labelledby="h-drill">
+        <div class="card-head">
+          <h2 id="h-drill" class="card-title">Readiness drill</h2>
+          <button id="btn-run-drill" class="btn btn-secondary btn-sm" type="button">Run drill</button>
+        </div>
+        <div id="drill-status" aria-live="polite"></div>
+        <div id="drill-result" aria-live="polite"></div>
+      </section>
       <div class="split">
         <aside class="card list-pane" aria-labelledby="h-patients">
           <h2 id="h-patients" class="card-title">Patients</h2>

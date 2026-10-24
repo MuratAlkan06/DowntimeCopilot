@@ -77,6 +77,11 @@ class Store:
         self._db.execute("CREATE UNIQUE INDEX IF NOT EXISTS captured_client_id ON captured (client_id)")
         self._db.commit()
 
+    def close(self) -> None:
+        """Close the connection (the readiness drill's ephemeral store, app/drill.py)."""
+        with self._lock:
+            self._db.close()
+
     def _enqueue(self, pk: str, sk: str, body: str) -> None:
         """Caller holds the lock and commits. A local SQLite insert only: a failure is logged, never raised,
         so the audit row or record save it rides with still lands (the handler never sees a sync problem)."""
