@@ -124,3 +124,8 @@ def test_word_errors_minimal_edit_script():
     assert report.word_errors(["heparin", "sc"], ["heparin", "iv"]) == [("substitute", "sc", "iv")]
     assert len(report.word_errors(report.words("5000 units SC now"), report.words("5000 unit now stat"))) == 3
     assert report.word_errors(["a"], ["a"]) == []
+
+
+def test_apply_guardrail_count_is_policy_answers_in_bedrock_mode_only():
+    assert run.guardrail_apply("bedrock", 5) == 5  # packets use the metered checker even in bedrock mode
+    assert run.guardrail_apply("checker", 5) == 0

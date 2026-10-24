@@ -16,7 +16,7 @@ import statistics
 import sys
 from pathlib import Path
 
-from evals.run import ROOT, Refused, check_costs, digest, loud
+from evals.run import ROOT, Refused, check_costs, digest, guardrail_apply, loud
 
 NOTES = ROOT / "evals" / "NOTES.md"
 BASELINE = ROOT / "evals" / "baseline"
@@ -327,9 +327,11 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
         f"{costs['tokens_in']} / {costs['tokens_out']} | {costs['total_usd']:.6f} |")
     add("")
     um = meta["unmetered"]
+    # Derived from the bundle, not run.json's tally (the first baseline's tally counted packets; see NOTES.md).
+    apply_n = guardrail_apply(meta["paths"]["guardrail_mode"], len(_load(bundle, "outputs/policy.json")))
     add(f"Per-call-type sums equal the `/costs` totals (checked at run time and again here). Not metered by the app, "
         f"so not in these sums: Textract AnalyzeDocument {um['textract_analyze_document']} page(s), Transcribe "
-        f"{um['transcribe_jobs']} job(s), ApplyGuardrail {um['guardrail_apply']} check(s); see AWS billing. Budget "
+        f"{um['transcribe_jobs']} job(s), ApplyGuardrail {apply_n} check(s); see AWS billing. Budget "
         f"guard: limit ${meta['budget']['limit_usd']:.2f}, max projected ${meta['budget']['max_projected_usd']:.4f}.")
     note("latency_cost")
     add("")

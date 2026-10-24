@@ -257,6 +257,12 @@ class Hooks:
             packets.faithful, transcribe.transcribe, textract.read_with_boxes = orig_faithful, orig_tr, orig_tx
 
 
+def guardrail_apply(mode: str, policy_answers: int) -> int:
+    """Unmetered ApplyGuardrail calls: one per policy answer in 'bedrock' mode. Packets (grounding without a
+    query) go to the checker model even then (app.ai.guardrail.BedrockGuardrail), metered in /costs as `checker`."""
+    return policy_answers if mode == "bedrock" else 0
+
+
 def check_costs(costs: dict) -> dict[str, dict]:
     """Per-call-type sums must equal the /costs totals; cost per outage-hour must be non-null."""
     by_job: dict[str, dict] = {}
@@ -311,7 +317,7 @@ def live_run(fixtures: Path, runs: Path) -> Path:
 
     def spent() -> float:
         metered = sum(c["usd"] for c in store.list_costs())
-        checks = len(out.get("packets", [])) + len(out.get("policy", []))
+        checks = len(out.get("policy", []))  # packets go to the metered checker (guardrail.BedrockGuardrail)
         unmetered = (hooks.textract_calls * allow["textract_page"] + len(hooks.transcripts) * allow["transcribe_job"]
                      + (checks * allow["guardrail_check"] if config.guardrail_mode() == "bedrock" else 0))
         return metered + unmetered
@@ -380,8 +386,7 @@ def live_run(fixtures: Path, runs: Path) -> Path:
         "budget": {"limit_usd": budget["limit_usd"], "max_projected_usd": round(guard.max_projected, 6),
                    "spent_with_allowances_usd": round(spent(), 6)},
         "unmetered": {"textract_analyze_document": hooks.textract_calls, "transcribe_jobs": len(hooks.transcripts),
-                      "guardrail_apply": (len(out["packets"]) + len(out["policy"]))
-                      if config.guardrail_mode() == "bedrock" else 0},
+                      "guardrail_apply": guardrail_apply(config.guardrail_mode(), len(out["policy"]))},
     }
     bundle = runs / run_id
     write_json(bundle / "run.json", run_meta)

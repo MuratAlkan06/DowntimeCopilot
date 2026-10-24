@@ -96,7 +96,7 @@ One word dropped on purpose.
 | policy | 1 | 6000 | 6000 / 300 | 0.022500 |
 | **Total** | 4 | 7500 | 16200 / 2550 | 0.076375 |
 
-Per-call-type sums equal the `/costs` totals (checked at run time and again here). Not metered by the app, so not in these sums: Textract AnalyzeDocument 1 page(s), Transcribe 1 job(s), ApplyGuardrail 3 check(s); see AWS billing. Budget guard: limit $2.00, max projected $0.8800.
+Per-call-type sums equal the `/costs` totals (checked at run time and again here). Not metered by the app, so not in these sums: Textract AnalyzeDocument 1 page(s), Transcribe 1 job(s), ApplyGuardrail 0 check(s); see AWS billing. Budget guard: limit $2.00, max projected $0.8800.
 
 ## 7. Cost per simulated outage-hour
 
