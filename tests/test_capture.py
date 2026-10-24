@@ -82,7 +82,7 @@ def test_dry_run_unreadable_has_no_value_and_layout_crops(env):
 def test_live_unreadable_never_guessed(env):
     calls: list = []
     stub_nova(env, {
-        "fields": {"bed": "12", "time": "03:30", "temp_c": "37.8", "heart_rate": "104", "resp_rate": "22",
+        "fields": {"bed": "12", "time": "02:55", "temp_c": "37.8", "heart_rate": "104", "resp_rate": "22",
                    "bp_systolic": "148", "bp_diastolic": "86", "spo2": "illegible", "pain_score": "4",
                    "initials": "PN"},
         "confidence": {"bed": 0.98, "time": 0.95, "temp_c": 0.93, "heart_rate": 0.94, "resp_rate": 0.9,

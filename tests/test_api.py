@@ -239,10 +239,14 @@ def test_backload_verify_entered(api):
 
 
 def test_recovery_restore_discrepancies(api):
-    go_to_downtime(api)
-    capture(api, "vitals_flowsheet")
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)  # 03:00
+    capture(api, "vitals_flowsheet")  # SpO2 89 at 02:55, no documented response
     capture(api, "downtime_mar")  # bed 12 heparin: ordered, but inside its frequency window
     capture(api, "downtime_mar", patient_id="pt-02")  # heparin with no pre-downtime order for pt-02
+    simc.post("/clock/advance", json={"minutes": 45})  # restore at 03:45: the 02:55 response window closed at 03:25
+    # Taken after the window: a pt-12 order inside 02:55-03:25 would count as the documented response (R-REC-02).
     capture(api, "verbal_order", patient_id="pt-12")
     r = api.post("/recovery/restore")
     assert r.status_code == 200, r.text
@@ -252,6 +256,18 @@ def test_recovery_restore_discrepancies(api):
     assert {d.patient_id for d in found if d.rule_id == "R-REC-01"} == {"pt-02"}
     assert audited("recovery.restore")
     assert len(api.get("/discrepancies").json()) == len(found) and audited("discrepancy.list")
+
+
+def test_restore_inside_response_window_omits_rec02(api):
+    """Restored at 03:10, the 02:55 vitals still have until 03:25 for a documented response."""
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)
+    capture(api, "vitals_flowsheet")
+    simc.post("/clock/advance", json={"minutes": 10})
+    r = api.post("/recovery/restore")
+    assert r.status_code == 200, r.text
+    assert "R-REC-02" not in {d["rule_id"] for d in r.json()}
 
 
 def test_digest(api):

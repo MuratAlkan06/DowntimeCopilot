@@ -14,13 +14,13 @@ from contracts import FormType, ReaderOutput
 # Canned dry-run read; differs from the Bedrock mock only on resp_rate (README demo step 3).
 MOCK: dict[FormType, dict[str, tuple[str | None, float]]] = {
     FormType.vitals_flowsheet: {
-        "bed": ("12", 0.99), "time": ("03:30", 0.95), "temp_c": ("37.8", 0.94), "heart_rate": ("104", 0.93),
+        "bed": ("12", 0.99), "time": ("02:55", 0.95), "temp_c": ("37.8", 0.94), "heart_rate": ("104", 0.93),
         "resp_rate": ("22", 0.58), "bp_systolic": ("148", 0.92), "bp_diastolic": ("86", 0.9),
         "spo2": ("89", 0.95), "pain_score": (None, 0.12), "initials": ("PN", 0.9),
     },
     FormType.downtime_mar: {
         "bed": ("12", 0.98), "medication": ("heparin", 0.88), "dose": ("5000 units", 0.9), "route": ("SC", 0.96),
-        "time_given": ("03:10", 0.92), "initials": ("PN", 0.9), "second_verifier": (None, 0.2),
+        "time_given": ("02:50", 0.92), "initials": ("PN", 0.9), "second_verifier": (None, 0.2),
     },
     FormType.admission_note: {
         "bed": ("12", 0.97), "allergies": ("penicillin (hives)", 0.8), "height_cm": ("178", 0.93),

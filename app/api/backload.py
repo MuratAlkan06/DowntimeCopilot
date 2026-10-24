@@ -205,10 +205,12 @@ def recovery_restore(role: str = Depends(actor_role)) -> list[Discrepancy]:
         raise HTTPException(503, str(exc)) from exc
     store.save_snapshot(restored_list, "restored")
     restored = {p.patient_id: p for p in restored_list}
-    found = diff_restored(pre, restored) + recovery_discrepancies(RecoveryContext(pre, store.list_records()))
+    restored_at = sim_client.now()  # unit clock; also the judgment time for windowed recovery rules
+    found = diff_restored(pre, restored) + recovery_discrepancies(
+        RecoveryContext(pre, store.list_records(), now=restored_at))
     store.save_discrepancies(found)
     store.set_kv("phase", "recovery")
-    store.set_kv("restored_at", sim_client.now().isoformat())
+    store.set_kv("restored_at", restored_at.isoformat())
     store.audit(role, "recovery.restore", "unit", None,
                 {"discrepancies": len(found), "simulator_changes": changes})
     return store.list_discrepancies()
