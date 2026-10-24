@@ -93,6 +93,9 @@
           <h1 id="h-during" class="view-title">During downtime</h1>
           <p class="muted">Ask the downtime policy, photograph each completed paper form, then work through your checklist.</p>
         </div>
+        <div class="action-buttons">
+          <button id="btn-notice" class="btn btn-secondary" type="button">Patient notice</button>
+        </div>
       </div>
       <div class="grid-2">
         <section class="card" aria-labelledby="h-policy">
@@ -159,6 +162,22 @@
         <p id="checklist-foot" class="muted small">From the downtime policy, section 2 and the duties it names.</p>
         <p id="checklist-cached" class="muted small" aria-live="polite"></p>
       </section>
+    </section>
+
+    <!-- Patient notice (S15), opened from During: static EN/ES notice for patients and families (web/js/notice.js).
+         "Print notice" prints it alone, one page per language (print.css: body.printing-notice). -->
+    <section id="view-notice" class="view" data-view="notice" aria-labelledby="h-notice" hidden>
+      <div class="action-bar">
+        <div>
+          <h1 id="h-notice" class="view-title">Patient notice</h1>
+          <p class="muted">Show or print for patients and families. English and Spanish, one page each.</p>
+        </div>
+        <div class="action-buttons">
+          <button id="btn-notice-back" class="btn btn-secondary" type="button">Back to During</button>
+          <button id="btn-print-notice" class="btn btn-primary" type="button">Print notice</button>
+        </div>
+      </div>
+      <div id="notice" class="notice"></div>
     </section>
 
     <!-- Phase 3: Recovery -->

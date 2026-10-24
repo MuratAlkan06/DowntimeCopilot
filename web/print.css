@@ -52,3 +52,16 @@ body.printing-incident #incident-card .card-head { display: none !important; }
 .incident-table tr { break-inside: avoid; }
 .incident-table td:first-child { white-space: nowrap; }
 .table-wrap { overflow: visible !important; max-height: none !important; }
+
+/* "Print notice" (During -> Patient notice): body.printing-notice prints the bilingual notice only, one page per
+   language. Every other print leaves it out. No print stamp: a patient notice shows no internal clock. */
+body:not(.printing-notice) #view-notice { display: none !important; }
+body.printing-notice main > .view:not(#view-notice), body.printing-notice .print-all { display: none !important; }
+body.printing-notice #view-notice { display: block !important; }
+body.printing-notice #view-notice > :not(#notice) { display: none !important; }
+.notice-lang { display: block !important; break-after: page; page-break-after: always; }
+.notice-lang:last-child { break-after: auto; page-break-after: auto; }
+.notice-hospital { font-size: 14pt; font-weight: 700; color: #000 !important; border-bottom: 1.5pt solid #000; padding-bottom: 4pt; margin-bottom: 14pt !important; }
+.notice-title { font-size: 24pt; line-height: 1.2; margin-bottom: 14pt !important; }
+.notice-text { font-size: 16pt; line-height: 1.4; margin-bottom: 10pt !important; }
+.notice-review { font-size: 9pt; color: #000 !important; border-top: 0.5pt solid #000; padding-top: 3pt; margin-top: 18pt !important; }
