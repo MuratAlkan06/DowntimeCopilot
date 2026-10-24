@@ -17,9 +17,18 @@ Source: `docs/probe-results.md`. Rows follow the README "Permission-aware fallba
 
 Model routing note: Nova 2 Lite answered "Black." to the red test image, but every Claude model and Nova Lite 1.0 answered "Red". Nova 2 Lite stays the default form reader per the README, but the eval harness must compare Nova 2 Lite with Haiku 4.5 on form reading before the 1:00 AM checkpoint.
 
+## Step-zero reconciliation (2026-10-23, slice S1)
+
+- **Guardrail re-probe.** `ConflictException` on create means the `sparthill-probe` name already exists. It is a name collision, not a deny. The current DRAFT guardrail id is `jeb5uct6gv35`; the previously recorded `0wnxjjzefh0n` is no longer listed (`docs/probe-results.md` corrected). `GUARDRAIL_ID` is unset, so `config.guardrail_mode()` uses the checker fallback (Nova 2 Lite + `prompts/checker.md`) until Role 3 publishes a guardrail version and sets `GUARDRAIL_ID`.
+- **Model routing reproduced 19:16 PDT.** Same profiles as the README "Model routing" table.
+- **Scheduler on the simulated clock (this slice).** The in-app puller ticks every `SNAPSHOT_INTERVAL_SECONDS` real seconds (default 5; 0 disables). Each tick reads the simulator's `GET /clock` and pulls only when the phase is `before`, the EHR is up, and at least 15 simulated minutes have passed since the newest pre-outage snapshot (`app.api.snapshot.should_pull`). It never pulls in `downtime` or `recovery`, so the pre-outage baseline that `/recovery/restore` and `/digest` read stays intact. Manual `POST /snapshot/pull` is unchanged. `python -m simulator.seed --fresh` empties the app store for a clean demo.
+- **Packets.** `prompts/packet.md` is now v2. `source_path` may list several comma-separated snapshot paths, and every one must resolve. Rules-engine alerts are never a source. A rejected line is logged and the packet is regenerated once. Lines that still fail are dropped and shown as an `omitted: unverifiable line` item (`source_path: faithfulness-check`). `generated_at` uses the simulated clock. `/downtime/start` runs up to `PACKET_CONCURRENCY` (default 4) generations at once.
+- **S4 / S11 physical-photo deferral (owner decision).** The photographed-paper-form steps are deferred to their slices.
+- **Remaining wall-clock stamps deferred.** Packets and the web UI (packet header, print footer, snapshot-age banner, outage start) now use the simulated clock. The digest `generated_at`, store timestamps (`pulls.pulled_at`, audit `ts`, cost `ts`) and recovery stamps still use the wall clock. Each is fixed in its own slice.
+
 ## Deferred (CI minimalism ruling)
 
 - TODO: dependabot config
 - TODO: README CI badge
 - TODO: ruff lint job
-- TODO: one clock: sqlite store stamps real wall-clock while the simulator runs a sim clock (UTC); the UI shows sim/unit time only
+- TODO: one clock: sqlite store stamps real wall-clock while the simulator runs a sim clock (UTC); the UI shows sim/unit time only (packets + UI done in S1; digest/store/recovery remain, see above)
