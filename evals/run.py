@@ -2,7 +2,8 @@
 artifact bundle evals/runs/<run-id>/ (git-ignored): run.json (manifest, ground truth, run-time git SHA and
 timestamps, paths that ran, the ALLOWED/DENIED table from docs/decisions.md), outputs/*.json (raw packets,
 faithfulness passes, policy answers, captured records, transcript) and costs.json (the GET /costs dump).
-Every file is scrubbed with the tools/guard.sh patterns before it is written.
+Every file is scrubbed with the tools/guard.sh patterns before it is written. RESULTS.md is then generated
+from the bundle alone (evals/report.py).
 
 The app runs in-process (FastAPI TestClient on app.main:app, no lifespan: no scheduler, no sync worker, so
 nothing is mirrored to the cloud) on a scratch STORE_PATH that must start empty, so /costs holds ONLY this
@@ -406,6 +407,14 @@ def main(argv: list[str] | None = None) -> int:
         loud(str(exc))
         return 4 if isinstance(exc, BudgetExceeded) else 3
     print(f"bundle {bundle} (sha256 {digest(bundle)})")
+    from evals import report
+    try:
+        text = report.render(bundle)
+    except Refused as exc:
+        loud(f"{exc} (the bundle stays at {bundle})")
+        return 3
+    args.out.write_text(text)
+    print(f"wrote {args.out}")
     return 0
 
 

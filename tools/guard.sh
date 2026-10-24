@@ -34,7 +34,15 @@ if [ -f docs/probe-results.md ]; then
   fi
 fi
 
+# 4. Committed eval bundles (evals/baseline/) get the same redaction check as the probe results.
+if [ -d evals/baseline ]; then
+  if grep -rnE 'arn:aws:[^ ]*:[0-9]{12}|(^|[^0-9])[0-9]{12}([^0-9]|$)' evals/baseline >/dev/null; then
+    echo "guard FAIL [unredacted]: evals/baseline/ contains an AWS account ID or ARN account segment; re-scrub the bundle" >&2
+    fail=1
+  fi
+fi
+
 if [ "$fail" -ne 0 ]; then
   exit 1
 fi
-echo "guard OK: probe untracked, no credentials in index, probe results redacted"
+echo "guard OK: probe untracked, no credentials in index, probe results and eval baseline redacted"
