@@ -34,7 +34,8 @@ forms:  ## regenerate printable form templates, layout maps and seeded fixtures 
 	$(PY) tools/form_fixtures.py
 
 dev:  ## simulator on :$(SIM_PORT) (default 8001), app on :$(APP_PORT) (default 8000); Ctrl-C stops both
-	@$(PY) -m uvicorn $(SIM_APP) --port $(SIM_PORT) --reload & sim=$$!; \
+	@if [ -f .env ]; then set -a; . ./.env; set +a; echo "loaded .env"; fi; \
+	$(PY) -m uvicorn $(SIM_APP) --port $(SIM_PORT) --reload & sim=$$!; \
 	$(PY) -m uvicorn $(API_APP) --port $(APP_PORT) --reload & api=$$!; \
 	trap 'kill $$sim $$api 2>/dev/null' INT TERM EXIT; \
 	wait

@@ -65,14 +65,16 @@ function render() {
   const auto = getCurrentRoute();
 
   // Show the appropriate main view
-  document.querySelectorAll('[data-route]').forEach((v) => {
+  document.querySelectorAll('.view[data-route]').forEach((v) => {
     v.hidden = !(v.dataset.route === route);
   });
 
-  // Load patients for both normal and downtime routes
-  if (route === 'normal' || route === 'downtime') {
-    loadPatients();
-  }
+  // One patient list + packet panel, moved into whichever view is showing.
+  const split = $('patient-split');
+  const slot = route === 'downtime' ? $('snapshot-slot') : $('recovery-section');
+  if (route === 'downtime') slot.appendChild(split);
+  else slot.parentNode.insertBefore(split, slot);
+  loadPatients();
 
   // If in downtime, show the downtime navigation and tabs
   const downtimeNav = $('downtime-nav');

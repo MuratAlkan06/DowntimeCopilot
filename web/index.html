@@ -33,7 +33,7 @@
     </div>
   </header>
 
-  <nav class="downtime-nav" aria-label="Downtime workflow" hidden>
+  <nav id="downtime-nav" class="downtime-nav" aria-label="Downtime workflow" hidden>
     <button class="downtime-tab" type="button" data-route="snapshots"><span>Snapshots</span></button>
     <button class="downtime-tab" type="button" data-route="capture"><span>Capture</span></button>
   </nav>
@@ -59,10 +59,11 @@
           <button id="btn-go-downtime" class="btn btn-danger btn-lg" type="button">Declare downtime</button>
         </div>
       </div>
+      <div id="downtime-status" aria-live="polite"></div>
       <div id="readiness" class="banner banner-info readiness" role="status" hidden></div>
 
       <!-- Patient list (always visible) -->
-      <div class="split">
+      <div id="patient-split" class="split">
         <aside class="card list-pane" aria-labelledby="h-patients">
           <h2 id="h-patients" class="card-title">Patients</h2>
           <div id="patient-list"></div>
@@ -71,12 +72,61 @@
       </div>
 
       <!-- Recovery/Backload section (only visible after restoration) -->
-      <section id="recovery-section" class="card" aria-labelledby="h-backload" hidden>
-        <div class="card-head">
-          <h2 id="h-backload" class="card-title">Backload queue</h2>
-          <span id="backload-summary" class="muted"></span>
+      <section id="recovery-section" hidden>
+        <div id="recovery-status" class="muted"></div>
+        <div class="action-buttons">
+          <button id="btn-restore" class="btn btn-success btn-lg" type="button">Systems restored</button>
+          <button id="btn-refresh-backload" class="btn btn-secondary" type="button">Refresh</button>
         </div>
-        <div id="backload"></div>
+
+        <section class="card" aria-labelledby="h-disc">
+          <h2 id="h-disc" class="card-title">Discrepancies</h2>
+          <div id="discrepancies"></div>
+        </section>
+
+        <section class="card" aria-labelledby="h-backload">
+          <div class="card-head">
+            <h2 id="h-backload" class="card-title">Backload queue</h2>
+            <span id="backload-summary" class="muted"></span>
+          </div>
+          <div id="backload"></div>
+        </section>
+
+        <div class="grid-2">
+          <section class="card" aria-labelledby="h-digest">
+            <div class="card-head">
+              <h2 id="h-digest" class="card-title">Shift digest</h2>
+              <button id="btn-digest" class="btn btn-secondary" type="button">Write digest</button>
+            </div>
+            <div id="digest"></div>
+          </section>
+          <section class="card" aria-labelledby="h-costs">
+            <div class="card-head">
+              <h2 id="h-costs" class="card-title">AI cost</h2>
+              <button id="btn-costs" class="btn btn-quiet" type="button">Refresh</button>
+            </div>
+            <div id="costs"></div>
+          </section>
+        </div>
+
+        <section id="incident-card" class="card" aria-labelledby="h-incident">
+          <div class="card-head">
+            <h2 id="h-incident" class="card-title">Incident report</h2>
+            <div class="action-buttons">
+              <button id="btn-incident" class="btn btn-secondary" type="button">Build report</button>
+              <button id="btn-print-incident" class="btn btn-quiet" type="button" disabled>Print report</button>
+            </div>
+          </div>
+          <div id="incident"></div>
+        </section>
+
+        <section class="card" aria-labelledby="h-audit">
+          <div class="card-head">
+            <h2 id="h-audit" class="card-title">Audit log</h2>
+            <button id="btn-audit" class="btn btn-quiet" type="button">Refresh</button>
+          </div>
+          <div id="audit"></div>
+        </section>
       </section>
     </section>
 
@@ -102,14 +152,7 @@
           </div>
         </div>
         <!-- Readiness: per-patient snapshots older than 30 unit-minutes (R-STALE-01), from GET /rules/current. -->
-        <div id="readiness-downtime" class="banner banner-info readiness" role="status" hidden></div>
-        <div class="split">
-          <aside class="card list-pane" aria-labelledby="h-packets">
-            <h2 id="h-packets" class="card-title">Patients</h2>
-            <div id="snapshot-patient-list"></div>
-          </aside>
-          <article id="snapshot-packet" class="card packet-pane" aria-live="polite"></article>
-        </div>
+        <div id="snapshot-slot"></div>
         <!-- "Print all packets" renders every packet here, print only: one page per patient (print.css). -->
         <div id="print-all" class="print-all" aria-hidden="true"></div>
       </div>
