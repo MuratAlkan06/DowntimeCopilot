@@ -147,11 +147,40 @@ function patientRow(p) {
   );
 }
 
+function patientChart(p) {
+  const section = (title, items) => h('section', { class: 'stack-tight' },
+    h('h3', { class: 'card-title' }, title),
+    items.length ? h('ul', {}, items.map((t) => h('li', {}, t))) : h('p', { class: 'muted' }, 'None'));
+  const allergies = (p.allergies || []).map((a) => `${a.substance} (${a.reaction}, ${a.severity})`);
+  const meds = (p.medications || []).map((m) => h('span', {},
+    `${m.name} ${m.dose} ${m.route} ${m.frequency}`,
+    m.next_due ? ` · next due ${fmtTime(m.next_due)}` : '',
+    m.high_alert ? ' ' : '', m.high_alert ? chip('High alert', 'crit') : null));
+  return h('div', { class: 'stack' },
+    h('div', {},
+      h('h2', { class: 'view-subtitle' }, `${p.bed} · ${p.name}`),
+      h('p', { class: 'muted' }, `MRN ${p.mrn} · ${p.age} ${p.sex} · DOB ${p.dob} · ${p.admitting_dx}`),
+      h('div', { class: 'chips' },
+        chip(p.code_status, 'warn'),
+        p.isolation ? chip(`Isolation: ${p.isolation}`, 'warn') : null,
+        p.fall_risk ? chip(`Fall risk: ${p.fall_risk}`, 'neutral') : null,
+        p.weight_kg ? chip(`${p.weight_kg} kg`, 'neutral') : null)),
+    section('Allergies', allergies),
+    section('Medications', meds),
+    section('Lines and drains', p.lines_drains || []),
+    section('Pending labs', p.pending_labs || []),
+    h('p', { class: 'muted small' }, 'Live chart. Downtime packets are generated when you tap "Declare downtime".'));
+}
+
 /** `quiet`: redraw in place (no spinner, no scroll) and keep the current view if the fetch fails. */
 export async function openPacket(id, { quiet = false } = {}) {
   selectedId = id;
   document.querySelectorAll('.patient-row').forEach((b) => b.toggleAttribute('aria-current', b.dataset.id === id));
   const pane = $('packet');
+  if (!store.downtimeStartedAt && store.patients.has(id)) {
+    mount(pane, patientChart(store.patients.get(id)));
+    return;
+  }
   if (!quiet) {
     mount(pane, stateBox('loading', 'Loading packet…'));
     if (window.matchMedia('(max-width: 760px)').matches) pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
