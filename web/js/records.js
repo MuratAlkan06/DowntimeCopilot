@@ -113,7 +113,23 @@ function agreementChip(f) {
   return chip('Single read', 'neutral');
 }
 
-export function renderRecord(rec, { onChange } = {}) {
+// X-Transcribe outcome seen when this device captured the record (during.js), by record id, so a re-render
+// after verify or an edit keeps it. A typed read-back or a fallback was not transcribed from the audio.
+const heardBy = new Map();
+const TRANSCRIBED = new Set(['mock', 'transcribed']);
+
+function sourceLine(rec, readers) {
+  if (rec.audio_ref && !rec.image_ref) {
+    const heard = heardBy.get(rec.record_id);
+    if (heard === 'typed') return 'Read from the typed read-back (single read)';
+    if (heard && !TRANSCRIBED.has(heard)) return 'Audio saved, not transcribed';
+    return 'Transcribed from audio (single read)';
+  }
+  return `${readers.length ? `Read by ${readers.join(' + ')}` : 'No reader output'}${readers.length === 1 ? ' (single read)' : ''}`;
+}
+
+export function renderRecord(rec, { onChange, transcribe } = {}) {
+  if (transcribe) heardBy.set(rec.record_id, transcribe);
   const fields = rec.fields || [];
   const tx = rec.reads?.textract;
   const br = rec.reads?.bedrock;
@@ -135,8 +151,7 @@ export function renderRecord(rec, { onChange } = {}) {
         h('h3', { class: 'record-title' }, FORM_LABELS[rec.form_type] || labelize(rec.form_type), ' · ', patientLabel(rec.patient_id)),
         h('p', { class: 'record-meta' },
           `Captured ${fmtTime(rec.captured_at)} by ${roleLabel(rec.captured_by_role)} · `,
-          readers.length ? `Read by ${readers.join(' + ')}` : 'No reader output',
-          readers.length === 1 ? ' (single read)' : '',
+          sourceLine(rec, readers),
           ' · ', h('span', { class: 'mono' }, rec.record_id)),
       ),
       h('span', { class: 'chips record-chips' },
