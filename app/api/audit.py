@@ -1,14 +1,15 @@
-"""Audit log (append only), cost per outage-hour, and cloud sync."""
+"""Audit log (append only), cost per outage-hour, and cloud sync (docs/decisions.md S10)."""
 from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app import sim_client
 from app.api import actor_role
 from app.store import get_store
-from app.sync import get_mirror
+from app.sync import s3 as s3sync
+from app.sync import worker as sync_worker
 from contracts import AuditEvent
 
 router = APIRouter(tags=["audit"])
@@ -52,10 +53,31 @@ def costs(role: str = Depends(actor_role)) -> dict:
 
 @router.post("/sync")
 def sync(role: str = Depends(actor_role)) -> dict:
+    """Drain the outbox now (the background worker does the same). Never raises on a sync failure."""
+    pushed, error = sync_worker.drain_all()
+    st = sync_worker.status()
+    get_store().audit(role, "sync.push", "audit", st["mode"], {"pushed": pushed, "error": error})
+    return {"mirror": st["mode"], "pushed": pushed, "pending": st["pending"], "error": error}
+
+
+@router.get("/sync/status")
+def sync_status() -> dict:
+    """Non-contract. {mode, mirrored, pending, last_success_ts, last_error}; same keys in DRY_RUN. Not audited:
+    the web chip polls it, and an audit row per poll would itself be a pending item."""
+    return sync_worker.status()
+
+
+@router.post("/sync/export")
+def sync_export(at: datetime | None = None, role: str = Depends(actor_role)) -> dict:
+    """Non-contract. Audit log as JSONL under exports/ in the app bucket (local file in DRY_RUN or with no bucket).
+    `at` (default: now, unit clock) names the object; the same `at` never writes a second copy. An AWS error is
+    a 502 with its code, never a 500."""
     store = get_store()
-    mirror = get_mirror()
-    pending = store.unsynced_audit()
-    pushed = mirror.push_audit(pending)
-    store.mark_synced([e.event_id for e in pending[:pushed]])
-    store.audit(role, "sync.push", "audit", mirror.name, {"pushed": pushed})
-    return {"mirror": mirror.name, "pushed": pushed}
+    try:
+        out = s3sync.export_audit(store, at or store.now())
+    except Exception as exc:  # noqa: BLE001 - report the code, keep the handler alive
+        code = s3sync.error_code(exc) or type(exc).__name__
+        store.audit(role, "sync.export_failed", "audit", None, {"error": code})
+        raise HTTPException(502, f"audit export failed: {code}") from None
+    store.audit(role, "sync.export", "audit", out["key"], {k: out[k] for k in ("target", "created", "events")})
+    return out

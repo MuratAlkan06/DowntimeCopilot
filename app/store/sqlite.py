@@ -8,6 +8,7 @@ not hardened.
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import threading
 import uuid
@@ -15,6 +16,8 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 from contracts import AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot
+
+log = logging.getLogger(__name__)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pulls (pull_id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, pulled_at TEXT);
@@ -29,7 +32,19 @@ CREATE TABLE IF NOT EXISTS costs (seq INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT
                                   tokens_in INTEGER, tokens_out INTEGER, latency_ms INTEGER, usd REAL,
                                   dry_run INTEGER);
 CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS sync_outbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, pk TEXT NOT NULL, sk TEXT NOT NULL,
+                                        body TEXT NOT NULL);
 """
+
+# Cloud-mirror outbox (docs/decisions.md S10). Every audit event and every captured-record save adds one row in
+# the same local transaction; app.sync.worker drains it oldest first in a background thread. Rows are never
+# coalesced: the item key (pk, sk) is stable, so a later put of the same record overwrites the earlier one.
+SYNC_AUDIT, SYNC_RECORD = "AuditEvent", "CapturedRecord"
+
+
+def sync_key(ts: datetime, item_id: str) -> str:
+    """DynamoDB sort key "<iso-ts>#<id>": one item per event / record, whatever the number of puts."""
+    return f"{ts.isoformat()}#{item_id}"
 
 
 def utcnow() -> datetime:
@@ -61,6 +76,14 @@ class Store:
                 self._db.execute(f"ALTER TABLE captured ADD COLUMN {col} TEXT")  # fixed names, not user input
         self._db.execute("CREATE UNIQUE INDEX IF NOT EXISTS captured_client_id ON captured (client_id)")
         self._db.commit()
+
+    def _enqueue(self, pk: str, sk: str, body: str) -> None:
+        """Caller holds the lock and commits. A local SQLite insert only: a failure is logged, never raised,
+        so the audit row or record save it rides with still lands (the handler never sees a sync problem)."""
+        try:
+            self._db.execute("INSERT INTO sync_outbox (pk, sk, body) VALUES (?, ?, ?)", (pk, sk, body))
+        except sqlite3.Error as exc:
+            log.warning("sync outbox enqueue failed (%s); item not mirrored", type(exc).__name__)
 
     def _exec(self, sql: str, args: tuple = ()) -> list[tuple]:
         with self._lock:
@@ -99,6 +122,15 @@ class Store:
             self._db.commit()
         return pull_id
 
+    def newest_pull(self) -> tuple[int, str, str, list[PatientSnapshot]] | None:
+        """(pull_id, kind, pulled_at, patients) of the newest pull of any kind (S3 snapshot mirror)."""
+        rows = self._exec("SELECT pull_id, kind, pulled_at FROM pulls ORDER BY pull_id DESC LIMIT 1")
+        if not rows:
+            return None
+        pull_id, kind, pulled_at = rows[0]
+        bodies = self._exec("SELECT body FROM snapshots WHERE pull_id = ? ORDER BY patient_id", (pull_id,))
+        return pull_id, kind, pulled_at, [PatientSnapshot.model_validate_json(_dec(b)) for (b,) in bodies]
+
     def latest_snapshot(self, kind: str = "pre") -> list[PatientSnapshot]:
         rows = self._exec(
             "SELECT s.body FROM snapshots s WHERE s.pull_id = (SELECT MAX(pull_id) FROM pulls WHERE kind = ?)",
@@ -131,6 +163,7 @@ class Store:
                 "client_id = COALESCE(excluded.client_id, captured.client_id), "
                 "text_source = COALESCE(excluded.text_source, captured.text_source)",
                 (record.record_id, seq, _enc(record.model_dump_json()), client_id, text_source))
+            self._enqueue(SYNC_RECORD, sync_key(record.captured_at, record.record_id), record.model_dump_json())
             self._db.commit()
 
     def get_record(self, record_id: str) -> CapturedRecord | None:
@@ -177,6 +210,7 @@ class Store:
                             action=action, target_type=target_type, target_id=target_id, details=details or {})
             self._db.execute("INSERT INTO audit (event_id, body, synced) VALUES (?, ?, 0)",
                              (ev.event_id, _enc(ev.model_dump_json())))
+            self._enqueue(SYNC_AUDIT, sync_key(ev.ts, ev.event_id), ev.model_dump_json())
             self._db.commit()
         return ev
 
@@ -198,6 +232,30 @@ class Store:
     def mark_synced(self, event_ids: list[str]) -> None:
         for eid in event_ids:
             self._exec("UPDATE audit SET synced = 1 WHERE event_id = ?", (eid,))
+
+    # ------------------------------------------------------------ sync outbox (app.sync.worker drains it)
+    def outbox(self, limit: int = 25) -> list[tuple[int, str, str, str]]:
+        """Oldest first: (seq, pk, sk, body)."""
+        return self._exec("SELECT seq, pk, sk, body FROM sync_outbox ORDER BY seq LIMIT ?", (limit,))
+
+    def outbox_pending(self) -> int:
+        return self._exec("SELECT COUNT(*) FROM sync_outbox")[0][0]
+
+    def outbox_done(self, seq: int, pk: str, sk: str) -> bool:
+        """One mirrored put, in one transaction: drop the row, count it, stamp last success, clear the last
+        error, and mark an audit event synced. False (nothing counted) if the row was already gone."""
+        with self._lock:
+            if self._db.execute("DELETE FROM sync_outbox WHERE seq = ?", (seq,)).rowcount != 1:
+                self._db.commit()
+                return False
+            if pk == SYNC_AUDIT:
+                self._db.execute("UPDATE audit SET synced = 1 WHERE event_id = ?", (sk.rsplit("#", 1)[-1],))
+            self._db.execute("INSERT INTO kv (key, value) VALUES ('sync.mirrored', '1') ON CONFLICT (key) "
+                             "DO UPDATE SET value = CAST(value AS INTEGER) + 1")
+            self._db.executemany("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)",
+                                 [("sync.last_success_ts", self.now().isoformat()), ("sync.last_error", None)])
+            self._db.commit()
+        return True
 
     # ------------------------------------------------------------ costs
     def record_cost(self, job: str, model_id: str, tokens_in: int, tokens_out: int, latency_ms: int,

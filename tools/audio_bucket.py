@@ -5,8 +5,9 @@
 
 The name is `downtime-copilot-audio-<random suffix>`: generated once, appended to the local, git-ignored .env
 as `export AUDIO_BUCKET=...`, and reused after that (from the environment or the .env line). Hardening is
-idempotent: SSE-S3 default encryption, Block Public Access (all four), objects expire after 1 day. Prints the
-bucket name and what it did, never credentials. CI never runs this.
+idempotent: SSE-S3 default encryption, Block Public Access (all four), lifecycle rules merged into the existing
+ones (audio/ expires after 1 day; snapshots/ and exports/ after 7, docs/decisions.md S10). Prints the bucket
+name and what it did, never credentials. CI never runs this.
 """
 from __future__ import annotations
 
@@ -57,8 +58,10 @@ def main(argv: list[str] | None = None) -> int:
         name = bucket_name()
         created = s3sync.ensure_bucket(s3, name, region)
         s3sync.harden_bucket(s3, name)  # again for an existing bucket: idempotent
+        rules = ", ".join(f"{r['Filter'].get('Prefix', '') or '*'} {r['Expiration']['Days']}d"
+                          for r in s3sync.ensure_lifecycle(s3, name) if "Filter" in r and "Expiration" in r)
         print(f"{name}: {'created' if created else 'exists'}, hardened (SSE-S3, Block Public Access x4, "
-              f"expire after {s3sync.EXPIRE_DAYS} day) in {region}")
+              f"lifecycle: {rules}) in {region}")
         return 0
     name = bucket_name(create=False)
     if not name:

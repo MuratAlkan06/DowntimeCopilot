@@ -256,10 +256,28 @@ export async function loadCosts() {
   );
 }
 
+// ---------------------------------------------------------------- sync status chip (GET /sync/status, S10)
+
+const SYNC_MODE = { dynamodb: 'DynamoDB', local: 'local export', dry_run: 'dry run' };
+let syncTimer;
+
+/** Amber with the count while the outbox has items (re-checked every 2 s until it settles); quiet otherwise.
+ *  Hidden when the status is unreachable. */
+export async function loadSyncStatus() {
+  clearTimeout(syncTimer);
+  const r = await api('/sync/status');
+  const s = r.ok && !r.offline ? r.data : null;
+  const mode = s && (SYNC_MODE[s.mode] || s.mode);
+  mount($('sync-chip'), s ? chip(s.pending > 0 ? `Sync: ${s.pending} pending · ${mode}` : `Synced · ${mode}`,
+    s.pending > 0 ? 'warn' : 'neutral', s.last_error ? `Last sync error: ${s.last_error}` : undefined) : null);
+  if (s?.pending > 0 && store.phase === 'recovery') syncTimer = setTimeout(loadSyncStatus, 2000);
+}
+
 export function enterRecovery() {
   loadBackload();
   loadAudit();
   loadCosts();
+  loadSyncStatus();
 }
 
 export function initRecovery() {
@@ -267,12 +285,13 @@ export function initRecovery() {
   $('btn-refresh-backload').addEventListener('click', () => { loadBackload(); loadAudit(); });
   $('btn-digest').addEventListener('click', loadDigest);
   $('btn-audit').addEventListener('click', loadAudit);
-  $('btn-costs').addEventListener('click', loadCosts);
+  $('btn-costs').addEventListener('click', () => { loadCosts(); loadSyncStatus(); });
+  setInterval(() => { if (store.phase === 'recovery' && !document.hidden) loadSyncStatus(); }, 10000);
   $('btn-incident').addEventListener('click', loadIncident);
   $('btn-print-incident').addEventListener('click', printIncident);
   renderDiscrepancies();
   mount($('incident'), h('p', { class: 'muted' }, 'Timeline of the outage from the audit log, with a two-paragraph summary. Printable on one page.'));
   mount($('digest'), h('p', { class: 'muted' }, 'The SBAR handoff for the oncoming shift, written from the audit log and captured records.'));
   on('role', () => { if (records.length) renderBackload(); });
-  on('records-changed', () => { if (store.phase === 'recovery') { loadAudit(); loadCosts(); } });
+  on('records-changed', () => { if (store.phase === 'recovery') { loadAudit(); loadCosts(); loadSyncStatus(); } });
 }
