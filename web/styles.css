@@ -156,7 +156,6 @@ main:focus { outline: none; }
 .action-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .action-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .view-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
-.view-subtitle { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.01em; }
 .split { display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: var(--sp-4); align-items: start; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); align-items: start; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
