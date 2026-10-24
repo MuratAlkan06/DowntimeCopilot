@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { h, mount, stateBox, chip, fmtTime, fmtDateTime, asList, cachedNote, labelize, usd } from './dom.js';
 import { store, set, on, GROUPS, ROLE_GROUPS, patientLabel, roleLabel } from './state.js';
 import { renderRecord } from './records.js';
-import { ruleSeverity } from './packets.js';
+import { ruleSeverity, loadStatus } from './packets.js';
 
 const $ = (id) => document.getElementById(id);
 let records = [];
@@ -27,8 +27,30 @@ function renderDiscrepancies() {
       h('span', { class: 'rule-badge' }, d.rule_id),
       h('span', { class: 'disc-body' },
         h('strong', {}, patientLabel(d.patient_id)), ' — ', d.description,
-        h('span', { class: 'disc-meta' }, `${d.severity || ''} · ${labelize(d.status || 'open')}${d.record_id ? ` · record ${d.record_id}` : ''}`)));
+        h('span', { class: 'disc-meta' }, `${d.severity || ''} · ${labelize(d.status || 'open')}${d.record_id ? ` · record ${d.record_id}` : ''}`)),
+      h('span', { class: 'disc-actions' },
+        d.status === 'open' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'acknowledged', e.target) }, 'Acknowledge') : null,
+        d.status !== 'resolved' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'resolved', e.target) }, 'Resolve') : null));
   })));
+}
+
+// Charge nurse review before end of shift (policy 7.5): open -> acknowledged -> resolved.
+async function setDiscStatus(d, status, btn) {
+  btn.disabled = true;
+  const r = await api(`/discrepancies/${encodeURIComponent(d.discrepancy_id)}/status`, { method: 'POST', json: { status } });
+  if (!r.ok) {
+    btn.disabled = false;
+    mount($('recovery-status'), stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — not saved.' : `Not saved (${r.error}).`));
+    return;
+  }
+  discrepancies = discrepancies.map((x) => (x.discrepancy_id === d.discrepancy_id ? r.data : x));
+  renderDiscrepancies();
+  loadAudit();
+}
+
+async function loadDiscrepancies() {
+  const r = await api('/discrepancies');
+  if (r.ok && Array.isArray(r.data) && r.data.length) { discrepancies = r.data; renderDiscrepancies(); }
 }
 
 async function restore() {
@@ -42,12 +64,13 @@ async function restore() {
       ? 'Still offline — reconciliation runs when connectivity returns.' : `Restore failed (${r.error}).`));
     return;
   }
-  set('restoredAt', new Date().toISOString());
+  const st = await loadStatus(); // restore time on the unit clock
+  if (!st?.restored_at) set('restoredAt', new Date().toISOString());
   discrepancies = asList(r.data, 'discrepancies', 'items');
   renderDiscrepancies();
-  mount($('recovery-status'), h('span', {}, `Systems restored ${fmtTime(store.restoredAt)} · ${discrepancies.length} discrepancies flagged.`));
+  mount($('recovery-status'), h('span', {}, `Systems restored ${fmtTime(store.restoredAt, { unit: true })} · ${discrepancies.length} discrepancies flagged.`));
   await loadBackload();
-  loadAudit();
+  await syncAudit();
   loadDigest();
   loadCosts();
 }
@@ -144,7 +167,14 @@ export async function loadDigest() {
   ));
 }
 
-// ---------------------------------------------------------------- audit
+// ---------------------------------------------------------------- audit + cloud sync
+
+export async function syncAudit() {
+  const r = await api('/sync', { method: 'POST' });
+  $('sync-status').textContent = r.ok ? `Last sync: ${r.data.pushed} events to ${r.data.mirror}`
+    : (r.offline ? 'Offline — sync pending' : `Sync failed (${r.error})`);
+  await loadAudit();
+}
 
 export async function loadAudit() {
   const el = $('audit');
@@ -158,7 +188,7 @@ export async function loadAudit() {
   if (!events.length) { mount(el, stateBox('empty', 'No audit events yet.')); return; }
   const synced = events.filter((e) => e.synced).length;
   mount(el,
-    h('p', { class: 'muted small' }, `${events.length} events · ${synced} synced to AWS · ${events.length - synced} pending sync`),
+    h('p', { class: 'muted small' }, `${events.length} events · ${synced} synced to the cloud mirror · ${events.length - synced} pending sync`),
     h('div', { class: 'table-wrap' }, h('table', { class: 'data-table' },
       h('thead', {}, h('tr', {}, ['Time', 'Role', 'Action', 'Target', 'Sync'].map((t) => h('th', { scope: 'col' }, t)))),
       h('tbody', {}, events.slice(0, 50).map((e) => h('tr', {},
@@ -209,6 +239,7 @@ export async function loadCosts() {
 }
 
 export function enterRecovery() {
+  if (discrepancies == null) loadDiscrepancies();
   loadBackload();
   loadAudit();
   loadCosts();
@@ -219,9 +250,10 @@ export function initRecovery() {
   $('btn-refresh-backload').addEventListener('click', () => { loadBackload(); loadAudit(); });
   $('btn-digest').addEventListener('click', loadDigest);
   $('btn-audit').addEventListener('click', loadAudit);
+  $('btn-sync').addEventListener('click', syncAudit);
   $('btn-costs').addEventListener('click', loadCosts);
   renderDiscrepancies();
   mount($('digest'), h('p', { class: 'muted' }, 'The SBAR handoff for the oncoming shift, written from the audit log and captured records.'));
   on('role', () => { if (records.length) renderBackload(); });
-  on('records-changed', () => { if (store.phase === 'recovery') { loadAudit(); loadCosts(); } });
+  on('records-changed', () => { if (store.phase === 'recovery') { syncAudit(); loadCosts(); } });
 }

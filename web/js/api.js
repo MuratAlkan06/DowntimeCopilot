@@ -1,6 +1,8 @@
 // Fetch wrapper: same-origin relative URLs, never throws, tracks connectivity.
 // Result shape: { ok, status, data, error, offline, cachedAt }.
 
+import { store } from './state.js';
+
 const listeners = new Set();
 const SIM_KEY = 'dc.simOffline';
 
@@ -62,7 +64,8 @@ async function fromCache(path) {
 }
 
 export async function api(path, { method = 'GET', json, form, headers } = {}) {
-  const init = { method, headers: { Accept: 'application/json', ...(headers || {}) } };
+  // The role switcher is the actor for every request (audit, captured_by_role, two-person verify).
+  const init = { method, headers: { Accept: 'application/json', 'X-Role': store.role, ...(headers || {}) } };
   if (json !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(json); }
   if (form) init.body = form;
 

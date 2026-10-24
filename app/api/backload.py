@@ -13,8 +13,8 @@ from app.rules import RecoveryContext, out_of_range, recovery_discrepancies
 from app.rules.drug_classes import is_high_alert, same_medication
 from app.rules.engine import discrepancy
 from app.store import get_store
-from contracts import (BackloadGroup, CapturedRecord, Discrepancy, FieldFlag, FormType, PatientSnapshot, RecordStatus,
-                       Severity)
+from contracts import (BackloadGroup, CapturedRecord, Discrepancy, DiscrepancyStatus, FieldFlag, FormType, PatientSnapshot,
+                       RecordStatus, Severity)
 
 router = APIRouter(tags=["backload"])
 
@@ -219,3 +219,20 @@ def discrepancies(role: str = Depends(actor_role)) -> list[Discrepancy]:
     store = get_store()
     store.audit(role, "discrepancy.list", "discrepancy")
     return store.list_discrepancies()
+
+
+class DiscrepancyUpdate(BaseModel):
+    status: DiscrepancyStatus
+
+
+@router.post("/discrepancies/{discrepancy_id}/status", response_model=Discrepancy)
+def discrepancy_status(discrepancy_id: str, body: DiscrepancyUpdate, role: str = Depends(actor_role)) -> Discrepancy:
+    """Charge nurse reviews each discrepancy before end of shift (policy 7.5): open -> acknowledged -> resolved."""
+    store = get_store()
+    found = next((d for d in store.list_discrepancies() if d.discrepancy_id == discrepancy_id), None)
+    if found is None:
+        raise HTTPException(404, f"unknown discrepancy {discrepancy_id}")
+    updated = found.model_copy(update={"status": body.status})
+    store.update_discrepancy(updated)
+    store.audit(role, f"discrepancy.{body.status.value}", "discrepancy", discrepancy_id, {"rule_id": found.rule_id})
+    return updated

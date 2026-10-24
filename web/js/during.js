@@ -102,6 +102,10 @@ async function submitCapture(e) {
   };
   const out = $('capture-result');
   const prev = [...out.childNodes].filter((n) => !n.classList?.contains('state')); // kept on failure
+  if (meta.form_type === 'verbal_order' && !meta.patient_id) {
+    mount(out, stateBox('error', 'Choose the patient for this verbal order. The read-back has no bed box to read, and an unassigned order is never checked for co-sign (R-VO-01).'), prev);
+    return;
+  }
   if (!file && !(meta.form_type === 'verbal_order' && meta.readback_text)) {
     mount(out, stateBox('error', 'Choose a photo of the form (or type the read-back for a verbal order).'), prev);
     return;

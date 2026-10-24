@@ -243,6 +243,7 @@ export async function loadStatus() {
   if (r.offline) return s; // cached copy: do not overwrite the outage markers from it
   if ((s.outage_id || null) !== store.outageId) set('outageId', s.outage_id || null);
   if (s.outage_started_at && s.outage_started_at !== store.downtimeStartedAt) set('downtimeStartedAt', s.outage_started_at);
+  if (s.restored_at && s.restored_at !== store.restoredAt) set('restoredAt', s.restored_at);
   if (s.phase === 'before' && !s.outage_started_at && (store.downtimeStartedAt || store.restoredAt)) {
     set('downtimeStartedAt', null); // server was reset (seed --fresh): clear this device's stale markers
     set('restoredAt', null);

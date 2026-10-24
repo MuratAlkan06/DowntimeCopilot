@@ -183,7 +183,11 @@
       <section class="card" aria-labelledby="h-audit">
         <div class="card-head">
           <h2 id="h-audit" class="card-title">Audit log</h2>
-          <button id="btn-audit" class="btn btn-quiet" type="button">Refresh</button>
+          <span id="sync-status" class="muted"></span>
+          <span class="action-buttons">
+            <button id="btn-sync" class="btn btn-secondary" type="button">Sync now</button>
+            <button id="btn-audit" class="btn btn-quiet" type="button">Refresh</button>
+          </span>
         </div>
         <div id="audit"></div>
       </section>

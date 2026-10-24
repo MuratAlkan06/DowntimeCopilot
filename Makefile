@@ -13,7 +13,7 @@ SIM_URL ?= http://localhost:$(SIM_PORT)
 APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup probe schemas forms dev demo test evals guard
+.PHONY: setup probe schemas forms dev demo test evals guard e2e
 
 setup:  ## venv + dependencies
 	python3 -m venv $(VENV)
@@ -45,6 +45,9 @@ demo:  ## seeds 12 patients, opens the app at "Before" with a healthy EHR (needs
 
 test:  ## unit tests
 	$(PY) -m pytest -q
+
+e2e:  ## the demo script end to end through the API, mock mode (tests/test_e2e.py)
+	DRY_RUN=1 $(PY) -m pytest -q tests/test_e2e.py
 
 evals:  ## generates RESULTS.md from live runs (never hand-edit it; refuses DRY_RUN and empty fixtures)
 	$(PY) -m evals.run

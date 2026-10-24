@@ -141,6 +141,9 @@ class Store:
             self._exec("INSERT OR IGNORE INTO discrepancies (discrepancy_id, body) VALUES (?, ?)",
                        (d.discrepancy_id, _enc(d.model_dump_json())))
 
+    def update_discrepancy(self, d: Discrepancy) -> None:
+        self._exec("UPDATE discrepancies SET body = ? WHERE discrepancy_id = ?", (_enc(d.model_dump_json()), d.discrepancy_id))
+
     def list_discrepancies(self) -> list[Discrepancy]:
         return [Discrepancy.model_validate_json(_dec(r[0])) for r in self._exec("SELECT body FROM discrepancies")]
 
