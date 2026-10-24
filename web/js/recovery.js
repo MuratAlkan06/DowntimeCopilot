@@ -12,8 +12,25 @@ const SEV_KIND = { critical: 'crit', warning: 'warn', info: 'info' };
 
 // ---------------------------------------------------------------- discrepancies
 
+const discState = (d) => d.status || 'open';
+const countBy = (list, status) => list.filter((d) => discState(d) === status).length;
+
+/** Review progress for the panel header: "6 discrepancies · 4 open · 1 acknowledged · 1 resolved". */
+function discSummary(list) {
+  if (!list?.length) return '';
+  const n = list.length;
+  return `${n} ${n === 1 ? 'discrepancy' : 'discrepancies'} · ${countBy(list, 'open')} open · `
+    + `${countBy(list, 'acknowledged')} acknowledged · ${countBy(list, 'resolved')} resolved`;
+}
+
+// Each rendered row by discrepancy id: the element to focus after a review (its first remaining button, else
+// the row itself) and the slot for an inline "Not saved".
+let rows = new Map();
+
 function renderDiscrepancies() {
   const el = $('discrepancies');
+  $('disc-summary').textContent = discSummary(discrepancies);
+  rows = new Map();
   if (discrepancies == null) {
     mount(el, stateBox('empty', 'Tap "Systems restored" to diff the restored EHR against the snapshot and captured records.'));
     return;
@@ -23,31 +40,53 @@ function renderDiscrepancies() {
   const sorted = [...discrepancies].sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
   mount(el, h('ul', { class: 'disc-list', role: 'list' }, sorted.map((d) => {
     const kind = SEV_KIND[d.severity] || ruleSeverity(d.rule_id);
-    return h('li', { class: `alert alert-${kind}` },
+    const state = discState(d);
+    const reviewed = state === 'acknowledged' ? chip('Acknowledged', 'info')
+      : state === 'resolved' ? chip([h('span', { 'aria-hidden': 'true' }, '✓'), 'Resolved'], 'neutral') : null;
+    const buttons = [
+      state === 'open' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'acknowledged', e.target) }, 'Acknowledge') : null,
+      state !== 'resolved' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'resolved', e.target) }, 'Resolve') : null,
+    ].filter(Boolean);
+    const err = h('span', { class: 'disc-error' });
+    const li = h('li', { class: `alert alert-${kind} disc-item is-${state}`, tabindex: '-1' },
       h('span', { class: 'rule-badge' }, d.rule_id),
       h('span', { class: 'disc-body' },
-        h('strong', {}, patientLabel(d.patient_id)), ' — ', d.description,
-        h('span', { class: 'disc-meta' }, `${d.severity || ''} · ${labelize(d.status || 'open')}${d.record_id ? ` · record ${d.record_id}` : ''}`)),
-      h('span', { class: 'disc-actions' },
-        d.status === 'open' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'acknowledged', e.target) }, 'Acknowledge') : null,
-        d.status !== 'resolved' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'resolved', e.target) }, 'Resolve') : null));
+        h('span', { class: 'disc-head' }, h('strong', {}, patientLabel(d.patient_id)), reviewed), ' — ', d.description,
+        // The status chip carries a reviewed state; the meta line names the state only while it is still open.
+        h('span', { class: 'disc-meta' }, `${d.severity || ''}${reviewed ? '' : ` · ${labelize(state)}`}${d.record_id ? ` · record ${d.record_id}` : ''}`),
+        err),
+      buttons.length ? h('span', { class: 'disc-actions' }, buttons) : null);
+    rows.set(d.discrepancy_id, { focus: buttons[0] || li, err });
+    return li;
   })));
+}
+
+/** The polite announcement after a review: "Bed 12 (R-REC-02) acknowledged — 3 open remaining". */
+function reviewAnnouncement(d, list) {
+  const bed = store.patients.get(d.patient_id)?.bed || patientLabel(d.patient_id);
+  return `${bed} (${d.rule_id}) ${labelize(discState(d))} — ${countBy(list, 'open')} open remaining`;
 }
 
 // Charge nurse review before end of shift (policy 7.5): open -> acknowledged -> resolved. Updates the list
 // syncRestored or restore() put on screen in place; never re-fetches it (the review state is in each item).
+// The list redraws, so focus goes back to the acted row and #disc-live announces the result; a failure shows
+// at that row (the top status line keeps the restore state).
 async function setDiscStatus(d, status, btn) {
   btn.disabled = true;
   const r = await api(`/discrepancies/${encodeURIComponent(d.discrepancy_id)}/status`, { method: 'POST', json: { status } });
   if (discrepancies == null) return; // a reseed or a new outage cleared the view while this was saving
   if (!r.ok) {
     btn.disabled = false;
-    mount($('recovery-status'), stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — not saved. Try again when connected.' : `Not saved (${r.error}).`));
+    const row = rows.get(d.discrepancy_id); // the list may have redrawn while this was saving
+    mount(row?.err, h('span', { role: 'alert' },
+      r.offline ? 'Offline — not saved. Try again when connected.' : `Not saved (${r.error}). Try again.`));
+    (btn.isConnected === false ? row?.focus : btn)?.focus?.(); // disabling it dropped focus to <body>
     return;
   }
   discrepancies = discrepancies.map((x) => (x.discrepancy_id === d.discrepancy_id ? r.data : x));
   renderDiscrepancies();
-  mount($('recovery-status'), restoredLine()); // clears an earlier "Not saved"
+  rows.get(d.discrepancy_id)?.focus.focus?.();
+  $('disc-live').textContent = reviewAnnouncement(r.data, discrepancies);
   loadAudit();
 }
 
