@@ -55,7 +55,7 @@ test:  ## unit tests
 evals:  ## ONE live run of evals/manifest.json -> evals/runs/<run-id>/ + RESULTS.md. Needs `source .env`, DRY_RUN=0, a fresh scratch STORE_PATH and the simulator on SIM_PORT (refuses otherwise)
 	$(PY) -m evals.run
 
-results:  ## regenerate RESULTS.md from the committed bundle (evals/baseline/<run-id>/ + evals/NOTES.md); pure, no network. BUNDLE=<dir> overrides
+results:  ## regenerate RESULTS.md from the newest committed bundle (evals/baseline/<run-id>/ + evals/NOTES.md); pure, no network. BUNDLE=<dir> overrides
 	$(PY) -m evals.report $(BUNDLE)
 
 guard:  ## secret / probe guard (run before every commit)

@@ -363,6 +363,21 @@ def test_scripted_flow_yields_exactly_the_planted_set(api):
     assert len({d.discrepancy_id for d in found}) == len(PLANTED)
 
 
+def test_second_restore_is_idempotent(api, monkeypatch):
+    """A second "Systems restored" (another device) gets the stored set with 200 and adds zero audit rows: no
+    second recovery.restore in the audit log or incident timeline, no re-pull of the EHR, no re-diff."""
+    found = scripted_flow(api)
+    store = get_store()
+    rows, restored_at = len(store.audit_log()), store.get_kv("restored_at")
+    monkeypatch.setattr(sim_client, "restore", lambda: pytest.fail("second restore re-pulled the EHR"))
+    r = api.post("/recovery/restore", headers={"X-Role": "rn"})
+    assert r.status_code == 200, r.text
+    again = [Discrepancy.model_validate(d) for d in r.json()]
+    assert sorted(d.model_dump_json() for d in again) == sorted(d.model_dump_json() for d in found)
+    assert len(store.audit_log()) == rows and store.get_kv("restored_at") == restored_at
+    assert sum(e.action == "recovery.restore" for _, e in store.audit_log()) == 1
+
+
 def test_rec04_dose_mismatch_through_restore(api):
     """A reviewer-corrected MAR dose (2500 units) against Bed 12's heparin 5000 units order."""
     simc = TestClient(sim.app)
@@ -604,6 +619,15 @@ def test_audit_costs_sync(api):
     assert set(c["models"]) == {call["model_id"] for call in c["calls"]}
     s = api.post("/sync").json()
     assert s["mirror"] == "dry_run" and s["pushed"] > 0 and s["pending"] == 0 and audited("sync.push")
+
+
+def test_pricing_covers_every_route_at_geographic_profile_rates():
+    from app.ai import client as ai
+    assert set(ai.ROUTES.values()) | {ai.FALLBACK_MODEL} <= set(ai.PRICING)
+    assert all(m.startswith("us.") for m in ai.PRICING)  # geographic profiles: the +10% rate applies
+    assert ai.estimate_usd(ai.SONNET_4_6, 1_000_000, 1_000_000) == 19.80
+    assert ai.estimate_usd(ai.HAIKU_4_5, 1_000_000, 1_000_000) == 6.60
+    assert ai.estimate_usd(ai.NOVA_2_LITE, 1_000_000, 1_000_000) == 3.08
 
 
 # ------------------------------------------------------------------ S4: edits + two-person verify

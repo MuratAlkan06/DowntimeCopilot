@@ -1,4 +1,4 @@
-"""RESULTS.md generator: a PURE function of one artifact bundle (evals/runs/<run-id>/ or the committed
+"""RESULTS.md generator: a PURE function of one artifact bundle (evals/runs/<run-id>/ or the newest committed
 evals/baseline/<run-id>/) plus evals/NOTES.md. The timestamp and git SHA come from the bundle's run.json
 (recorded at run time), never from now() or HEAD, so regenerating from the same bundle is byte-identical.
 
@@ -388,11 +388,13 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
     return "\n".join(L)
 
 
-def only_baseline() -> Path:
+def latest_baseline() -> Path:
+    """The newest committed bundle. Run ids start with the UTC start time, so they sort chronologically;
+    older bundles stay under evals/baseline/ as the history of record."""
     found = sorted(p for p in BASELINE.glob("*") if p.is_dir()) if BASELINE.exists() else []
-    if len(found) != 1:
-        raise Refused(f"expected exactly one bundle under {BASELINE}, found {len(found)}; pass BUNDLE explicitly")
-    return found[0]
+    if not found:
+        raise Refused(f"no bundle under {BASELINE}; pass BUNDLE explicitly")
+    return found[-1]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -402,7 +404,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, default=ROOT / "RESULTS.md")
     args = ap.parse_args(argv)
     try:
-        text = render(args.bundle or only_baseline(), args.notes)
+        text = render(args.bundle or latest_baseline(), args.notes)
     except Refused as exc:
         loud(str(exc))
         return 3

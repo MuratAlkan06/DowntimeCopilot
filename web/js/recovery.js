@@ -42,16 +42,39 @@ async function restore() {
       ? 'Still offline — reconciliation runs when connectivity returns.' : `Restore failed (${r.error}).`));
     return;
   }
+  // Set before loadStatus: its restoredAt change must not make syncRestored fetch the list again.
+  discrepancies = asList(r.data, 'discrepancies', 'items');
   // Restore time is the server's unit clock (GET /status restored_at), never the browser clock.
   const s = await loadStatus();
   set('restoredAt', s?.restored_at || store.unitNow);
-  discrepancies = asList(r.data, 'discrepancies', 'items');
   renderDiscrepancies();
-  mount($('recovery-status'), h('span', {}, `Systems restored ${fmtTime(store.restoredAt)} · ${discrepancies.length} discrepancies flagged.`));
+  mount($('recovery-status'), restoredLine());
   await loadBackload();
   loadAudit();
   loadDigest();
   loadCosts();
+}
+
+const restoredLine = () => h('span', {}, `Systems restored ${fmtTime(store.restoredAt)} · ${discrepancies.length} discrepancies flagged.`);
+let idleStatus = ''; // #recovery-status as shipped, shown again when the restore state clears
+
+/** The Recovery view follows store.restoredAt, which loadStatus hydrates from GET /status: a restore made on
+ *  another device shows here as restored (its discrepancies from GET /discrepancies), and a reseed or a new
+ *  outage puts the view back to "not restored". Fetches only while Recovery is open (enterRecovery re-runs it). */
+async function syncRestored() {
+  if (!store.restoredAt) {
+    if (discrepancies == null) return;
+    discrepancies = null;
+    renderDiscrepancies();
+    mount($('recovery-status'), idleStatus);
+    return;
+  }
+  if (discrepancies != null || store.phase !== 'recovery') return;
+  const r = await api('/discrepancies');
+  if (!r.ok || !store.restoredAt || discrepancies != null) return;
+  discrepancies = asList(r.data, 'discrepancies', 'items');
+  renderDiscrepancies();
+  mount($('recovery-status'), restoredLine());
 }
 
 // ---------------------------------------------------------------- backload queue
@@ -274,6 +297,7 @@ export async function loadSyncStatus() {
 }
 
 export function enterRecovery() {
+  syncRestored();
   loadBackload();
   loadAudit();
   loadCosts();
@@ -289,7 +313,9 @@ export function initRecovery() {
   setInterval(() => { if (store.phase === 'recovery' && !document.hidden) loadSyncStatus(); }, 10000);
   $('btn-incident').addEventListener('click', loadIncident);
   $('btn-print-incident').addEventListener('click', printIncident);
+  idleStatus = $('recovery-status').textContent;
   renderDiscrepancies();
+  on('restoredAt', syncRestored);
   mount($('incident'), h('p', { class: 'muted' }, 'Timeline of the outage from the audit log, with a two-paragraph summary. Printable on one page.'));
   mount($('digest'), h('p', { class: 'muted' }, 'The SBAR handoff for the oncoming shift, written from the audit log and captured records.'));
   on('role', () => { if (records.length) renderBackload(); });

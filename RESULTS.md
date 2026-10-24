@@ -3,19 +3,19 @@
 
 GENERATED - DO NOT EDIT. Every number below is computed from one recorded live run (the bundle named here); commentary comes verbatim from `evals/NOTES.md`.
 
-- Run id: `20261024T102817Z-a020e81`
-- Run started / finished (UTC, recorded at run time): 2026-10-24T10:28:17+00:00 / 2026-10-24T10:29:41+00:00
-- Git SHA at run time: `a020e81ac6bca004d6e11c6a6f54bcc2e4d6eff2`
-- Artifact bundle: `evals/baseline/20261024T102817Z-a020e81/`
-- Artifact digest (sha256 over the bundle, `evals.run.digest`): `30383010dbbaae28457ae052f480e5852a325456850953b354915abf4673a41a`
+- Run id: `20261024T120050Z-90d316a`
+- Run started / finished (UTC, recorded at run time): 2026-10-24T12:00:50+00:00 / 2026-10-24T12:02:21+00:00
+- Git SHA at run time: `90d316a3df10e97a71ea6325d56ed22ad8b0b7d2`
+- Artifact bundle: `evals/baseline/20261024T120050Z-90d316a/`
+- Artifact digest (sha256 over the bundle, `evals.run.digest`): `78aee8247803bfc1ff1d85f4e024338f1aba78c9b338c008f381d8b9e630606e`
 - Inputs fixed before the run (`evals/manifest.json`): 12 seeded patients, 5 DEMO.md policy questions, form fixtures: 3, speech fixtures: 1, simulated clock +15 min then +45 min
 
 ## Headline
 
 | Metric | Value |
 |---|---|
-| Packet faithfulness, final lines with a resolving source_path | 100.0% (191/191) |
-| Packet faithfulness, first-pass model lines | 100.0% (191/191) |
+| Packet faithfulness, final lines with a resolving source_path | 100.0% (198/198) |
+| Packet faithfulness, first-pass model lines | 100.0% (198/198) |
 | Packet omissions (unverifiable lines withheld) | 0 |
 | Policy grounding rate | 100.0% (5/5) |
 | Policy expected-section correctness | 100.0% (5/5) |
@@ -24,8 +24,8 @@ GENERATED - DO NOT EDIT. Every number below is computed from one recorded live r
 | Form field accuracy, combined (agreement) (synthetic fixtures) | 95.5% (21/22) |
 | False-flag rate on clean fields (synthetic fixtures) | 0.0% (0/19) |
 | Speech transcription word accuracy (1 synthetic fixture) | 100.0% (17/17) |
-| Model spend, this run (`/costs`, Bedrock only) | $0.2480 |
-| Cost per simulated outage-hour | $0.3307 (0.75 simulated h) |
+| Model spend, this run (`/costs`, Bedrock only) | $0.2780 |
+| Cost per simulated outage-hour | $0.3706 (0.75 simulated h) |
 
 Photographed forms: 0 fixtures — pending
 
@@ -44,7 +44,7 @@ Photographed forms: 0 fixtures — pending
 |---|---|
 | Claude on Bedrock | ALLOWED |
 | Bedrock Guardrails | ALLOWED |
-| Knowledge Bases | ALLOWED (list only) |
+| Knowledge Bases | ALLOWED (list only); creation UNVERIFIED |
 | Textract | ALLOWED |
 | Transcribe | ALLOWED |
 | DynamoDB | ALLOWED |
@@ -53,12 +53,16 @@ Photographed forms: 0 fixtures — pending
 
 ## 1. Packet faithfulness
 
-Packets: 12. Final: 100.0% (191/191) of shown lines resolve to a snapshot path, 0 omitted. First pass: 100.0% (191/191). Regenerated once: 0; unparseable model output: 0.
+Packets: 12. Final: 100.0% (198/198) of shown lines resolve to a snapshot path, 0 omitted. First pass: 100.0% (198/198). Regenerated once: 0; unparseable model output: 0.
 
 Notes (evals/NOTES.md, `faithfulness`):
 
 One run of 12 packets. Every first-pass line resolved, so the regenerate-once path and the omission path did not
-run in this bundle; their behaviour is covered by unit tests only, not by this measurement.
+run in this bundle; their behaviour is covered by unit tests only, not by this measurement. The line count differs
+from the previous baseline (`20261024T102817Z-a020e81`, kept under `evals/baseline/` as history) for two reasons.
+The seeded snapshot changed in exactly two strings: pt-09's INR and pt-21's H&H pending labs now carry the
+`(critical)` marker added after that run, and both packets gained the lines that mention it. The other per-packet
+differences (pt-02, pt-07, pt-11, pt-16) come from identical inputs, so they are run-to-run model variance.
 
 ## 2. Policy grounding
 
@@ -116,34 +120,36 @@ Notes (evals/NOTES.md, `speech`):
 One synthetic text-to-speech clip (`verbal_order-01.wav`, voice Samantha, 165 wpm), so this is not a measure of
 accuracy on real speech. Every structuring miss is a normalization gap and not a hearing error: "Doctor Quill"
 for "Dr. Quill", "confirmed" for "yes", "subcutaneous" for "SC". `provider_cosign` was left unread because the
-read-back never mentions a co-sign. S9 saw the same behaviour live.
+read-back never mentions a co-sign. S9 saw the same behaviour live, and this run repeats the previous baseline's
+four misses field for field. Verbal-order structuring is still the weakest measured step.
 
 ## 6. Latency and cost per call type (`/costs`)
 
 | Call type | Calls | Median latency (ms) | Tokens in / out | USD |
 |---|---|---|---|---|
-| checker | 12 | 908.5 | 10028 / 276 | 0.003699 |
-| form_read | 3 | 1981 | 1737 / 1487 | 0.004239 |
-| packet | 12 | 5609.5 | 11492 / 9564 | 0.177936 |
-| policy | 5 | 2874 | 10835 / 1943 | 0.061650 |
-| structure | 1 | 1128 | 373 / 164 | 0.000522 |
-| **Total** | 33 | 2674 | 34465 / 13434 | 0.248046 |
+| checker | 12 | 768.5 | 10173 / 298 | 0.004178 |
+| form_read | 3 | 2904 | 1737 / 1491 | 0.004673 |
+| packet | 12 | 5529.5 | 11499 / 9875 | 0.200885 |
+| policy | 5 | 3422 | 10835 / 1934 | 0.067666 |
+| structure | 1 | 1103 | 373 / 164 | 0.000574 |
+| **Total** | 33 | 2904 | 34617 / 13762 | 0.277976 |
 
 Per-call-type sums equal the `/costs` totals (checked at run time and again here). Not metered by the app, so not in these sums: Textract AnalyzeDocument 3 page(s), Transcribe 1 job(s), ApplyGuardrail 5 check(s); see AWS billing. Budget guard: limit $2.00, max projected $0.8800.
 
 Notes (evals/NOTES.md, `latency_cost`):
 
 `checker` is the packet guardrail. Packets send grounding without a query, so `BedrockGuardrail` routes them to
-the Nova 2 Lite checker, which is metered here. ApplyGuardrail runs only for policy answers. Harness bug, fixed
-after this run: `run.json` `unmetered.guardrail_apply` says 17, but the real number of ApplyGuardrail calls was
-5 (one per policy answer). The report now derives the count from the bundle, and the bundle was left as recorded.
-The same bug inflated the budget guard's running allowance (`spent_with_allowances_usd`) by 12 × $0.01, which only
-made the guard stricter. Latency comes from `/costs` and covers the model call only (no HTTP, no Textract or
-Transcribe time).
+the Nova 2 Lite checker, which is metered here. ApplyGuardrail runs only for policy answers (one per answer). USD
+comes from the app's `PRICING` table at the `us.` geographic-profile rates, which list 10% above the `global.`
+rates. The table was corrected to those rates before this run, so this bundle's spend is about 10% higher than the
+previous baseline's for the same tokens. The rest of the difference is token-count variance. The previous
+baseline's `unmetered.guardrail_apply` over-count (a harness bug fixed before this run) does not appear here.
+Latency comes from `/costs` and covers the model call only (no HTTP, no Textract or Transcribe time); medians move
+run to run.
 
 ## 7. Cost per simulated outage-hour
 
-$0.3307 per simulated outage-hour: $0.248046 of model calls over 0.75 simulated hours (outage declared after +15 min, `/costs` read after +45 min).
+$0.3706 per simulated outage-hour: $0.277976 of model calls over 0.75 simulated hours (outage declared after +15 min, `/costs` read after +45 min).
 
 Notes (evals/NOTES.md, `outage_cost`):
 

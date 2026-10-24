@@ -133,8 +133,18 @@ def test_apply_guardrail_count_is_policy_answers_in_bedrock_mode_only():
 
 def test_committed_results_regenerate_byte_identical_from_the_baseline():
     root = Path(__file__).resolve().parent.parent
-    bundle = report.only_baseline()
+    bundle = report.latest_baseline()
     assert report.render(bundle, root / "evals" / "NOTES.md").encode() == (root / "RESULTS.md").read_bytes()
     assert f"`{run.digest(bundle)}`" in (root / "RESULTS.md").read_text()
-    for f in bundle.rglob("*"):
+    for f in report.BASELINE.rglob("*"):  # every committed bundle, history included, stays scrubbed
         assert not f.is_file() or not run.guard_hits(f.read_text()), f
+
+
+def test_latest_baseline_is_the_newest_run_id_and_refuses_none(tmp_path, monkeypatch):
+    monkeypatch.setattr(report, "BASELINE", tmp_path)
+    with pytest.raises(run.Refused):
+        report.latest_baseline()
+    for rid in ("20261024T120050Z-90d316a", "20261024T102817Z-a020e81"):
+        (tmp_path / rid).mkdir()
+    (tmp_path / "20991231T000000Z-notadir").write_text("")  # files are ignored
+    assert report.latest_baseline() == tmp_path / "20261024T120050Z-90d316a"
