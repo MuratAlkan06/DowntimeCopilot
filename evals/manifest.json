@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "note": "Fixed BEFORE any run. One live run uses exactly these inputs; the first complete run is published.",
+  "seed_patients": 12,
+  "clock_advance_minutes": {"before_downtime": 15, "before_costs": 45},
+  "questions": [
+    {"question": "How do I get a stat lab with the order system down?", "expected_section": "4.2"},
+    {"question": "How do I take a verbal order and do the read-back during downtime?", "expected_section": "6"},
+    {"question": "How do I give medications without barcode scanning?", "expected_section": "5"},
+    {"question": "Who declares downtime, and how is it announced?", "expected_section": "1"},
+    {"question": "What does each role backload when the EHR comes back?", "expected_section": "7"}
+  ],
+  "form_fixtures": ["vitals_flowsheet-01", "downtime_mar-01", "admission_note-01"],
+  "speech_fixture": {"stem": "verbal_order-01", "patient_id": "pt-07"},
+  "budget": {
+    "limit_usd": 2.0,
+    "step_estimates_usd": {"packets": 0.40, "policy": 0.20, "forms": 0.25, "speech": 0.03},
+    "unmetered_allowance_usd": {"textract_page": 0.07, "transcribe_job": 0.01, "guardrail_check": 0.01}
+  }
+}
