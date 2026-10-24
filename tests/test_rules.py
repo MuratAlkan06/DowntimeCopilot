@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
-from app.rules import RULES, RecoveryContext, snapshot_alerts
+from app.rules import RULES, RecoveryContext, engine, rule_hits, snapshot_alerts
 from contracts import Agreement, CapturedField, CapturedRecord, PatientSnapshot
+from simulator.state import DEFAULT_SEED, SimState
 
 NOW = datetime(2026, 10, 24, 2, 47, tzinfo=timezone.utc)
 PATIENTS = Path(__file__).resolve().parent.parent / "data" / "patients"
@@ -157,3 +159,60 @@ def test_registry_is_exactly_the_readme_table():
 def test_seeded_patients_fire_expected_rules(pid, rule_id):
     p = PatientSnapshot.model_validate(json.loads((PATIENTS / f"{pid}.json").read_text()))
     assert rule_id in {a.rule_id for a in snapshot_alerts(p, NOW)}
+
+
+# ------------------------------------------------------------ fire counts on the simulated feed
+SEEDED_FIRES = {"R-ALG-01": {"pt-03", "pt-05"}, "R-DUP-01": {"pt-07"}, "R-DUE-01": {"pt-08", "pt-11", "pt-12"}}
+
+
+def fired(hits: dict) -> dict[str, set[str]]:
+    out: dict[str, set[str]] = {}
+    for pid, items in hits["patients"].items():
+        for h in items:
+            out.setdefault(h["rule_id"], set()).add(pid)
+    return out
+
+
+@pytest.mark.parametrize("minutes", [0, 15])  # seed clock 02:45, and 03:00 after the DEMO.md "advance 15"
+def test_seeded_fire_counts_exact(minutes):
+    state = SimState(DEFAULT_SEED)
+    state.advance(minutes)
+    got = fired(rule_hits(state.snapshot(), state.now))
+    assert {rid: got.get(rid, set()) for rid in SEEDED_FIRES} == SEEDED_FIRES
+
+
+def due_and_stale_patient() -> PatientSnapshot:
+    return base(medications=[med("heparin", next_due=NOW + timedelta(minutes=43), high_alert=True)],
+                snapshot_time=(NOW - timedelta(minutes=42)).isoformat())
+
+
+def test_alert_text_is_absolute_time_only():
+    texts = [a.text for a in snapshot_alerts(due_and_stale_patient(), NOW)]
+    assert any("due 03:30" in t for t in texts) and any("taken 02:05" in t for t in texts)
+    assert not any(re.search(r"\bin \d+ min|\d+ min old", t) for t in texts)
+
+
+def test_rule_hits_stable_text_with_structured_times():
+    p = due_and_stale_patient()
+    early, late = (({h["rule_id"]: h for h in rule_hits([p], t)["patients"]["pt-t"]})
+                   for t in (NOW, NOW + timedelta(minutes=20)))
+    assert early["R-DUE-01"]["text"] == late["R-DUE-01"]["text"]  # nothing relative frozen into the text
+    assert early["R-DUE-01"]["due_at"] == late["R-DUE-01"]["due_at"] == "2026-10-24T03:30:00+00:00"
+    assert early["R-STALE-01"]["snapshot_time"] == "2026-10-24T02:05:00+00:00"
+    assert set(early["R-DUE-01"]) == {"rule_id", "text", "due_at"}
+
+
+def test_rules_engine_never_calls_a_model():
+    src = "\n".join(f.read_text() for f in sorted(Path(engine.__file__).parent.glob("*.py")))
+    assert not re.search(r"\b(boto3|bedrock|anthropic|app\.ai|from app import ai)\b", src, re.IGNORECASE)
+
+
+@pytest.mark.parametrize("minutes", [0, 15])
+def test_seeded_stale_example_is_exactly_one(minutes):
+    """Readiness: one lagging feed in the seed (pt-14, 40 min behind the unit clock), nobody else stale."""
+    state = SimState(DEFAULT_SEED)
+    state.advance(minutes)
+    hits = rule_hits(state.snapshot(), state.now)
+    assert fired(hits).get("R-STALE-01") == {"pt-14"}
+    (stale,) = [h for h in hits["patients"]["pt-14"] if h["rule_id"] == "R-STALE-01"]
+    assert state.now - datetime.fromisoformat(stale["snapshot_time"]) == timedelta(minutes=40)

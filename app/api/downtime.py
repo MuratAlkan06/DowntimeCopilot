@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app import config, sim_client
 from app.ai import packets, policy
 from app.api import actor_role
-from app.api.snapshot import pull_and_store
+from app.api.snapshot import evaluate_rules, pull_and_store
 from app.rules import snapshot_alerts
 from app.store import get_store
 from contracts import DowntimePacket, PatientSnapshot, PolicyAnswer
@@ -37,6 +37,7 @@ def downtime_start(body: DowntimeStart | None = Body(default=None), role: str = 
     now = sim_client.now()
     if body is None or body.simulate_outage:
         sim_client.outage_start()
+    evaluate_rules(patients, now, role, "downtime.start")
 
     def build(p: PatientSnapshot) -> DowntimePacket:
         packet = packets.generate_packet(p, snapshot_alerts(p, now), now, actor_role=role)

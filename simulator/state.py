@@ -18,6 +18,9 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent.paren
 DEFAULT_SEED = 20261024
 # Last good snapshot is taken at 02:45; the outage in the demo starts at 02:47.
 CLOCK_START = datetime(2026, 10, 24, 2, 45, tzinfo=timezone.utc)
+# A patient file whose snapshot_time is earlier than CLOCK_START models a lagging feed for that patient
+# (e.g. a stuck interface): the feed keeps reporting data that much older than the unit clock. The seed
+# has exactly one (pt-14, 40 min), so the readiness panel and R-STALE-01 have a real example.
 
 _INTERVAL = re.compile(r"q(\d+)h", re.IGNORECASE)
 
@@ -48,6 +51,8 @@ class SimState:
         self.outage = False
         self.restored = False
         self.patients = {p.patient_id: p for p in load_patients()}
+        self.feed_lag = {pid: CLOCK_START - p.snapshot_time for pid, p in self.patients.items()
+                         if p.snapshot_time < CLOCK_START}
         self.restore_changes: list[dict] = []
 
     # ------------------------------------------------------------ clock
@@ -56,13 +61,13 @@ class SimState:
         return self.now
 
     # ------------------------------------------------------------ drift
-    def _drift_medication(self, m: Medication) -> Medication:
+    def _drift_medication(self, m: Medication, as_of: datetime) -> Medication:
         """Roll scheduled doses forward as the clock passes them (doses given on time while up)."""
         hours = frequency_hours(m.frequency)
         if m.next_due is None or hours is None or self.outage or self.restored:
             return m
         next_due, last_given = m.next_due, m.last_given
-        while next_due <= self.now:
+        while next_due <= as_of:
             last_given = next_due
             next_due = next_due + timedelta(hours=hours)
         return m.model_copy(update={"next_due": next_due, "last_given": last_given})
@@ -70,8 +75,9 @@ class SimState:
     def snapshot(self) -> list[PatientSnapshot]:
         out = []
         for p in self.patients.values():
-            meds = [self._drift_medication(m) for m in p.medications]
-            out.append(p.model_copy(update={"medications": meds, "snapshot_time": self.now}))
+            as_of = self.now - self.feed_lag.get(p.patient_id, timedelta(0))  # a lagging feed reports older data
+            meds = [self._drift_medication(m, as_of) for m in p.medications]
+            out.append(p.model_copy(update={"medications": meds, "snapshot_time": as_of}))
         return sorted(out, key=lambda p: int(re.sub(r"\D", "", p.bed) or 0))
 
     # ------------------------------------------------------------ outage controls

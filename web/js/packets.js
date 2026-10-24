@@ -1,7 +1,8 @@
 // Phase 1: Go to downtime -> patient list -> SBAR packet view (printable).
 import { api } from './api.js';
 import { h, mount, stateBox, chip, fmtTime, fmtDateTime, asList, cachedNote, usd } from './dom.js';
-import { store, set, emit, noteSnapshot } from './state.js';
+import { store, set, emit, noteSnapshot, STALE_MINUTES } from './state.js';
+import { dueAt, dueRelative, ageMinutes } from './rules.js';
 
 const $ = (id) => document.getElementById(id);
 let selectedId = null;
@@ -21,13 +22,78 @@ export function ruleSeverity(ruleId = '') {
 
 const bedSort = (a, b) => String(a.bed).localeCompare(String(b.bed), undefined, { numeric: true });
 
-export async function loadPatients() {
+const DUE = 'R-DUE-01';
+const STALE = 'R-STALE-01';
+
+// ---------------------------------------------------------------- rule hits (GET /rules/current)
+// Hits are evaluated server-side on every snapshot pull and at downtime start. Their text holds absolute
+// unit times only; "in N min" / "N min old" are rendered here from the unit clock and refreshed on every
+// /status poll (refreshRelativeTimes), never frozen.
+
+const relDue = (iso) => h('span', { class: 'rel-time', 'data-due': iso }, dueRelative({ due_at: iso }, store.unitNow));
+const ageText = (iso) => {
+  const m = ageMinutes(iso, store.unitNow);
+  return m == null ? 'age unknown' : `${m} min old`;
+};
+
+function ruleBadges(id) {
+  const byRule = new Map();
+  (store.ruleHits?.[id] || []).forEach((x) => byRule.set(x.rule_id, [...(byRule.get(x.rule_id) || []), x]));
+  if (!byRule.size) return null;
+  return h('span', { class: 'rule-badges' }, [...byRule].map(([rid, hits]) => {
+    const text = hits.map((x) => x.text).join('\n');
+    const due = rid === DUE ? hits.map((x) => x.due_at).filter(Boolean).sort()[0] : null;
+    return h('span', { class: 'rule-hit' },
+      h('span', { class: `rule-badge sev-${ruleSeverity(rid)}`, title: text, 'aria-label': `${rid}: ${text}` }, rid),
+      due ? h('span', { class: 'rule-note' }, `due ${fmtTime(due)} · `, relDue(due)) : null);
+  }));
+}
+
+function renderReadiness() {
+  const el = $('readiness');
+  if (!el) return;
+  if (!store.ruleHits) { el.hidden = true; return; }
+  const p = (pid) => store.patients.get(pid) || { bed: pid };
+  const stale = Object.entries(store.ruleHits)
+    .flatMap(([pid, hits]) => hits.filter((x) => x.rule_id === STALE).map((x) => ({ pid, at: x.snapshot_time })))
+    .sort((a, b) => bedSort(p(a.pid), p(b.pid)));
+  el.hidden = false;
+  if (!stale.length) {
+    el.className = 'banner banner-ok readiness';
+    mount(el, h('strong', {}, 'Readiness:'), ` every patient snapshot is under ${STALE_MINUTES} min old.`);
+    return;
+  }
+  el.className = 'banner banner-warn readiness';
+  mount(el,
+    h('span', { class: 'rule-badge' }, STALE),
+    h('strong', {}, `Readiness: ${stale.length} stale snapshot${stale.length > 1 ? 's' : ''}`),
+    ` — older than ${STALE_MINUTES} min. Reconcile with the patient and paper chart.`,
+    h('ul', { class: 'readiness-list' }, stale.map(({ pid, at }) => h('li', {},
+      h('strong', {}, p(pid).bed), ` ${p(pid).name || ''} · snapshot ${fmtTime(at, { unit: true })} · `,
+      h('span', { class: 'rel-age', 'data-age-from': at }, ageText(at))))));
+}
+
+/** Re-render every relative time on screen from the current unit clock (called on each /status poll). */
+export function refreshRelativeTimes() {
+  document.querySelectorAll('[data-due]').forEach((el) => { el.textContent = dueRelative({ due_at: el.dataset.due }, store.unitNow); });
+  document.querySelectorAll('[data-age-from]').forEach((el) => { el.textContent = ageText(el.dataset.ageFrom); });
+}
+
+let inflight = null;
+/** Patient list + rule hits. Concurrent calls (refresh button, new snapshot seen) share one load. */
+export function loadPatients() {
+  inflight ||= fetchPatients().finally(() => { inflight = null; });
+  return inflight;
+}
+
+async function fetchPatients() {
   const list = $('patient-list');
   if (!store.patients.size) mount(list, stateBox('loading', 'Loading patients…'));
   if (!selectedId && !$('packet').hasChildNodes()) {
     mount($('packet'), stateBox('empty', 'Packets appear here. Tap "Go to downtime", then choose a patient.'));
   }
-  const r = await api('/patients');
+  const [r, rules] = await Promise.all([api('/patients'), api('/rules/current'), loadStatus()]);
+  if (rules.ok && rules.data?.patients) store.ruleHits = rules.data.patients;
   if (!r.ok && store.patients.size) {
     // Keep the list already on screen; just say it may be stale.
     mount(list, stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — showing the list already on this device.' : `Refresh failed (${r.error}).`),
@@ -44,6 +110,7 @@ export async function loadPatients() {
   store.patients.clear();
   patients.forEach((p) => store.patients.set(p.patient_id, p));
   emit('patients', patients);
+  renderReadiness();
   noteSnapshot(patients.map((p) => p.snapshot_time));
   if (!patients.length) {
     mount(list, stateBox('empty', 'No patients in the snapshot yet. Run the simulator feed, then refresh.'));
@@ -74,6 +141,7 @@ function patientRow(p) {
         p.isolation ? chip(`Isolation: ${p.isolation}`, 'warn') : null,
         highAlert ? chip(`${highAlert} high-alert`, 'crit') : null,
       ),
+      ruleBadges(p.patient_id),
     )),
   );
 }
@@ -133,8 +201,12 @@ function renderPacket(pk, patient, res) {
     ),
     (pk.alerts || []).length
       ? h('section', { class: 'alerts', 'aria-label': 'Safety alerts' },
-        pk.alerts.map((a) => h('div', { class: `alert alert-${ruleSeverity(a.rule_id)}` },
-          h('span', { class: 'rule-badge' }, a.rule_id), h('span', {}, a.text))))
+        pk.alerts.map((a) => {
+          const due = a.rule_id === DUE ? dueAt(a, store.unitNow) : null; // "due HH:MM" in the text
+          return h('div', { class: `alert alert-${ruleSeverity(a.rule_id)}` },
+            h('span', { class: 'rule-badge' }, a.rule_id),
+            h('span', {}, a.text, due && !isNaN(due) ? [' (', relDue(due.toISOString()), ')'] : null));
+        }))
       : h('p', { class: 'muted' }, 'No rule alerts for this patient.'),
     h('div', { class: 'sbar' }, SBAR.map(([key, letter, label]) => {
       const items = pk.sbar?.[key] || [];

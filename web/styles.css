@@ -208,6 +208,15 @@ textarea.input { resize: vertical; }
 .alert-crit .rule-badge { background: var(--c-crit); }
 .alert-warn .rule-badge, .banner-warn .rule-badge { background: var(--c-warn-strong); color: #fff; }
 .alert-info .rule-badge { background: var(--c-info); }
+/* Patient-list rule badges: same severity colors as the packet alert badges above. */
+.rule-badge.sev-crit { background: var(--c-crit); }
+.rule-badge.sev-warn { background: var(--c-warn-strong); color: #fff; }
+.rule-badge.sev-info { background: var(--c-info); }
+.rule-badges { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); }
+.rule-hit { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
+.rule-note { font-size: var(--fs-xs); font-weight: 600; color: var(--c-crit); }
+.readiness { margin-top: var(--sp-3); }
+.readiness-list { flex-basis: 100%; margin: 0; padding-left: var(--sp-5); }
 .section-badge { background: var(--c-accent); color: #fff; }
 .ha-badge { background: var(--c-crit); color: #fff; margin-right: var(--sp-2); }
 
