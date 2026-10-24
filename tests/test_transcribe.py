@@ -5,9 +5,13 @@ real waits), and the Bedrock structuring call is stubbed at app.ai.client._conve
 """
 from __future__ import annotations
 
+import importlib.util
+import io
 import json
 import logging
 import re
+import wave
+from pathlib import Path
 
 import pytest
 from botocore.exceptions import ClientError
@@ -360,3 +364,43 @@ def test_api_reports_the_transcribe_outcome(env):
         assert r.status_code == 201 and r.headers["x-transcribe"] == "typed"
         r = c.post("/capture", files={"file": ("f.png", b"\x89PNG", "image/png")}, data={"form_type": "vitals_flowsheet"})
         assert r.status_code == 201 and "x-transcribe" not in r.headers
+
+
+# ------------------------------------------------------------------ speech fixture (tools/speech_fixture.py)
+
+FIXTURES = Path(__file__).resolve().parent.parent / "data" / "forms" / "fixtures"
+
+
+def speech_fixture() -> tuple[bytes, dict]:
+    truth = json.loads((FIXTURES / "verbal_order-01.json").read_text())
+    return (FIXTURES / truth["audio"]).read_bytes(), truth
+
+
+def test_speech_fixture_is_small_synthetic_pcm_and_matches_the_generator():
+    audio, truth = speech_fixture()
+    assert len(audio) < 500_000 and truth["synthetic"] is True
+    with wave.open(io.BytesIO(audio)) as w:
+        assert (w.getnchannels(), w.getframerate(), w.getsampwidth()) == (1, 16000, 2)
+        assert 3 < w.getnframes() / w.getframerate() < 15
+    spec = importlib.util.spec_from_file_location("speech_fixture", FIXTURES.parents[2] / "tools" / "speech_fixture.py")
+    gen = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gen)  # import only; generating needs macOS and never runs in CI
+    assert truth["script"] == gen.SCRIPT and {k: truth[k] for k in gen.TRUTH} == gen.TRUTH
+    assert "Quill" in truth["script"] and truth["bed"] == "7"
+
+
+def test_dry_run_fixture_audio_gets_its_canned_transcript_and_typed_parity(env):
+    audio, truth = speech_fixture()
+    assert transcribe.canned_transcript(audio) == truth["transcript"]
+    assert transcribe.canned_transcript(audio + b"\x00") == transcribe.MOCK_TRANSCRIPT  # any other audio
+    info: dict = {}
+    rec = pipeline.capture(audio, "audio/wav", FormType.verbal_order, truth["patient_id"], "rn", info=info)
+    typed = pipeline.capture(truth["transcript"].encode(), "text/plain", FormType.verbal_order, truth["patient_id"],
+                             "rn", truth["transcript"])
+    assert info == {"transcribe": "mock"} and shape(rec) == shape(typed)
+    f = {x.name: x.value for x in rec.fields}
+    want = truth["fields"]
+    for name in ("medication", "dose", "frequency", "ordering_provider", "read_back", "provider_cosign"):
+        assert f[name] == want[name], name
+    assert f["route"].lower().startswith("subcut")  # the DRY_RUN pattern parse keeps the spoken route word
+    assert rec.backload_group == BackloadGroup.pharmacy_orders and rec.patient_id == "pt-07"
