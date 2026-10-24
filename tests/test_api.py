@@ -96,6 +96,22 @@ def test_policy_ask_cites_4_2(api):
     assert audited("policy.ask")
 
 
+STAT_QUOTE = "the RN completes a red downtime requisition marked \"STAT\""
+
+
+@pytest.mark.parametrize("section_id, quote, expected", [
+    ("4.2.1", STAT_QUOTE, True),             # paragraph-level id resolves to its 4.2 header
+    ("4.2", STAT_QUOTE, True),               # header-level id still works
+    ("9.9.9", STAT_QUOTE, False),            # fabricated id with no parsed ancestor
+    ("4.2.9", STAT_QUOTE, False),            # fabricated paragraph under a real header
+    ("4.2.1", "use the pneumatic tube for all stat specimens", False),  # real id, fabricated quote
+])
+def test_policy_grounded_paragraph_citations(section_id, quote, expected):
+    from app.ai.policy import grounded
+    from contracts import Citation
+    assert grounded([Citation(section_id=section_id, title="Stat labs", quote=quote)]) is expected
+
+
 def test_capture_vitals_agreement(api):
     go_to_downtime(api)
     rec = capture(api, "vitals_flowsheet")

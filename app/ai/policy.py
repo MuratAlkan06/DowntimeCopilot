@@ -1,8 +1,8 @@
 """Policy answers grounded in data/policy/downtime_policy.md (Bedrock job 3).
 
 docs/decisions.md: full policy in context (KB retrieval is P2). Citations are checked against the
-parsed section headers: an answer is `grounded` only if every citation names a real section and
-its quote appears in that section's text.
+parsed section headers: an answer is `grounded` only if every citation names a real section (or a
+numbered paragraph inside one, e.g. 4.2.1) and its quote appears in that section's text.
 """
 from __future__ import annotations
 
@@ -74,10 +74,21 @@ def _mock_answer(question: str) -> str:
                        "citations": [{"section_id": s.section_id, "title": s.title, "quote": quote}]})
 
 
+def _resolve(section_id: str, secs: dict[str, Section]) -> Section | None:
+    """A parsed header, or the nearest parsed ancestor of a numbered paragraph that exists in it (4.2.1 -> 4.2)."""
+    if section_id in secs:
+        return secs[section_id]
+    parts = section_id.split(".")
+    for i in range(len(parts) - 1, 0, -1):
+        if (s := secs.get(".".join(parts[:i]))) is not None:
+            return s if re.search(rf"^{re.escape(section_id)}\s", s.text, re.M) else None
+    return None
+
+
 def grounded(citations: list[Citation]) -> bool:
     secs = sections()
     return bool(citations) and all(
-        c.section_id in secs and _norm(c.quote) in _norm(secs[c.section_id].text) for c in citations
+        (s := _resolve(c.section_id, secs)) is not None and _norm(c.quote) in _norm(s.text) for c in citations
     )
 
 
