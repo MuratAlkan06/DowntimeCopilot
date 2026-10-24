@@ -13,6 +13,8 @@ Correction (re-run 19:16 PDT): the current DRAFT guardrail id is `jeb5uct6gv35`.
 
 Not probed: Lambda, EventBridge, Transcribe `StartTranscriptionJob`, Knowledge Base creation.
 
+Probe delta (S8, 2026-10-24 ~01:00 PDT, us-east-1): before S8, `DetectDocumentText` was the only Textract call probed (`TEXTRACT  OK` below). `AnalyzeDocument` with `FeatureTypes` `FORMS` + `QUERIES` was first called in the S8 live pass and was **GRANTED**: 3 of 3 calls succeeded, with no AccessDenied. This was not a `make probe` re-run; the evidence is in `docs/decisions.md` (S8).
+
 ## Raw output (redacted)
 
 ```text
