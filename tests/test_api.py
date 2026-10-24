@@ -21,6 +21,7 @@ def api(tmp_path, monkeypatch):
     monkeypatch.setenv("DRY_RUN", "1")
     monkeypatch.setenv("STORE_PATH", str(tmp_path / "test.sqlite"))
     monkeypatch.setenv("SNAPSHOT_INTERVAL_SECONDS", "0")
+    monkeypatch.setenv("SYNC_INTERVAL_SECONDS", "0")  # no outbox worker thread; POST /sync drains
     monkeypatch.setenv("SYNC_EXPORT_DIR", str(tmp_path / "logs"))
     monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
     sim.state.reset(7)
@@ -602,7 +603,7 @@ def test_audit_costs_sync(api):
     assert sum(m["calls"] for m in c["models"].values()) == len(c["calls"])
     assert set(c["models"]) == {call["model_id"] for call in c["calls"]}
     s = api.post("/sync").json()
-    assert s["mirror"] == "local" and s["pushed"] > 0 and audited("sync.push")
+    assert s["mirror"] == "dry_run" and s["pushed"] > 0 and s["pending"] == 0 and audited("sync.push")
 
 
 # ------------------------------------------------------------------ S4: edits + two-person verify

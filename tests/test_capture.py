@@ -30,6 +30,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("DRY_RUN", "1")
     monkeypatch.setenv("STORE_PATH", str(tmp_path / "test.sqlite"))
     monkeypatch.setenv("SNAPSHOT_INTERVAL_SECONDS", "0")
+    monkeypatch.setenv("SYNC_INTERVAL_SECONDS", "0")  # no outbox worker thread; POST /sync drains
     monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
     sim.state.reset(7)
     reset_store()

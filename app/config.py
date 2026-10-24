@@ -39,6 +39,12 @@ def snapshot_interval_seconds() -> int:
     return int(os.environ.get("SNAPSHOT_INTERVAL_SECONDS", "5"))
 
 
+def sync_interval_seconds() -> float:
+    """Idle poll, in real seconds, of the sync outbox worker (app.sync.worker, docs/decisions.md S10).
+    0 disables the worker (tests); the outbox still fills and POST /sync drains it."""
+    return float(os.environ.get("SYNC_INTERVAL_SECONDS", "1"))
+
+
 def packet_concurrency() -> int:
     """Max packet generations in flight during /downtime/start (bounded so Bedrock is not flooded)."""
     return max(1, int(os.environ.get("PACKET_CONCURRENCY", "4")))

@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from app import checklists as role_checklists
 from app import config, sim_client
 from app.api import audit, backload, capture, checklists, digest, downtime, incident, snapshot
+from app.sync import worker as sync_worker
 
 log = logging.getLogger(__name__)
 
@@ -35,9 +36,14 @@ async def lifespan(_: FastAPI):
     role_checklists.load()  # parse the policy's role checklists once, at startup
     interval = config.snapshot_interval_seconds()
     task = asyncio.create_task(_snapshot_loop(interval)) if interval > 0 else None
+    sync_interval = config.sync_interval_seconds()
+    syncer = sync_worker.start(sync_interval) if sync_interval > 0 else None  # outbox drain thread
     yield
     if task:
         task.cancel()
+    if syncer:
+        syncer[1].set()
+        syncer[0].join(timeout=3)
 
 
 app = FastAPI(title="Downtime Copilot", lifespan=lifespan)
