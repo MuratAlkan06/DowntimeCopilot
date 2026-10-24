@@ -47,9 +47,10 @@ def capture(data: bytes, content_type: str, form_type: FormType, patient_id: str
     else:
         fmt = IMAGE_FORMATS.get(content_type.lower(), "jpeg")
         vision, model_boxes = forms.read_form_with_boxes(data, fmt, form_type, actor_role=role)
-        reads = Reads(textract=textract.read(data, form_type), bedrock=vision)
+        second, textract_boxes = textract.read_with_boxes(data, form_type)
+        reads = Reads(textract=second, bedrock=vision)
         image_ref, audio_ref = ref, None
-        boxes, source = crops.choose_boxes(form_type, model_boxes)
+        boxes, source = crops.choose_boxes(form_type, model_boxes, textract_boxes)
         rendered = crops.render_crops(data, boxes)
         for name, jpeg in rendered.items():
             store.save_blob(jpeg, "image/jpeg", ref=crops.crop_ref(record_id, name))
