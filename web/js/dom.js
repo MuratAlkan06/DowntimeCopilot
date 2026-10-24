@@ -1,4 +1,5 @@
 // Tiny DOM helpers. All text goes through textContent, never innerHTML.
+import { isOffline } from './api.js';
 
 export function h(tag, attrs = {}, ...kids) {
   const el = document.createElement(tag);
@@ -79,8 +80,9 @@ export function asList(data, ...keys) {
   return [];
 }
 
-/** "Cached copy" note shown when a response came from the service worker cache. */
+/** "Cached copy" note: only when offline and the response came from the service worker cache.
+ *  No timestamp: the cache stamp is wall clock; the packet's own unit-time "Generated" line is the only time shown. */
 export function cachedNote(res) {
-  if (!res?.cachedAt) return null;
-  return h('p', { class: 'cached-note' }, `Cached copy from ${fmtDateTime(res.cachedAt)}`);
+  if (!res?.cachedAt || !(res.offline || isOffline())) return null;
+  return h('p', { class: 'cached-note' }, 'Cached copy — may be stale');
 }
