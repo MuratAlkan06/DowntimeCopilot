@@ -361,6 +361,69 @@ def test_digest(api):
     assert len(d.per_patient) == 12 and d.unit_summary and audited("digest.generate")
 
 
+def _digest_lines(d: ShiftDigest) -> list:
+    return [i for p in d.per_patient for s in ("situation", "background", "assessment", "recommendation")
+            for i in getattr(p.sbar, s)]
+
+
+def test_digest_verified_only_display_names_and_provenance(api):
+    """Scripted flow, then verify + enter the Bed 12 vitals only: the MAR and verbal order stay needs_review."""
+    import re
+    found = scripted_flow(api)
+    recs = {r["form_type"]: r for g in api.get("/backload").json().values() for r in g}
+    vitals, mar, vo = (recs[k]["record_id"] for k in ("vitals_flowsheet", "downtime_mar", "verbal_order"))
+    assert api.post(f"/backload/{vitals}/verify", json={"verified_by": "RN Test"}).status_code == 200
+    assert api.post(f"/backload/{vitals}/entered").status_code == 200
+    d = ShiftDigest.model_validate(api.get("/digest").json())
+    assert len(d.per_patient) == 12
+    lines = _digest_lines(d)
+    text = " ".join([d.unit_summary, *d.open_items, *(i.text for i in lines)])
+    # display names, never raw ids
+    assert not re.search(r"\bpt-\d+|\brec-[0-9a-f]+|\bspo2\b|resp_rate|vitals_flowsheet|downtime_mar", text)
+    assert "Bed 12" in text and "SpO2 89 (out of range)" in text
+    # provenance: every line cites resolvable refs; verified record and audit events are cited by id / seq
+    refs = {i.source_path for i in lines}
+    seqs = {str(s) for s, _ in get_store().audit_log()}
+    for i in lines:
+        for ref in i.source_path.split(","):
+            kind, _, rest = ref.partition(".")
+            assert kind in ("snapshot", "captured", "discrepancy", "audit"), ref
+            assert kind != "audit" or rest in seqs
+    assert f"captured.{vitals}" in refs and any(r.startswith("audit.") for r in refs)
+    # verified-only: the needs_review MAR / verbal order contribute no content and are never cited
+    assert f"captured.{mar}" not in refs and f"captured.{vo}" not in refs
+    assert "heparin" not in text.lower() and "Okafor" not in text
+    held = {f"discrepancy.{x.discrepancy_id}" for x in found if x.record_id in (mar, vo)}
+    assert held and not held & refs
+    bed2 = next(p for p in d.per_patient if p.patient_id == "pt-02")
+    assert any("awaiting verification" in i.text for i in bed2.sbar.recommendation)
+    assert next(e for e in events("digest.generate")).details["guardrail"]["status"] == "passed"
+
+
+def test_digest_drops_lines_without_resolvable_provenance(api, monkeypatch):
+    import json as _json
+    from app.ai import client as ai
+    go_to_downtime(api)
+    real = ai.call
+
+    def fake(job, prompt, user, **kw):
+        if job != "digest":
+            return real(job, prompt, user, **kw)
+        return real(job, prompt, user, **{**kw, "mock": lambda: _json.dumps({
+            "unit_summary": "pt-12 spo2 fine", "open_items": ["check pt-12"],
+            "per_patient": [{"patient_id": "pt-12", "sbar": {
+                "situation": [{"text": "pt-12 roster", "source_path": "snapshot.pt-12.admitting_dx"},
+                              {"text": "invented", "source_path": "snapshot.pt-12.made_up"},
+                              {"text": "no source", "source_path": ""}]}}]})})
+
+    monkeypatch.setattr(ai, "call", fake)
+    d = ShiftDigest.model_validate(api.get("/digest").json())
+    bed12 = next(p for p in d.per_patient if p.patient_id == "pt-12")
+    assert [(i.text, i.source_path) for i in bed12.sbar.situation] == [("Bed 12 roster", "snapshot.pt-12.admitting_dx")]
+    assert d.unit_summary == "Bed 12 SpO2 fine" and d.open_items == ["check Bed 12"]
+    assert len(d.per_patient) == 12  # patients the model left out get the deterministic SBAR
+
+
 def test_restore_status_audit_and_digest_on_unit_clock(api):
     """DEMO.md: +15 min, declare (03:00), +45 min, restore (03:45). Every stamp is unit time, never wall clock."""
     simc = TestClient(sim.app)
