@@ -1,10 +1,12 @@
 """DRY_RUN smoke test for every API endpoint: status, contract shape, and an audit event written."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app import sim_client
+from app import clock, sim_client
 from app.store import get_store, reset_store
 from contracts import (AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot, PolicyAnswer,
                        ShiftDigest)
@@ -21,10 +23,12 @@ def api(tmp_path, monkeypatch):
     monkeypatch.setenv("SYNC_EXPORT_DIR", str(tmp_path / "logs"))
     monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
     sim.state.reset(7)
+    clock.reset()
     reset_store()
     from app.main import app
     with TestClient(app) as c:
         yield c
+    clock.reset()
     reset_store()
 
 
@@ -54,6 +58,16 @@ def test_snapshot_pull_and_view(api):
     assert len(api.get("/snapshot").json()) == 12 and audited("snapshot.view")
     s = api.get("/status").json()
     assert s["phase"] == "before" and s["patients"] == 12 and audited("status.view")
+
+
+def test_first_pull_of_fresh_process_is_audited_in_unit_time(api):
+    """Fresh store, never-synced unit clock, simulator reachable: the FIRST request is POST /snapshot/pull.
+    The pull syncs the unit clock before it audits, so the row is in the simulator era (02:45), not wall-clock."""
+    from simulator.state import CLOCK_START
+    assert clock._synced is None and not get_store().list_audit()
+    assert api.post("/snapshot/pull").status_code == 200
+    pull = next(e for e in get_store().list_audit() if e.action == "snapshot.pull")
+    assert CLOCK_START <= pull.ts < CLOCK_START + timedelta(minutes=15)
 
 
 def test_patients_list(api):
@@ -192,6 +206,14 @@ def test_capture_vitals_agreement(api):
     assert api.get(f"/blobs/{rec.image_ref}").content == PNG and audited("blob.view")
 
 
+def test_capture_audits_x_role(api):
+    go_to_downtime(api)
+    files = {"file": ("form.png", PNG, "image/png")}
+    r = api.post("/capture", files=files, data={"form_type": "vitals_flowsheet"}, headers={"X-Role": "pharmacy"})
+    assert r.status_code == 201
+    assert events("capture.create")[0].actor_role == "pharmacy"
+
+
 def test_capture_typed_verbal_order(api):
     go_to_downtime(api)
     typed = "Insulin lispro 6 units subcut now per Dr. Hale, read back and confirmed"
@@ -215,7 +237,11 @@ def test_backload_verify_entered(api):
     assert set(groups) == {"nursing_med_admin", "nursing_vitals", "nursing_io", "pharmacy_orders", "unit_registration"}
     assert groups["nursing_med_admin"][0]["record_id"] == rec.record_id and audited("backload.view")
     assert api.post(f"/backload/{rec.record_id}/entered").status_code == 409
-    v = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "RN Test"})
+    # The DRY_RUN MAR read is the fixture's heparin: high-alert, so two people verify before entry.
+    first = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "RN Test"})
+    assert first.status_code == 200 and first.json()["status"] == "needs_review"
+    assert api.post(f"/backload/{rec.record_id}/entered").status_code == 409
+    v = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "Pharm Test"})
     assert v.status_code == 200 and v.json()["status"] == "verified" and audited("backload.verify")
     e = api.post(f"/backload/{rec.record_id}/entered")
     assert e.status_code == 200 and CapturedRecord.model_validate(e.json()).status.value == "entered"
@@ -223,17 +249,35 @@ def test_backload_verify_entered(api):
 
 
 def test_recovery_restore_discrepancies(api):
-    go_to_downtime(api)
-    capture(api, "vitals_flowsheet")
-    capture(api, "downtime_mar")
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)  # 03:00
+    capture(api, "vitals_flowsheet")  # SpO2 89 at 02:55, no documented response
+    capture(api, "downtime_mar")  # bed 12 heparin: ordered, but inside its frequency window
+    capture(api, "downtime_mar", patient_id="pt-02")  # heparin with no pre-downtime order for pt-02
+    simc.post("/clock/advance", json={"minutes": 45})  # restore at 03:45: the 02:55 response window closed at 03:25
+    # Taken after the window: a pt-12 order inside 02:55-03:25 would count as the documented response (R-REC-02).
     capture(api, "verbal_order", patient_id="pt-12")
     r = api.post("/recovery/restore")
     assert r.status_code == 200, r.text
     found = [Discrepancy.model_validate(d) for d in r.json()]
     rule_ids = {d.rule_id for d in found}
-    assert {"R-REC-01", "R-REC-02", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= rule_ids
+    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= rule_ids
+    assert {d.patient_id for d in found if d.rule_id == "R-REC-01"} == {"pt-02"}
     assert audited("recovery.restore")
     assert len(api.get("/discrepancies").json()) == len(found) and audited("discrepancy.list")
+
+
+def test_restore_inside_response_window_omits_rec02(api):
+    """Restored at 03:10, the 02:55 vitals still have until 03:25 for a documented response."""
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)
+    capture(api, "vitals_flowsheet")
+    simc.post("/clock/advance", json={"minutes": 10})
+    r = api.post("/recovery/restore")
+    assert r.status_code == 200, r.text
+    assert "R-REC-02" not in {d["rule_id"] for d in r.json()}
 
 
 def test_digest(api):
@@ -243,6 +287,27 @@ def test_digest(api):
     assert r.status_code == 200
     d = ShiftDigest.model_validate(r.json())
     assert len(d.per_patient) == 12 and d.unit_summary and audited("digest.generate")
+
+
+def test_restore_status_audit_and_digest_on_unit_clock(api):
+    """DEMO.md: +15 min, declare (03:00), +45 min, restore (03:45). Every stamp is unit time, never wall clock."""
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)
+    simc.post("/clock/advance", json={"minutes": 45})
+    assert api.get("/status").json()["restored_at"] is None
+    assert api.post("/recovery/restore").status_code == 200
+    s = api.get("/status").json()
+    restored = datetime.fromisoformat(s["restored_at"])
+    assert restored == sim.state.now == datetime.fromisoformat(s["now"])
+    close = timedelta(seconds=5)
+    assert abs(events("downtime.start")[-1].ts - (restored - timedelta(minutes=45))) < close
+    assert abs(events("recovery.restore")[-1].ts - restored) < close
+    d = ShiftDigest.model_validate(api.get("/digest").json())
+    assert d.shift_window.end == restored and abs(d.generated_at - restored) < close
+    start = restored - timedelta(minutes=45)
+    assert all(start - close < datetime.fromisoformat(c["ts"]) < restored + close
+               for c in api.get("/costs").json()["calls"])
 
 
 def test_audit_costs_sync(api):
@@ -313,21 +378,35 @@ def test_non_high_alert_single_verify(api):
     assert v.status_code == 200 and v.json()["status"] == "verified" and v.json()["verified_by"] == "rn"
 
 
-def test_edit_records_before_after_and_can_make_record_high_alert(api):
+def test_dry_run_mar_read_matches_fixture(api):
+    import json
+    from pathlib import Path
+    truth = json.loads((Path(__file__).resolve().parent.parent / "data/forms/fixtures/downtime_mar-01.json").read_text())
     go_to_downtime(api)
-    rec = capture(api, "downtime_mar")  # DRY_RUN mock reads ondansetron: one verify would do
-    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 1
-    r = api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": " heparin "}, headers={"X-Role": "rn"})
+    rec = capture(api, "downtime_mar")
+    assert {f.name: f.value for f in rec.fields} == truth["fields"]  # crops never contradict the values
+    assert all(f.agreement == "agree" for f in rec.fields if f.value is not None)  # both mock readers agree
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2  # two-verify, no edit
+
+
+def test_edit_records_before_after_and_can_change_high_alert(api):
+    go_to_downtime(api)
+    rec = capture(api, "downtime_mar")  # DRY_RUN mock reads the fixture's heparin: two verifies
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2
+    r = api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": " ondansetron "},
+                  headers={"X-Role": "rn"})
     assert r.status_code == 200
     f = {x["name"]: x for x in r.json()["fields"]}
-    assert f["medication"]["value"] == "heparin" and f["medication"]["confidence"] == 1.0
-    assert r.json()["reads"]["bedrock"]["fields"]["medication"] == "ondansetron"  # original read kept
+    assert f["medication"]["value"] == "ondansetron" and f["medication"]["confidence"] == 1.0
+    assert r.json()["reads"]["bedrock"]["fields"]["medication"] == "heparin"  # original read kept
     ev = events("backload.edit")[-1]
-    assert ev.actor_role == "rn" and ev.details["before"] == "ondansetron" and ev.details["after"] == "heparin"
+    assert ev.actor_role == "rn" and ev.details["before"] == "heparin" and ev.details["after"] == "ondansetron"
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 1
+    api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": "heparin"}, headers={"X-Role": "rn"})
     assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2
     # an edit after the first of two verifications resets it
     api.post(f"/backload/{rec.record_id}/verify", headers={"X-Role": "rn"})
-    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "5000 units"}, headers={"X-Role": "rn"})
+    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "2500 units"}, headers={"X-Role": "rn"})
     assert events("backload.edit")[-1].details["verification_reset"] is True
     assert api.get(f"/backload/{rec.record_id}/verification").json()["verifications"] == []
     assert api.patch(f"/backload/{rec.record_id}/fields/nope", json={"value": "x"}).status_code == 404

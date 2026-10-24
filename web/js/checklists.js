@@ -20,8 +20,13 @@ const saveChecked = (s) => {
 
 let items = [];
 
+// Before an outage there is no outage id to key the marks by, so they are not kept (see `ephemeral`).
+const FOOT = 'From the downtime policy, section 2 and the duties it names.';
+
 function renderHeader() {
   const done = items.filter((i) => loadChecked().has(i.id)).length;
+  $('checklist-foot').textContent = `${FOOT} ${store.outageId
+    ? 'Check marks stay on this device.' : 'Check marks are saved once downtime is declared.'}`;
   mount($('checklist-meta'),
     h('strong', {}, roleLabel(store.role)),
     ` · ${store.unitNow ? fmtTime(store.unitNow, { unit: true }) : 'unit time not received yet'}`,

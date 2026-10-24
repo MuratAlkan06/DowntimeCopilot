@@ -12,7 +12,7 @@ import sqlite3
 import threading
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from contracts import AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot
 
@@ -45,8 +45,10 @@ def _dec(text: str) -> str:  # TODO(encryption at rest)
 
 
 class Store:
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, now: Callable[[], datetime] = utcnow) -> None:
+        """`now` stamps audit events and cost rows (app.store.get_store passes the unit clock)."""
         self.path = path
+        self.now = now
         self._lock = threading.Lock()
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._db.executescript(SCHEMA)
@@ -147,10 +149,12 @@ class Store:
     # ------------------------------------------------------------ audit (append only)
     def audit(self, actor_role: str, action: str, target_type: str, target_id: str | None = None,
               details: dict[str, Any] | None = None) -> AuditEvent:
-        ev = AuditEvent(event_id=f"ev-{uuid.uuid4().hex[:16]}", ts=utcnow(), actor_role=actor_role,
-                        action=action, target_type=target_type, target_id=target_id, details=details or {})
-        self._exec("INSERT INTO audit (event_id, body, synced) VALUES (?, ?, 0)",
-                   (ev.event_id, _enc(ev.model_dump_json())))
+        with self._lock:  # stamp under the insert lock, so ts order matches seq order under parallel writers
+            ev = AuditEvent(event_id=f"ev-{uuid.uuid4().hex[:16]}", ts=self.now(), actor_role=actor_role,
+                            action=action, target_type=target_type, target_id=target_id, details=details or {})
+            self._db.execute("INSERT INTO audit (event_id, body, synced) VALUES (?, ?, 0)",
+                             (ev.event_id, _enc(ev.model_dump_json())))
+            self._db.commit()
         return ev
 
     def list_audit(self, limit: int = 500) -> list[AuditEvent]:
@@ -171,7 +175,7 @@ class Store:
         self._exec(
             "INSERT INTO costs (ts, job, model_id, tokens_in, tokens_out, latency_ms, usd, dry_run) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (utcnow().isoformat(), job, model_id, tokens_in, tokens_out, latency_ms, usd, int(dry_run)),
+            (self.now().isoformat(), job, model_id, tokens_in, tokens_out, latency_ms, usd, int(dry_run)),
         )
 
     def list_costs(self) -> list[dict[str, Any]]:

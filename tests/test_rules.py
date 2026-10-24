@@ -119,6 +119,43 @@ def test_rec02_quiet_when_response_documented():
     assert run("R-REC-02", ctx) == []
 
 
+def judged(hhmm: str) -> datetime:
+    h, m = map(int, hhmm.split(":"))
+    return NOW.replace(hour=h, minute=m)
+
+
+def vitals_0255(**extra):
+    """The retimed vitals fixture: 02:55 on paper, captured 03:00, SpO2 89 out of range."""
+    return rec("vitals_flowsheet", {"time": "02:55", "spo2": "89", "heart_rate": "104", **extra},
+               at=judged("03:00"), group="nursing_vitals")
+
+
+def test_rec02_fires_once_window_closed_at_judgment_time():
+    ctx = RecoveryContext({"pt-t": base()}, [vitals_0255()], now=judged("03:45"))
+    hits = run("R-REC-02", ctx)
+    assert [d.rule_id for d in hits] == ["R-REC-02"] and "at 02:55" in hits[0].description
+
+
+def test_rec02_fires_exactly_at_window_close():
+    assert len(run("R-REC-02", RecoveryContext({"pt-t": base()}, [vitals_0255()], now=judged("03:25")))) == 1
+
+
+def test_rec02_quiet_while_window_still_open():
+    ctx = RecoveryContext({"pt-t": base()}, [vitals_0255()], now=judged("03:10"))
+    assert run("R-REC-02", ctx) == []
+
+
+def test_rec02_quiet_when_response_documented_after_window():
+    ctx = RecoveryContext({"pt-t": base()}, [vitals_0255(response="2L NC, recheck 94")], now=judged("03:45"))
+    assert run("R-REC-02", ctx) == []
+
+
+def test_rec02_quiet_when_order_given_inside_window():
+    mar = rec("downtime_mar", {"medication": "albuterol", "time_given": "03:05"}, rid="r2", at=judged("03:10"))
+    ctx = RecoveryContext({"pt-t": base()}, [vitals_0255(), mar], now=judged("03:45"))
+    assert run("R-REC-02", ctx) == []
+
+
 # ------------------------------------------------------------ R-REC-03
 def test_rec03_fires_on_double_dose_inside_window():
     p = base(medications=[med("vancomycin", freq="q12h", last_given=NOW - timedelta(hours=1))])

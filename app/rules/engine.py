@@ -54,6 +54,9 @@ def rule(rule_id: str, phase: str, description: str):
 class RecoveryContext:
     snapshots: dict[str, PatientSnapshot]
     records: list[CapturedRecord] = field(default_factory=list)
+    # Judgment time (restore / evaluation time on the unit clock). Rules with a response window only
+    # report once the window has closed at this time. None = judge as if every window has closed.
+    now: datetime | None = None
 
 
 # ------------------------------------------------------------------ helpers
@@ -194,6 +197,8 @@ def r_rec_02(ctx: RecoveryContext) -> list[Discrepancy]:
         if not abnormal or (f.get("response") or "").strip():
             continue
         t = record_time(r)
+        if ctx.now is not None and ctx.now < t + RESPONSE_WINDOW:
+            continue  # the 30-minute response window is still open at judgment time
         responded = any(
             o.patient_id == r.patient_id and o.record_id != r.record_id
             and o.form_type in (FormType.downtime_mar, FormType.verbal_order)

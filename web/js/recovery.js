@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { h, mount, stateBox, chip, fmtTime, fmtDateTime, asList, cachedNote, labelize, usd } from './dom.js';
 import { store, set, on, GROUPS, ROLE_GROUPS, patientLabel, roleLabel } from './state.js';
 import { renderRecord } from './records.js';
-import { ruleSeverity } from './packets.js';
+import { ruleSeverity, loadStatus } from './packets.js';
 
 const $ = (id) => document.getElementById(id);
 let records = [];
@@ -42,7 +42,9 @@ async function restore() {
       ? 'Still offline — reconciliation runs when connectivity returns.' : `Restore failed (${r.error}).`));
     return;
   }
-  set('restoredAt', new Date().toISOString());
+  // Restore time is the server's unit clock (GET /status restored_at), never the browser clock.
+  const s = await loadStatus();
+  set('restoredAt', s?.restored_at || store.unitNow);
   discrepancies = asList(r.data, 'discrepancies', 'items');
   renderDiscrepancies();
   mount($('recovery-status'), h('span', {}, `Systems restored ${fmtTime(store.restoredAt)} · ${discrepancies.length} discrepancies flagged.`));
@@ -154,7 +156,9 @@ export async function loadAudit() {
       { label: 'Retry', onClick: loadAudit }));
     return;
   }
-  const events = asList(r.data, 'events', 'items').slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  // GET /audit is newest-first by store sequence (ORDER BY seq DESC). Keep that order: equal or
+  // clamped unit-clock stamps can tie, so sorting by ts would misplace the newest rows.
+  const events = asList(r.data, 'events', 'items');
   if (!events.length) { mount(el, stateBox('empty', 'No audit events yet.')); return; }
   const synced = events.filter((e) => e.synced).length;
   mount(el,

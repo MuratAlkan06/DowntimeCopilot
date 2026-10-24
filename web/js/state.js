@@ -63,12 +63,14 @@ export function set(key, value) {
   emit(key, value);
 }
 
-/** Record the newest snapshot time seen in any response. */
+/** Record the unit's snapshot time from a live server response (newest of `times`; nulls ignored).
+ *  Trusts the server even when the time moves backward: a reseed rewinds the unit clock. Callers pass
+ *  live unit-wide times only, never one patient's packet or a cached copy (either can be older). */
 export function noteSnapshot(...times) {
   const valid = times.flat().filter(Boolean).map((t) => new Date(t)).filter((d) => !isNaN(d));
   if (!valid.length) return;
-  const newest = new Date(Math.max(...valid));
-  if (!store.snapshotTime || newest > new Date(store.snapshotTime)) set('snapshotTime', newest.toISOString());
+  const newest = new Date(Math.max(...valid)).toISOString();
+  if (newest !== store.snapshotTime) set('snapshotTime', newest);
 }
 
 export function patientLabel(id) {
