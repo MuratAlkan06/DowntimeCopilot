@@ -215,7 +215,11 @@ def test_backload_verify_entered(api):
     assert set(groups) == {"nursing_med_admin", "nursing_vitals", "nursing_io", "pharmacy_orders", "unit_registration"}
     assert groups["nursing_med_admin"][0]["record_id"] == rec.record_id and audited("backload.view")
     assert api.post(f"/backload/{rec.record_id}/entered").status_code == 409
-    v = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "RN Test"})
+    # The DRY_RUN MAR read is the fixture's heparin: high-alert, so two people verify before entry.
+    first = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "RN Test"})
+    assert first.status_code == 200 and first.json()["status"] == "needs_review"
+    assert api.post(f"/backload/{rec.record_id}/entered").status_code == 409
+    v = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "Pharm Test"})
     assert v.status_code == 200 and v.json()["status"] == "verified" and audited("backload.verify")
     e = api.post(f"/backload/{rec.record_id}/entered")
     assert e.status_code == 200 and CapturedRecord.model_validate(e.json()).status.value == "entered"
@@ -225,13 +229,15 @@ def test_backload_verify_entered(api):
 def test_recovery_restore_discrepancies(api):
     go_to_downtime(api)
     capture(api, "vitals_flowsheet")
-    capture(api, "downtime_mar")
+    capture(api, "downtime_mar")  # bed 12 heparin: ordered, but inside its frequency window
+    capture(api, "downtime_mar", patient_id="pt-02")  # heparin with no pre-downtime order for pt-02
     capture(api, "verbal_order", patient_id="pt-12")
     r = api.post("/recovery/restore")
     assert r.status_code == 200, r.text
     found = [Discrepancy.model_validate(d) for d in r.json()]
     rule_ids = {d.rule_id for d in found}
-    assert {"R-REC-01", "R-REC-02", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= rule_ids
+    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= rule_ids
+    assert {d.patient_id for d in found if d.rule_id == "R-REC-01"} == {"pt-02"}
     assert audited("recovery.restore")
     assert len(api.get("/discrepancies").json()) == len(found) and audited("discrepancy.list")
 
@@ -313,21 +319,35 @@ def test_non_high_alert_single_verify(api):
     assert v.status_code == 200 and v.json()["status"] == "verified" and v.json()["verified_by"] == "rn"
 
 
-def test_edit_records_before_after_and_can_make_record_high_alert(api):
+def test_dry_run_mar_read_matches_fixture(api):
+    import json
+    from pathlib import Path
+    truth = json.loads((Path(__file__).resolve().parent.parent / "data/forms/fixtures/downtime_mar-01.json").read_text())
     go_to_downtime(api)
-    rec = capture(api, "downtime_mar")  # DRY_RUN mock reads ondansetron: one verify would do
-    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 1
-    r = api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": " heparin "}, headers={"X-Role": "rn"})
+    rec = capture(api, "downtime_mar")
+    assert {f.name: f.value for f in rec.fields} == truth["fields"]  # crops never contradict the values
+    assert all(f.agreement == "agree" for f in rec.fields if f.value is not None)  # both mock readers agree
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2  # two-verify, no edit
+
+
+def test_edit_records_before_after_and_can_change_high_alert(api):
+    go_to_downtime(api)
+    rec = capture(api, "downtime_mar")  # DRY_RUN mock reads the fixture's heparin: two verifies
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2
+    r = api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": " ondansetron "},
+                  headers={"X-Role": "rn"})
     assert r.status_code == 200
     f = {x["name"]: x for x in r.json()["fields"]}
-    assert f["medication"]["value"] == "heparin" and f["medication"]["confidence"] == 1.0
-    assert r.json()["reads"]["bedrock"]["fields"]["medication"] == "ondansetron"  # original read kept
+    assert f["medication"]["value"] == "ondansetron" and f["medication"]["confidence"] == 1.0
+    assert r.json()["reads"]["bedrock"]["fields"]["medication"] == "heparin"  # original read kept
     ev = events("backload.edit")[-1]
-    assert ev.actor_role == "rn" and ev.details["before"] == "ondansetron" and ev.details["after"] == "heparin"
+    assert ev.actor_role == "rn" and ev.details["before"] == "heparin" and ev.details["after"] == "ondansetron"
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 1
+    api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": "heparin"}, headers={"X-Role": "rn"})
     assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2
     # an edit after the first of two verifications resets it
     api.post(f"/backload/{rec.record_id}/verify", headers={"X-Role": "rn"})
-    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "5000 units"}, headers={"X-Role": "rn"})
+    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "2500 units"}, headers={"X-Role": "rn"})
     assert events("backload.edit")[-1].details["verification_reset"] is True
     assert api.get(f"/backload/{rec.record_id}/verification").json()["verifications"] == []
     assert api.patch(f"/backload/{rec.record_id}/fields/nope", json={"value": "x"}).status_code == 404

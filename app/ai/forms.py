@@ -9,7 +9,8 @@ from app.capture.transcribe import MOCK_TRANSCRIPT
 from contracts import Crop, FormType, ReaderOutput
 
 # Canned dry-run reads. Vitals: vs the Textract mock, 8 fields agree, resp_rate disagrees,
-# pain_score is unreadable (README demo step 3).
+# pain_score is unreadable (README demo step 3). MAR: the seeded fixture (heparin 5000 units SC, blank
+# second verifier), so crops never contradict values and the high-alert two-verify beat needs no edit.
 MOCK_READS: dict[FormType, dict[str, tuple[str | None, float]]] = {
     FormType.vitals_flowsheet: {
         "bed": ("12", 0.97), "time": ("03:30", 0.93), "temp_c": ("37.8", 0.91), "heart_rate": ("104", 0.9),
@@ -17,7 +18,7 @@ MOCK_READS: dict[FormType, dict[str, tuple[str | None, float]]] = {
         "spo2": ("89", 0.92), "pain_score": (None, 0.2), "initials": ("PN", 0.95),
     },
     FormType.downtime_mar: {
-        "bed": ("12", 0.96), "medication": ("ondansetron", 0.9), "dose": ("4 mg", 0.88), "route": ("IV", 0.95),
+        "bed": ("12", 0.96), "medication": ("heparin", 0.9), "dose": ("5000 units", 0.88), "route": ("SC", 0.95),
         "time_given": ("03:10", 0.9), "initials": ("PN", 0.94), "second_verifier": (None, 0.3),
     },
     FormType.admission_note: {

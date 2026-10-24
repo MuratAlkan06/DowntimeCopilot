@@ -19,7 +19,7 @@ MOCK: dict[FormType, dict[str, tuple[str | None, float]]] = {
         "spo2": ("89", 0.95), "pain_score": (None, 0.12), "initials": ("PN", 0.9),
     },
     FormType.downtime_mar: {
-        "bed": ("12", 0.98), "medication": ("ondansetron", 0.88), "dose": ("4 mg", 0.9), "route": ("IV", 0.96),
+        "bed": ("12", 0.98), "medication": ("heparin", 0.88), "dose": ("5000 units", 0.9), "route": ("SC", 0.96),
         "time_given": ("03:10", 0.92), "initials": ("PN", 0.9), "second_verifier": (None, 0.2),
     },
     FormType.admission_note: {
