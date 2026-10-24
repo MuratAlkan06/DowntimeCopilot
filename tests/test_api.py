@@ -192,6 +192,14 @@ def test_capture_vitals_agreement(api):
     assert api.get(f"/blobs/{rec.image_ref}").content == PNG and audited("blob.view")
 
 
+def test_capture_audits_x_role(api):
+    go_to_downtime(api)
+    files = {"file": ("form.png", PNG, "image/png")}
+    r = api.post("/capture", files=files, data={"form_type": "vitals_flowsheet"}, headers={"X-Role": "pharmacy"})
+    assert r.status_code == 201
+    assert events("capture.create")[0].actor_role == "pharmacy"
+
+
 def test_capture_typed_verbal_order(api):
     go_to_downtime(api)
     typed = "Insulin lispro 6 units subcut now per Dr. Hale, read back and confirmed"

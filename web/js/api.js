@@ -1,5 +1,6 @@
 // Fetch wrapper: same-origin relative URLs, never throws, tracks connectivity.
 // Result shape: { ok, status, data, error, offline, cachedAt }.
+import { store } from './state.js';
 
 const listeners = new Set();
 const SIM_KEY = 'dc.simOffline';
@@ -67,7 +68,9 @@ export const policyReplayKey = (q) => `/policy/ask?replay=${encodeURIComponent(n
 
 /** `replay`: cache key a read-only POST (policy answers) falls back to when offline. */
 export async function api(path, { method = 'GET', json, form, headers, replay } = {}) {
-  const init = { method, headers: { Accept: 'application/json', ...(headers || {}) } };
+  // Every write carries the role switcher's role (X-Role): the server audits it as the actor.
+  const role = method === 'GET' ? {} : { 'X-Role': store.role };
+  const init = { method, headers: { Accept: 'application/json', ...role, ...(headers || {}) } };
   if (json !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(json); }
   if (form) init.body = form;
 
