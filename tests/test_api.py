@@ -401,6 +401,18 @@ def test_digest_verified_only_display_names_and_provenance(api):
     assert next(e for e in events("digest.generate")).details["guardrail"]["status"] == "passed"
 
 
+@pytest.mark.parametrize("raw, shown", [
+    ("SAFETY: Bed 12 SpO2 89, no response. (discrepancy.d-7045e5ab3c76)", "SAFETY: Bed 12 SpO2 89, no response."),
+    ("VERIFY: MAR for pt-02 awaits verification (audit.24)", "VERIFY: MAR for Bed 2 awaits verification"),
+    ("Bed 12 vitals [source: captured.rec-077b971694aa, snapshot.pt-12.admitting_dx].", "Bed 12 vitals."),
+    ("see audit.7 and the audit log.", "see and the audit log."),
+])
+def test_display_strips_provenance_refs_from_prose(raw, shown):
+    """Live Sonnet (S6) appended refs to open items; refs belong in source_path, never in prose."""
+    from app.ai.digest import display
+    assert display(raw, {"pt-02": "Bed 2", "pt-12": "Bed 12"}) == shown
+
+
 def test_digest_drops_lines_without_resolvable_provenance(api, monkeypatch):
     import json as _json
     from app.ai import client as ai

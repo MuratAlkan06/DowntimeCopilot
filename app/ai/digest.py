@@ -44,6 +44,9 @@ ROLE_LABELS = {"charge_nurse": "Charge nurse", "rn": "RN", "pharmacy": "Pharmacy
                "system": "System"}
 HIDDEN_FIELDS = {"bed", "initials"}
 
+_REF = r"(?:snapshot|captured|discrepancy|audit)\.[A-Za-z0-9_:-]+(?:\.[A-Za-z0-9_:-]+)*"
+_REFS_PAREN = re.compile(rf"\s*[(\[]\s*(?:(?:source|ref)s?:\s*)?{_REF}(?:\s*,\s*{_REF})*\s*[)\]]")
+_REFS_BARE = re.compile(rf"\b{_REF}")
 _PID = re.compile(r"\bpt-\d+\b")
 _RECORD = re.compile(r"\brec-[0-9a-f]{6,}\b")
 # Only keys that are unmistakably raw (snake_case or with digits: spo2, resp_rate); plain words such as
@@ -55,7 +58,11 @@ _ROLE = re.compile(r"\b(charge_nurse|unit_clerk|rn)\b")
 
 
 def display(text: str, beds: dict[str, str]) -> str:
-    """Raw ids -> display names: patient ids -> bed, field keys -> labels, form types and roles -> labels."""
+    """Raw ids -> display names: provenance refs are dropped from prose (they belong in source_path; live
+    Sonnet appended "(discrepancy.d-…)" to open items), patient ids -> bed, field keys, form types and
+    roles -> labels."""
+    text = _REFS_BARE.sub("", _REFS_PAREN.sub("", text))
+    text = re.sub(r"\s{2,}", " ", re.sub(r"\s+([.,;:])", r"\1", text)).strip()
     text = _PID.sub(lambda m: beds.get(m.group(0), "a patient"), text)
     text = _RECORD.sub("a paper record", text)
     text = _FIELD.sub(lambda m: FIELD_LABELS[m.group(1)], text)
