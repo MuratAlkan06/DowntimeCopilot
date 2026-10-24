@@ -76,6 +76,34 @@ def test_downtime_start_packets_have_provenance(api):
     assert len(api.get("/packets").json()) == 12 and audited("packet.list")
 
 
+def test_downtime_start_bounded_concurrency(api, monkeypatch):
+    import threading
+    import time
+
+    from app.ai import packets as packets_mod
+    real, lock, state = packets_mod.generate_packet, threading.Lock(), {"now": 0, "max": 0}
+
+    def tracked(*args, **kwargs):
+        with lock:
+            state["now"] += 1
+            state["max"] = max(state["max"], state["now"])
+        time.sleep(0.05)
+        try:
+            return real(*args, **kwargs)
+        finally:
+            with lock:
+                state["now"] -= 1
+
+    monkeypatch.setattr(packets_mod, "generate_packet", tracked)
+    monkeypatch.setenv("PACKET_CONCURRENCY", "4")
+    packets = go_to_downtime(api)
+    assert len(packets) == 12 and len({p.patient_id for p in packets}) == 12
+    assert 1 < state["max"] <= 4
+    sim_now = api.get("/status").json()["now"]
+    assert all(p.generated_at.isoformat() == sim_now for p in packets)  # sim clock, not wall clock
+    assert len([c for c in api.get("/costs").json()["calls"] if c["job"] == "packet"]) == 12
+
+
 def test_patient_packet_bed12(api):
     go_to_downtime(api)
     r = api.get("/patients/pt-12/packet")

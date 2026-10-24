@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -79,13 +80,17 @@ def extract_json(text: str) -> Any:
 
 
 _bedrock = None
+_bedrock_lock = threading.Lock()
 
 
 def _runtime():
+    """One shared bedrock-runtime client. Clients are thread-safe, but creating them from the default
+    session is not (boto3 docs), so creation is locked: packets are generated on worker threads."""
     global _bedrock
-    if _bedrock is None:
-        import boto3
-        _bedrock = boto3.client("bedrock-runtime", region_name=config.aws_region())
+    with _bedrock_lock:
+        if _bedrock is None:
+            import boto3
+            _bedrock = boto3.client("bedrock-runtime", region_name=config.aws_region())
     return _bedrock
 
 

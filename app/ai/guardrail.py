@@ -30,14 +30,13 @@ class BedrockGuardrail:
         self.guardrail_id, self.version = guardrail_id, version
 
     def check(self, output: str, *, grounding: str | None = None, query: str | None = None) -> Guardrail:
-        import boto3
         content = []
         if grounding:
             content.append({"text": {"text": grounding, "qualifiers": ["grounding_source"]}})
         if query:
             content.append({"text": {"text": query, "qualifiers": ["query"]}})
         content.append({"text": {"text": output, "qualifiers": ["guard_content"]}})
-        resp = boto3.client("bedrock-runtime", region_name=config.aws_region()).apply_guardrail(
+        resp = ai._runtime().apply_guardrail(  # shared client: called from packet worker threads
             guardrailIdentifier=self.guardrail_id, guardrailVersion=self.version, source="OUTPUT", content=content,
         )
         if resp.get("action") == "GUARDRAIL_INTERVENED":

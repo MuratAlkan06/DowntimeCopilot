@@ -83,7 +83,7 @@ def run(fixtures: Path, out: Path) -> int:
     for p in load_patients():
         now = p.snapshot_time
         pk = packets.generate_packet(p, snapshot_alerts(p, now), now, actor_role="evals")
-        kept += sum(len(getattr(pk.sbar, s)) for s in packets.SECTIONS)
+        kept += sum(not packets.is_omission(i) for s in packets.SECTIONS for i in getattr(pk.sbar, s))
         m = next((re.search(r"rejected (\d+) line", r) for r in pk.guardrail.reasons if "faithfulness" in r), None)
         rejected += int(m.group(1)) if m else 0
 

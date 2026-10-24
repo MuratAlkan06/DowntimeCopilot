@@ -37,6 +37,11 @@ def snapshot_interval_seconds() -> int:
     return int(os.environ.get("SNAPSHOT_INTERVAL_SECONDS", "900"))
 
 
+def packet_concurrency() -> int:
+    """Max packet generations in flight during /downtime/start (bounded so Bedrock is not flooded)."""
+    return max(1, int(os.environ.get("PACKET_CONCURRENCY", "4")))
+
+
 def guardrail_mode() -> str:
     """'bedrock' (ApplyGuardrail, needs GUARDRAIL_ID) or 'checker' (second model call).
 

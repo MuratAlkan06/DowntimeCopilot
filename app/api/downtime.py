@@ -1,16 +1,18 @@
 """Go to downtime: packets per patient, packet view, policy answers."""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel
 
-from app import sim_client
+from app import config, sim_client
 from app.ai import packets, policy
 from app.api import actor_role
 from app.api.snapshot import pull_and_store
 from app.rules import snapshot_alerts
 from app.store import get_store
-from contracts import DowntimePacket, PolicyAnswer
+from contracts import DowntimePacket, PatientSnapshot, PolicyAnswer
 
 router = APIRouter(tags=["downtime"])
 
@@ -35,11 +37,16 @@ def downtime_start(body: DowntimeStart | None = Body(default=None), role: str = 
     now = sim_client.now()
     if body is None or body.simulate_outage:
         sim_client.outage_start()
-    out = []
-    for p in patients:
+
+    def build(p: PatientSnapshot) -> DowntimePacket:
         packet = packets.generate_packet(p, snapshot_alerts(p, now), now, actor_role=role)
         store.save_packet(packet)
-        out.append(packet)
+        return packet
+
+    # boto3 is synchronous: run the per-patient generations on a bounded worker pool (at most
+    # PACKET_CONCURRENCY Bedrock calls in flight). Each ai.call still logs its own cost and latency.
+    with ThreadPoolExecutor(max_workers=config.packet_concurrency(), thread_name_prefix="packet") as pool:
+        out = list(pool.map(build, patients))
     out.sort(key=packets.priority)
     store.set_kv("phase", "downtime")
     store.set_kv("outage_started_at", now.isoformat())
