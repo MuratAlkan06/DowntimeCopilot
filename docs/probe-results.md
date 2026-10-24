@@ -17,6 +17,8 @@ Probe delta (S8, 2026-10-24 ~01:00 PDT, us-east-1): before S8, `DetectDocumentTe
 
 Probe delta (S9, 2026-10-24 ~01:30 PDT, us-east-1): before S9, Transcribe was probed list-only (`TRANSCRIBE OK (list allowed)` below). `StartTranscriptionJob` (en-US, wav from an SSE-S3 bucket owned by this account), `GetTranscriptionJob` and `DeleteTranscriptionJob` were first called in the S9 live pass and were **ALLOWED**: 2 of 2 jobs COMPLETED, with no AccessDenied. S3 `CreateBucket`, `PutBucketEncryption`, `PutPublicAccessBlock`, `PutBucketLifecycleConfiguration`, `PutObject` and `DeleteObject` on the audio bucket were also allowed. This was not a `make probe` re-run; the evidence is in `docs/decisions.md` (S9).
 
+Probe delta (S12, 2026-10-24T10:42Z, us-east-1): Knowledge Base creation is still not probed. The S12 ladder began with `aws iam simulate-principal-policy` on the caller's role for `bedrock:CreateKnowledgeBase`, `aoss:CreateCollection`, `iam:CreateRole` and `iam:PassRole`. The simulator itself was **DENIED**: `An error occurred (AccessDenied) when calling the SimulatePrincipalPolicy operation: User: arn:aws:sts::[REDACTED]:assumed-role/WSParticipantRole/Participant is not authorized to perform: iam:SimulatePrincipalPolicy on resource: arn:aws:iam::[REDACTED]:role/WSParticipantRole because no identity-based policy allows the iam:SimulatePrincipalPolicy action`. The ladder stops at its first denial, so `aoss:ListCollections`, `iam:GetRole` and `CreateKnowledgeBase` were never called, and no resource was created. The four KB actions are unverified, not denied. This was not a `make probe` re-run; the evidence is in `docs/decisions.md` (S12).
+
 ## Raw output (redacted)
 
 ```text
