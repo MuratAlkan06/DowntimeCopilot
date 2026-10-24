@@ -1,7 +1,9 @@
 """Runtime settings, read from the environment at call time so tests can override them."""
 from __future__ import annotations
 
+import contextlib
 import os
+from contextvars import ContextVar
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -11,9 +13,23 @@ def _flag(name: str, default: str = "0") -> bool:
     return os.environ.get(name, default).strip().lower() not in ("", "0", "false", "no")
 
 
+_forced_dry_run: ContextVar[bool] = ContextVar("forced_dry_run", default=False)
+
+
 def dry_run() -> bool:
     """DRY_RUN=1: canned Bedrock / Textract / Transcribe responses, zero network."""
-    return _flag("DRY_RUN")
+    return _forced_dry_run.get() or _flag("DRY_RUN")
+
+
+@contextlib.contextmanager
+def forced_dry_run():
+    """DRY_RUN for the current context (thread) only, whatever the env says: the readiness drill's packets
+    (app/drill.py). Requests on other threads keep the process setting."""
+    token = _forced_dry_run.set(True)
+    try:
+        yield
+    finally:
+        _forced_dry_run.reset(token)
 
 
 def sim_url() -> str:

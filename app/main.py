@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import checklists as role_checklists
 from app import config, sim_client
-from app.api import audit, backload, capture, checklists, digest, downtime, incident, snapshot
+from app.api import audit, backload, capture, checklists, digest, downtime, incident, readiness, snapshot
 from app.sync import worker as sync_worker
 
 log = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Downtime Copilot", lifespan=lifespan)
-for module in (snapshot, downtime, checklists, capture, backload, digest, incident, audit):
+for module in (snapshot, downtime, checklists, capture, backload, digest, incident, audit, readiness):
     app.include_router(module.router)
 
 # Static PWA, mounted AFTER every API route so it never shadows them.

@@ -41,6 +41,11 @@ def clock() -> dict:
     return status
 
 
+def read_clock() -> dict:
+    """GET /clock with no side effects (no kv write, no unit-clock sync): the readiness drill (app/drill.py)."""
+    return _call("GET", "/clock").json()
+
+
 def now() -> datetime:
     """Simulated clock; falls back to the last clock seen, then the latest snapshot time."""
     store = get_store()
