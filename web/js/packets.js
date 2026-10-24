@@ -111,7 +111,7 @@ async function fetchPatients() {
   patients.forEach((p) => store.patients.set(p.patient_id, p));
   emit('patients', patients);
   renderReadiness();
-  noteSnapshot(patients.map((p) => p.snapshot_time));
+  if (!r.offline) noteSnapshot(patients.map((p) => p.snapshot_time));
   if (!patients.length) {
     mount(list, stateBox('empty', 'No patients in the snapshot yet. Run the simulator feed, then refresh.'));
     return;
@@ -160,7 +160,7 @@ export async function openPacket(id) {
       { label: 'Retry', onClick: () => openPacket(id) }));
     return;
   }
-  noteSnapshot(r.data?.snapshot_time);
+  // No noteSnapshot here: one patient's snapshot can be older than the unit's (R-STALE-01).
   mount(pane, renderPacket(r.data, store.patients.get(id), r));
 }
 
@@ -239,8 +239,8 @@ export async function loadStatus() {
   if (!r.ok || !r.data || typeof r.data !== 'object') return null;
   const s = r.data;
   if (s.now) set('unitNow', s.now);
+  if (r.offline) return s; // cached copy: do not overwrite the snapshot time or outage markers from it
   noteSnapshot(s.snapshot_time);
-  if (r.offline) return s; // cached copy: do not overwrite the outage markers from it
   if ((s.outage_id || null) !== store.outageId) set('outageId', s.outage_id || null);
   if (s.outage_started_at && s.outage_started_at !== store.downtimeStartedAt) set('downtimeStartedAt', s.outage_started_at);
   if (s.phase === 'before' && !s.outage_started_at && (store.downtimeStartedAt || store.restoredAt)) {
