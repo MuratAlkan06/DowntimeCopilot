@@ -56,6 +56,8 @@ def test_seed_fresh_clears_store(api, monkeypatch, capsys):  # noqa: F811
     api.post("/downtime/start")
     assert get_store().list_packets() and get_store().get_kv("phase") == "downtime"
     simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 60})
+    api.get("/status")  # unit clock synced at 03:45; the reseed rewinds it to 02:45
     monkeypatch.setenv("SIM_URL", "http://sim")
     monkeypatch.setenv("API_URL", "http://api")
 
@@ -71,3 +73,5 @@ def test_seed_fresh_clears_store(api, monkeypatch, capsys):  # noqa: F811
     status = api.get("/status").json()
     assert status["phase"] == "before" and status["outage_started_at"] is None and status["patients"] == 12
     assert "seeded 12 patients" in capsys.readouterr().out
+    reset_ev = next(e for e in store.list_audit(1000) if e.action == "store.reset")
+    assert abs(reset_ev.ts - T0) < timedelta(seconds=5)  # unit clock 02:45, not wall clock

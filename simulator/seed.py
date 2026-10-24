@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from datetime import datetime
 
 import httpx
 
@@ -23,10 +24,13 @@ def main(argv: list[str] | None = None) -> int:
         from app.store import get_store
         store = get_store()
         store.clear()
-        store.audit("system", "store.reset", "store", None, {"by": "simulator.seed --fresh"})
         print(f"app store cleared: {store.path}")
     try:
         clock = httpx.post(f"{sim}/reset", timeout=5).json()
+        if opts.fresh:  # stamp the reset on the unit clock the simulator just restarted, not this process's wall clock
+            from app import clock as unit_clock
+            unit_clock.sync(datetime.fromisoformat(clock["now"]))
+            store.audit("system", "store.reset", "store", None, {"by": "simulator.seed --fresh"})
         pulled = httpx.post(f"{api}/snapshot/pull", timeout=10)
         pulled.raise_for_status()
     except httpx.HTTPError as exc:
