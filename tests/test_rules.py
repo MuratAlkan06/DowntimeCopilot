@@ -205,3 +205,14 @@ def test_rule_hits_stable_text_with_structured_times():
 def test_rules_engine_never_calls_a_model():
     src = "\n".join(f.read_text() for f in sorted(Path(engine.__file__).parent.glob("*.py")))
     assert not re.search(r"\b(boto3|bedrock|anthropic|app\.ai|from app import ai)\b", src, re.IGNORECASE)
+
+
+@pytest.mark.parametrize("minutes", [0, 15])
+def test_seeded_stale_example_is_exactly_one(minutes):
+    """Readiness: one lagging feed in the seed (pt-14, 40 min behind the unit clock), nobody else stale."""
+    state = SimState(DEFAULT_SEED)
+    state.advance(minutes)
+    hits = rule_hits(state.snapshot(), state.now)
+    assert fired(hits).get("R-STALE-01") == {"pt-14"}
+    (stale,) = [h for h in hits["patients"]["pt-14"] if h["rule_id"] == "R-STALE-01"]
+    assert state.now - datetime.fromisoformat(stale["snapshot_time"]) == timedelta(minutes=40)

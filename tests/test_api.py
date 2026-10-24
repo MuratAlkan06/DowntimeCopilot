@@ -78,6 +78,7 @@ def test_rules_current_on_pull_and_downtime_start(api):
             fired.setdefault(h["rule_id"], set()).add(pid)
     assert {k: fired.get(k, set()) for k in ("R-ALG-01", "R-DUP-01", "R-DUE-01")} == {
         "R-ALG-01": {"pt-03", "pt-05"}, "R-DUP-01": {"pt-07"}, "R-DUE-01": {"pt-08", "pt-11", "pt-12"}}
+    assert fired.get("R-STALE-01") == {"pt-14"}  # the one seeded lagging feed (readiness panel)
     due = [h for h in r["patients"]["pt-12"] if h["rule_id"] == "R-DUE-01"]
     assert due and all(h["due_at"] and " min" not in h["text"] for h in due)
     go_to_downtime(api)
