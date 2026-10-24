@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app import clock, sim_client
 from app.store import get_store, reset_store
-from contracts import (AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot, PolicyAnswer,
+from contracts import (Allergy, AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot, PolicyAnswer,
                        ShiftDigest)
 from simulator import main as sim
 
@@ -262,10 +262,31 @@ def test_recovery_restore_discrepancies(api):
     assert r.status_code == 200, r.text
     found = [Discrepancy.model_validate(d) for d in r.json()]
     rule_ids = {d.rule_id for d in found}
-    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= rule_ids
+    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT", "DIFF-ALLERGY"} <= rule_ids
     assert {d.patient_id for d in found if d.rule_id == "R-REC-01"} == {"pt-02"}
+    allergy = next(ch for ch in sim.state.restore_changes if ch["kind"] == "allergy_added")
+    (diff,) = [d for d in found if d.rule_id == "DIFF-ALLERGY"]
+    assert diff.patient_id == allergy["patient_id"] and diff.severity.value == "warning"
+    assert allergy["substance"] in diff.description and diff.record_id is None
     assert audited("recovery.restore")
     assert len(api.get("/discrepancies").json()) == len(found) and audited("discrepancy.list")
+
+
+def test_diff_restored_allergy_added_and_removed():
+    from app.api.backload import diff_restored
+    from simulator.state import load_patients
+    pre = {p.patient_id: p for p in load_patients()}
+    p = pre["pt-09"]  # latex
+    new = Allergy(substance="Cephalexin", reaction="rash", severity="moderate")
+    added = p.model_copy(update={"allergies": [*p.allergies, new]})
+    removed = p.model_copy(update={"allergies": []})
+    same_case = p.model_copy(update={"allergies": [a.model_copy(update={"substance": "LATEX"}) for a in p.allergies]})
+    hits = {k: [d for d in diff_restored(pre, {**pre, "pt-09": v}) if d.rule_id == "DIFF-ALLERGY"]
+            for k, v in (("added", added), ("removed", removed), ("same", same_case))}
+    assert [d.patient_id for d in hits["added"]] == ["pt-09"] and "Cephalexin" in hits["added"][0].description
+    assert len(hits["removed"]) == 1 and "missing from the restored EHR" in hits["removed"][0].description
+    assert hits["same"] == []  # case-only spelling difference is not a changed allergy list
+    assert diff_restored(pre, pre) == []
 
 
 def test_restore_inside_response_window_omits_rec02(api):

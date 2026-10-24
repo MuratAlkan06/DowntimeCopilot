@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app import sim_client
 from app.api import actor_role
 from app.rules import RecoveryContext, out_of_range, recovery_discrepancies
-from app.rules.drug_classes import is_high_alert, same_medication
+from app.rules.drug_classes import is_high_alert, norm, same_medication
 from app.rules.engine import discrepancy
 from app.store import get_store
 from contracts import (BackloadGroup, CapturedRecord, Discrepancy, FieldFlag, FormType, PatientSnapshot, RecordStatus,
@@ -189,6 +189,17 @@ def diff_restored(pre: dict[str, PatientSnapshot], restored: dict[str, PatientSn
                 out.append(discrepancy("DIFF-ORDER", pid, None, f"Order {m.name} {m.dose} {m.route} {m.frequency} "
                                        "is in the restored EHR but not the pre-downtime snapshot; check paper orders",
                                        Severity.warning))
+        had, has = ({norm(a.substance): a for a in p.allergies} for p in (before, after))
+        for key in sorted(has.keys() - had.keys()):
+            a = has[key]
+            out.append(discrepancy("DIFF-ALLERGY", pid, None, f"Allergy {a.substance} ({a.reaction}, {a.severity}) "
+                                   "is in the restored EHR but not the pre-downtime snapshot; check doses given "
+                                   "on paper during downtime", Severity.warning))
+        for key in sorted(had.keys() - has.keys()):
+            a = had[key]
+            out.append(discrepancy("DIFF-ALLERGY", pid, None, f"Allergy {a.substance} is in the pre-downtime "
+                                   "snapshot but missing from the restored EHR; confirm with the patient and "
+                                   "the paper chart", Severity.warning))
     return out
 
 
