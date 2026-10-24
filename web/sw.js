@@ -7,6 +7,7 @@ const DATA_CACHE = `dc-data-${VERSION}`;
 const SHELL = [
   './', 'index.html', 'app.js', 'styles.css', 'print.css', 'manifest.webmanifest', 'icon.svg',
   'js/api.js', 'js/dom.js', 'js/state.js', 'js/rules.js', 'js/packets.js', 'js/records.js', 'js/during.js', 'js/checklists.js', 'js/recovery.js',
+  'js/queue.js',
 ];
 
 const SHELL_EXT = /\.(?:html|js|css|webmanifest|svg|png|ico)$/;
@@ -111,6 +112,15 @@ async function policyReplay(req) {
     return hit ? withHeaders(hit, { 'x-dc-fallback': '1' }) : offlineResponse();
   }
 }
+
+// Background Sync (Chromium): the page registers SYNC_TAG when it queues a capture offline. The queue,
+// its lock and the upload live in the page (web/js/queue.js), so the worker only wakes open pages; with
+// none open the queue drains on the next start. Other browsers: the page's online event and interval.
+const SYNC_TAG = 'dc-capture-drain';
+self.addEventListener('sync', (event) => {
+  if (event.tag !== SYNC_TAG) return;
+  event.waitUntil(self.clients.matchAll({ type: 'window' }).then((cs) => cs.forEach((c) => c.postMessage({ type: SYNC_TAG }))));
+});
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;

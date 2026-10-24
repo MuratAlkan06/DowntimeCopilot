@@ -13,14 +13,23 @@ router = APIRouter(tags=["capture"])
 
 @router.post("/capture", response_model=CapturedRecord, status_code=201)
 async def capture(
+    response: Response,
     file: UploadFile | None = File(default=None),
     form_type: FormType = Form(...),
     patient_id: str | None = Form(default=None),
     transcript: str | None = Form(default=None),
     readback_text: str | None = Form(default=None),
+    client_id: str | None = Form(default=None, max_length=100),
     role: str = Depends(actor_role),
 ) -> CapturedRecord:
     data = await file.read() if file is not None else b""
+    # Offline queue replay (web/js/queue.js): the device's id for this submission. A re-sent id gets the
+    # record it already created (200), with no new record, blob or audit. Nothing awaits between this
+    # lookup and save_record, so a single-worker app cannot interleave two submissions of one id.
+    client_id = (client_id or "").strip() or None
+    if client_id and (existing := get_store().record_by_client_id(client_id)) is not None:
+        response.status_code = 200
+        return existing
     content_type = (file.content_type if file is not None else None) or "application/octet-stream"
     # Verbal orders may be typed only (web client sends `readback_text`; `transcript` kept for API callers).
     text = (readback_text or transcript or "").strip() or None
@@ -34,10 +43,11 @@ async def capture(
     except NotImplementedError as exc:
         raise HTTPException(501, str(exc)) from exc
     store = get_store()
-    store.save_record(record)
+    store.save_record(record, client_id=client_id)
     store.audit(role, "capture.create", "captured_record", record.record_id,
                 {"form_type": form_type.value, "patient_id": record.patient_id,
-                 "flags": [f.name for f in record.fields if f.flag]})
+                 "flags": [f.name for f in record.fields if f.flag]}
+                | ({"client_id": client_id} if client_id else {}))
     return record
 
 

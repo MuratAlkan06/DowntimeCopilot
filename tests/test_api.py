@@ -215,6 +215,41 @@ def test_capture_audits_x_role(api):
     assert events("capture.create")[0].actor_role == "pharmacy"
 
 
+def test_capture_client_id_is_idempotent(api):
+    """Offline queue replay: the same client id twice -> one record, one capture.create audit, same body."""
+    go_to_downtime(api)
+    form = {"form_type": "vitals_flowsheet", "client_id": "c-0f8e2b9a"}
+    first = api.post("/capture", files={"file": ("form.png", PNG, "image/png")}, data=form, headers={"X-Role": "rn"})
+    again = api.post("/capture", files={"file": ("form.png", PNG, "image/png")}, data=form, headers={"X-Role": "rn"})
+    assert first.status_code == 201 and again.status_code == 200, again.text
+    assert again.json() == first.json()
+    store = get_store()
+    assert [r.record_id for r in store.list_records()] == [first.json()["record_id"]]
+    created = events("capture.create")
+    assert len(created) == 1 and created[0].details["client_id"] == "c-0f8e2b9a"
+    assert len(events("capture.crops")) <= 1
+    # A later save (verify/edit path) keeps the id; another id or no id still creates a new record.
+    store.save_record(store.get_record(first.json()["record_id"]))
+    assert store.record_by_client_id("c-0f8e2b9a").record_id == first.json()["record_id"]
+    other = api.post("/capture", files={"file": ("form.png", PNG, "image/png")},
+                     data={**form, "client_id": "c-other"}, headers={"X-Role": "rn"})
+    plain = api.post("/capture", files={"file": ("form.png", PNG, "image/png")}, data={"form_type": "vitals_flowsheet"})
+    assert other.status_code == 201 and plain.status_code == 201
+    assert len(store.list_records()) == 3 and len(events("capture.create")) == 3
+
+
+def test_store_upgrades_a_pre_s7_captured_table(tmp_path):
+    import sqlite3
+
+    from app.store.sqlite import Store
+    path = str(tmp_path / "old.sqlite")
+    sqlite3.connect(path).executescript(
+        "CREATE TABLE captured (record_id TEXT PRIMARY KEY, seq INTEGER, body TEXT);").close()
+    Store(path)
+    Store(path)  # idempotent on reopen
+    assert "client_id" in {r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(captured)")}
+
+
 def test_capture_typed_verbal_order(api):
     go_to_downtime(api)
     typed = "Insulin lispro 6 units subcut now per Dr. Hale, read back and confirmed"
