@@ -1,6 +1,7 @@
 """DRY_RUN smoke test for every API endpoint: status, contract shape, and an audit event written."""
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 
 import pytest
@@ -422,6 +423,45 @@ def test_digest_drops_lines_without_resolvable_provenance(api, monkeypatch):
     assert [(i.text, i.source_path) for i in bed12.sbar.situation] == [("Bed 12 roster", "snapshot.pt-12.admitting_dx")]
     assert d.unit_summary == "Bed 12 SpO2 fine" and d.open_items == ["check Bed 12"]
     assert len(d.per_patient) == 12  # patients the model left out get the deterministic SBAR
+
+
+def test_incident_timeline_filtered_in_seq_order_with_summary(api):
+    scripted_flow(api)
+    recs = {r["form_type"]: r for g in api.get("/backload").json().values() for r in g}
+    vitals = recs["vitals_flowsheet"]["record_id"]
+    api.post(f"/backload/{vitals}/verify", json={"verified_by": "RN Test"})
+    api.post(f"/backload/{vitals}/entered")
+    api.get("/audit"), api.get("/packets"), api.get(f"/blobs/{recs['vitals_flowsheet']['image_ref']}")  # view noise
+    r = api.get("/incident")
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) == {"generated_at", "outage_started_at", "restored_at", "model_id", "summary", "guardrail",
+                         "cost", "counts", "timeline"}
+    rows = body["timeline"]
+    assert all(set(x) == {"seq", "ts", "role", "action", "event", "patient", "detail"} for x in rows)
+    actions = {x["action"] for x in rows}
+    assert actions == {"downtime.start", "capture.create", "backload.verify", "backload.entered", "recovery.restore"}
+    assert not any(a.endswith((".view", ".list")) or a in ("ai.call", "rules.evaluate", "snapshot.pull")
+                   for a in actions)
+    assert [x["seq"] for x in rows] == sorted(x["seq"] for x in rows)  # store sequence order
+    events_in_order = [x["event"] for x in rows]
+    assert events_in_order[:2] == ["Downtime declared", "Downtime packets generated"]
+    assert events_in_order.count("Paper form captured") == 3
+    restore_at = events_in_order.index("Systems restored")
+    assert events_in_order.index("Verified") > restore_at and events_in_order[-1] == "Marked entered in the EHR"
+    discs = [x for x in rows if x["event"].startswith("Discrepancy ")]
+    assert sorted(x["event"].split()[1] for x in discs) == sorted(rid for rid, _, _ in PLANTED)
+    assert discs[0]["event"] == "Discrepancy R-REC-01" and discs[0]["patient"] == "Bed 2"  # critical first
+    assert body["counts"] == {"captures": 3, "verified": 1, "entered": 1, "corrections": 0, "discrepancies": 6,
+                              "critical": 1}
+    assert len(body["summary"]) == 2 and all(body["summary"])  # DRY_RUN canned two paragraphs
+    assert "03:00" in body["summary"][0] and "03:45" in body["summary"][0]
+    assert body["guardrail"]["status"] == "passed" and body["model_id"].startswith("dry-run:us.anthropic")
+    text = " ".join([*body["summary"], *(f"{x['patient'] or ''} {x['detail']}" for x in rows)])
+    assert not re.search(r"\bpt-\d+|\brec-[0-9a-f]+|\bspo2\b|vitals_flowsheet", text)
+    assert audited("incident.view")
+    again = api.get("/incident").json()
+    assert again["timeline"] == rows  # its own incident.view and ai.call rows never enter the timeline
 
 
 def test_restore_status_audit_and_digest_on_unit_clock(api):

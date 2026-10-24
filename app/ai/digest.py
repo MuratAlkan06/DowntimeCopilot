@@ -136,9 +136,10 @@ def _canned(patients: list[PatientSnapshot], fx: list[dict], held: int) -> dict:
         }})
     count = {k: sum(f["kind"] == k for f in fx) for k in ("verified", "entered", "pending", "discrepancy")}
     life = " ".join(f"{f['text']}." for f in fx if f["kind"] == "lifecycle")
-    summary = (f"{len(patients)} patients. {life} {count['verified'] + count['entered']} paper records verified "
+    done = count["verified"] + count["entered"]
+    summary = (f"{len(patients)} patients. {life} {done} paper record{'' if done == 1 else 's'} verified "
                f"({count['entered']} entered), {count['pending']} awaiting verification and not included. "
-               f"{count['discrepancy']} open discrepancies shown"
+               f"{count['discrepancy']} open discrepanc{'y' if count['discrepancy'] == 1 else 'ies'} shown"
                + (f"; {held} more are held back until their records are verified." if held else ".")).replace("  ", " ")
     items = [f["text"] for f in fx if f["kind"] == "discrepancy"] + \
             [f"{f['text'].split(' captured ')[0]} for {beds.get(f['patient_id'], 'a patient')}: verify before backload"
