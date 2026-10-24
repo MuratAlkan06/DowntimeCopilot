@@ -13,12 +13,12 @@ from fastapi.testclient import TestClient
 
 from app import sim_client
 from app.ai import client as ai
-from app.capture import crops, pipeline
+from app.capture import crops, pipeline, textract
 from app.capture.agreement import merge
 from app.capture.layouts import layout
 from app.rules import out_of_range
 from app.store import get_store, reset_store
-from contracts import CapturedRecord, Crop, FieldFlag, FormType, ReaderOutput
+from contracts import Agreement, CapturedRecord, Crop, FieldFlag, FormType, ReaderOutput
 from simulator import main as sim
 from simulator.state import load_patients
 
@@ -108,6 +108,19 @@ def test_live_low_confidence_value_is_not_used(env):
     data, _ = fixture(FormType.vitals_flowsheet)
     f = by_name(pipeline.capture(data, "image/jpeg", FormType.vitals_flowsheet, None, "rn"))
     assert f["pain_score"].value is None and f["pain_score"].flag == FieldFlag.unreadable
+
+
+def test_dry_run_unreadable_vs_textract_value_is_flagged_disagreement(env):
+    """Live S8 incident through the DRY_RUN pipeline: Nova mock leaves pain_score null, Textract reads "NW"."""
+    env.setitem(textract.MOCK[FormType.vitals_flowsheet], "pain_score", ("NW", 1.0))
+    data, _ = fixture(FormType.vitals_flowsheet)
+    rec = pipeline.capture(data, "image/jpeg", FormType.vitals_flowsheet, None, "rn")
+    f = by_name(rec)["pain_score"]
+    assert f.flag == FieldFlag.disagreement and f.agreement == Agreement.disagree and f.value == "NW"
+    assert rec.reads.textract.fields["pain_score"] == "NW" and rec.reads.bedrock.fields["pain_score"] is None
+    env.setenv("TEXTRACT_ENABLED", "0")  # Textract not run: the Nova null alone stays unreadable, no value
+    f = by_name(pipeline.capture(data, "image/jpeg", FormType.vitals_flowsheet, None, "rn"))["pain_score"]
+    assert (f.agreement, f.flag, f.value) == (Agreement.single, FieldFlag.unreadable, None)
 
 
 def test_merge_never_carries_a_value_on_unreadable():

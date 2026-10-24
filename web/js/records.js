@@ -53,11 +53,15 @@ function cropCell(rec, f) {
   return h('td', { class: 'crop-cell' }, link);
 }
 
+// One reader's raw read of a field: "—" when the reader did not run or did not report the field,
+// "unreadable" when it ran and returned null (agreement.merge counts that as a disagreement).
+const readerValue = (r, name) => (r && name in (r.fields || {}) ? r.fields[name] ?? 'unreadable' : '—');
+
 function valueCell(rec, f, getCard, msg, onChange, tx, bv) {
   const td = h('td', { class: 'field-value' });
   const show = () => mount(td,
     f.value ?? h('em', {}, 'unreadable'),
-    f.agreement === 'disagree' ? h('div', { class: 'reader-values' }, `Textract: ${tx?.fields?.[f.name] ?? '—'} · Bedrock: ${bv ?? '—'}`) : null,
+    f.agreement === 'disagree' ? h('div', { class: 'reader-values' }, `Textract: ${readerValue(tx, f.name)} · Bedrock: ${bv}`) : null,
     rec.status === 'needs_review'
       ? h('button', { class: 'btn btn-quiet btn-sm field-edit', type: 'button', 'aria-label': `Edit ${fieldLabel(f.name)}`, onclick: edit }, 'Edit')
       : null);
@@ -148,7 +152,7 @@ export function renderRecord(rec, { onChange } = {}) {
         h('thead', {}, h('tr', {}, ['Field', 'Photo', 'Value', 'Confidence', 'Readers', 'Review'].map((t) => h('th', { scope: 'col' }, t)))),
         h('tbody', {}, fields.map((f, i) => {
           const st = states[i];
-          const bv = br?.fields?.[f.name];
+          const bv = readerValue(br, f.name);
           return h('tr', { class: `field field-${st}`, 'data-field': f.name },
             h('th', { scope: 'row' }, fieldLabel(f.name)),
             cropCell(rec, f),

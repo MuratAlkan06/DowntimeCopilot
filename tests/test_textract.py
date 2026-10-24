@@ -14,7 +14,7 @@ from botocore.stub import Stubber
 from app.capture import crops, textract
 from app.capture.agreement import merge
 from app.capture.layouts import layout
-from contracts import Agreement, FormType
+from contracts import Agreement, FieldFlag, FormType
 
 VITALS = list(layout(FormType.vitals_flowsheet))
 
@@ -190,6 +190,55 @@ def test_two_live_reads_disagree_on_a_field(live):
     assert f.agreement == Agreement.disagree
 
 
+# ------------------------------------------------------------------ ran-and-unreadable vs a value (2026-10-24)
+
+def nova(value, conf):
+    return textract.ReaderOutput(fields={"pain_score": value}, confidence={"pain_score": conf})
+
+
+def test_scribbled_out_field_unreadable_vs_confident_value_is_disagreement(live):
+    """Live S8 incident: Nova null (unreadable) vs Textract "NW" @ 1.00 was stored as an unflagged single read."""
+    stub, _ = live
+    stub.add_response("analyze_document", {"Blocks": [query("q", "pain_score", ["r"]), result("r", "NW", 100.0)]},
+                      expected_params(FormType.vitals_flowsheet))
+    t = textract.read(b"img", FormType.vitals_flowsheet)
+    b = nova(None, 0.2)
+    (f,) = [x for x in merge(t, b) if x.name == "pain_score"]
+    assert f.agreement == Agreement.disagree and f.flag == FieldFlag.disagreement
+    assert f.value == "NW" and f.confidence == 0.2  # pre-filled, never above the dissenting read
+    assert t.fields["pain_score"] == "NW" and b.fields["pain_score"] is None  # both sides kept for the reviewer
+    (g,) = merge(b, nova("NW", 1.0))  # same verdict whichever reader is the unreadable one
+    assert (g.agreement, g.flag, g.value) == (Agreement.disagree, FieldFlag.disagreement, "NW")
+
+
+@pytest.mark.parametrize("unread", [(None, 0.0), ("7", 0.3)])  # null, or a value below the 0.4 cut
+def test_any_ran_and_unreadable_read_dissents(unread):
+    (f,) = merge(nova(*unread), nova("4", 0.9))
+    assert f.agreement == Agreement.disagree and f.flag == FieldFlag.disagreement and f.value == "4"
+
+
+def test_low_confidence_read_of_the_same_value_is_no_dissent():
+    (f,) = merge(nova("4", 0.3), nova(" 4 ", 0.9))
+    assert f.agreement == Agreement.single and f.flag is None and f.value == " 4 " and f.confidence == 0.9
+
+
+def test_reader_not_run_or_field_not_reported_stays_single(monkeypatch):
+    monkeypatch.setenv("TEXTRACT_ENABLED", "0")
+    assert textract.read(b"img", FormType.vitals_flowsheet) is None
+    (f,) = merge(None, nova("4", 0.9))
+    assert (f.agreement, f.flag, f.value) == (Agreement.single, None, "4")
+    other = textract.ReaderOutput(fields={"bed": "12"}, confidence={"bed": 0.99})  # ran, never reported pain_score
+    f = next(x for x in merge(other, nova("4", 0.9)) if x.name == "pain_score")
+    assert (f.agreement, f.flag, f.value) == (Agreement.single, None, "4")
+
+
+def test_both_readers_unreadable_stays_unreadable_without_value():
+    (f,) = merge(nova(None, 0.0), nova(None, 0.2))
+    assert (f.agreement, f.flag, f.value) == (Agreement.single, FieldFlag.unreadable, None)
+    (g,) = merge(nova("HIGH-ALERT MEDS", 0.37), nova(None, 0.2))  # live MAR second_verifier: below the cut
+    assert (g.flag, g.value) == (FieldFlag.unreadable, None)
+
+
 # ------------------------------------------------------------------ AccessDenied -> single read
 
 def test_access_denied_degrades_to_single_read_once(live, caplog):
@@ -204,6 +253,8 @@ def test_access_denied_degrades_to_single_read_once(live, caplog):
     assert sum("denied" in r.getMessage() for r in caplog.records) == 1
     b = textract.ReaderOutput(fields={"bed": "12"}, confidence={"bed": 0.9})
     assert [f.agreement for f in merge(None, b)] == [Agreement.single]
+    (f,) = merge(textract.read(b"img", FormType.vitals_flowsheet), nova("4", 0.9))  # denied: no dissent
+    assert (f.agreement, f.flag, f.value) == (Agreement.single, None, "4")
 
 
 def test_other_client_errors_are_not_swallowed(live):
