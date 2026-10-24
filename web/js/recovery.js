@@ -156,7 +156,9 @@ export async function loadAudit() {
       { label: 'Retry', onClick: loadAudit }));
     return;
   }
-  const events = asList(r.data, 'events', 'items').slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  // GET /audit is newest-first by store sequence (ORDER BY seq DESC). Keep that order: equal or
+  // clamped unit-clock stamps can tie, so sorting by ts would misplace the newest rows.
+  const events = asList(r.data, 'events', 'items');
   if (!events.length) { mount(el, stateBox('empty', 'No audit events yet.')); return; }
   const synced = events.filter((e) => e.synced).length;
   mount(el,

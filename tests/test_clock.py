@@ -53,6 +53,66 @@ def test_unit_now_is_sim_time_plus_elapsed(monkeypatch):
         clock.reset()
 
 
+class Mono:
+    """Controllable stand-in for time.monotonic()."""
+
+    def __init__(self, t: float = 100.0):
+        self.t = t
+
+    def __call__(self) -> float:
+        return self.t
+
+
+def test_frozen_sim_resyncs_never_rewind_unit_now(monkeypatch):
+    """A frozen simulator re-reports the same time on every /clock read; interleaved stamps stay ordered."""
+    mono = Mono()
+    monkeypatch.setattr(clock.time, "monotonic", mono)
+    clock.reset()
+    try:
+        seen = []
+        for _ in range(5):
+            clock.sync(SIM_NOW)  # every status poll re-bases on the same frozen sim time
+            mono.t += 7.0
+            seen.append(clock.unit_now())
+            mono.t += 3.0
+            seen.append(clock.unit_now())
+        assert seen == sorted(seen)
+        assert seen[0] == SIM_NOW + timedelta(seconds=7)
+        assert seen[-1] >= seen[1] == SIM_NOW + timedelta(seconds=10)  # clamped, not rewound to SIM_NOW + 7s
+    finally:
+        clock.reset()
+
+
+def test_advancing_sim_clock_unchanged_by_clamp(monkeypatch):
+    mono = Mono()
+    monkeypatch.setattr(clock.time, "monotonic", mono)
+    clock.reset()
+    try:
+        clock.sync(SIM_NOW)
+        mono.t += 30
+        assert clock.unit_now() == SIM_NOW + timedelta(seconds=30)
+        clock.sync(SIM_NOW + timedelta(minutes=45))  # POST /clock/advance +45
+        mono.t += 2
+        assert clock.unit_now() == SIM_NOW + timedelta(minutes=45, seconds=2)
+    finally:
+        clock.reset()
+
+
+def test_simulator_reset_starts_a_new_era(monkeypatch):
+    """seed --fresh rewinds the simulator: stamps follow it rather than the previous run's high-water mark."""
+    mono = Mono()
+    monkeypatch.setattr(clock.time, "monotonic", mono)
+    clock.reset()
+    try:
+        clock.sync(SIM_NOW + timedelta(hours=1))
+        late = clock.unit_now()
+        clock.sync(SIM_NOW)  # strictly earlier sim time = reset, not a frozen re-read
+        mono.t += 1
+        assert clock.unit_now() == SIM_NOW + timedelta(seconds=1) < late
+    finally:
+        clock.reset()
+
+
 @pytest.mark.parametrize("read", [sim_client.now, sim_client.clock])
 def test_audit_and_cost_stamps_follow_sim_clock_after_sync(unit, read):
     read()  # any successful /clock read syncs the unit clock
@@ -61,6 +121,17 @@ def test_audit_and_cost_stamps_follow_sim_clock_after_sync(unit, read):
     assert unit.list_audit(1)[0].ts == ev.ts
     unit.record_cost("digest", "dry-run:model", 1, 1, 1, 0.0, True)
     assert abs(datetime.fromisoformat(unit.list_costs()[-1]["ts"]) - SIM_NOW) < CLOSE
+
+
+def test_frozen_clock_audit_is_newest_first_by_seq_with_ordered_stamps(unit):
+    """GET /audit order (the UI shows it as-is): newest first by store seq; stamps never run backwards."""
+    for action in ("backload.verify", "backload.entered", "audit.list"):
+        sim_client.now()  # status polls re-sync to the same frozen sim time between events
+        unit.audit("rn", action, "captured_record", "rec-1")
+    events = unit.list_audit()
+    assert [e.action for e in events[:3]] == ["audit.list", "backload.entered", "backload.verify"]
+    stamps = [e.ts for e in reversed(events)]
+    assert stamps == sorted(stamps)
 
 
 def test_digest_generated_at_on_unit_clock(unit):
