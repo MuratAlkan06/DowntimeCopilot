@@ -291,11 +291,21 @@ def r_rec_04(ctx: RecoveryContext) -> list[Discrepancy]:
     return out
 
 
+UNASSIGNED = "unassigned"  # Discrepancy.patient_id for a record no patient was chosen for
+
+
 @rule("R-VO-01", "recovery", "Verbal order without read-back or provider co-sign")
 def r_vo_01(ctx: RecoveryContext) -> list[Discrepancy]:
     out = []
-    for r in _records(ctx, FormType.verbal_order):
+    for r in ctx.records:
+        if r.form_type != FormType.verbal_order or r.status == "rejected":
+            continue
         f = fields(r)
+        if not r.patient_id:  # the read-back has no bed box: nobody can co-sign or backload an order for no one
+            out.append(discrepancy("R-VO-01", UNASSIGNED, r.record_id,
+                                   f"Verbal order {f.get('medication') or ''} has no patient; assign it before "
+                                   "co-sign and pharmacy backload".replace("  ", " "), Severity.critical))
+            continue
         missing = [label for key, label in (("read_back", "read-back"), ("provider_cosign", "provider co-sign"))
                    if (f.get(key) or "").strip().lower() not in AFFIRMATIVE]
         if missing:

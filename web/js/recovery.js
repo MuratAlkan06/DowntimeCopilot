@@ -27,8 +27,25 @@ function renderDiscrepancies() {
       h('span', { class: 'rule-badge' }, d.rule_id),
       h('span', { class: 'disc-body' },
         h('strong', {}, patientLabel(d.patient_id)), ' — ', d.description,
-        h('span', { class: 'disc-meta' }, `${d.severity || ''} · ${labelize(d.status || 'open')}${d.record_id ? ` · record ${d.record_id}` : ''}`)));
+        h('span', { class: 'disc-meta' }, `${d.severity || ''} · ${labelize(d.status || 'open')}${d.record_id ? ` · record ${d.record_id}` : ''}`)),
+      h('span', { class: 'disc-actions' },
+        d.status === 'open' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'acknowledged', e.target) }, 'Acknowledge') : null,
+        d.status !== 'resolved' ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: (e) => setDiscStatus(d, 'resolved', e.target) }, 'Resolve') : null));
   })));
+}
+
+// Charge nurse review before end of shift (policy 7.5): open -> acknowledged -> resolved.
+async function setDiscStatus(d, status, btn) {
+  btn.disabled = true;
+  const r = await api(`/discrepancies/${encodeURIComponent(d.discrepancy_id)}/status`, { method: 'POST', json: { status } });
+  if (!r.ok) {
+    btn.disabled = false;
+    mount($('recovery-status'), stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — not saved. Try again when connected.' : `Not saved (${r.error}).`));
+    return;
+  }
+  discrepancies = discrepancies.map((x) => (x.discrepancy_id === d.discrepancy_id ? r.data : x));
+  renderDiscrepancies();
+  loadAudit();
 }
 
 async function restore() {
@@ -294,6 +311,16 @@ export async function loadSyncStatus() {
   mount($('sync-chip'), s ? chip(s.pending > 0 ? `Sync: ${s.pending} pending · ${mode}` : `Synced · ${mode}`,
     s.pending > 0 ? 'warn' : 'neutral', s.last_error ? `Last sync error: ${s.last_error}` : undefined) : null);
   if (s?.pending > 0 && store.phase === 'recovery') syncTimer = setTimeout(loadSyncStatus, 2000);
+}
+
+/** Discrepancies already stored on the server (after a reload), so review progress stays on screen. */
+async function loadDiscrepancies() {
+  if (!store.patients.size) { // after a reload straight into Recovery: names for the bed labels
+    const p = await api('/patients');
+    if (p.ok && Array.isArray(p.data)) p.data.forEach((x) => store.patients.set(x.patient_id, x));
+  }
+  const r = await api('/discrepancies');
+  if (r.ok && Array.isArray(r.data) && r.data.length) { discrepancies = r.data; renderDiscrepancies(); }
 }
 
 export function enterRecovery() {
