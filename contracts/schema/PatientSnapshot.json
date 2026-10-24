@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "Allergy": {
+      "additionalProperties": false,
+      "properties": {
+        "reaction": {
+          "title": "Reaction",
+          "type": "string"
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "string"
+        },
+        "substance": {
+          "title": "Substance",
+          "type": "string"
+        }
+      },
+      "required": [
+        "substance",
+        "reaction",
+        "severity"
+      ],
+      "title": "Allergy",
+      "type": "object"
+    },
+    "Medication": {
+      "additionalProperties": false,
+      "properties": {
+        "dose": {
+          "title": "Dose",
+          "type": "string"
+        },
+        "frequency": {
+          "title": "Frequency",
+          "type": "string"
+        },
+        "high_alert": {
+          "default": false,
+          "title": "High Alert",
+          "type": "boolean"
+        },
+        "last_given": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Given"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "next_due": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Next Due"
+        },
+        "route": {
+          "title": "Route",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "dose",
+        "route",
+        "frequency"
+      ],
+      "title": "Medication",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "admitting_dx": {
+      "title": "Admitting Dx",
+      "type": "string"
+    },
+    "age": {
+      "minimum": 0,
+      "title": "Age",
+      "type": "integer"
+    },
+    "allergies": {
+      "items": {
+        "$ref": "#/$defs/Allergy"
+      },
+      "title": "Allergies",
+      "type": "array"
+    },
+    "bed": {
+      "title": "Bed",
+      "type": "string"
+    },
+    "code_status": {
+      "title": "Code Status",
+      "type": "string"
+    },
+    "dob": {
+      "format": "date",
+      "title": "Dob",
+      "type": "string"
+    },
+    "fall_risk": {
+      "title": "Fall Risk",
+      "type": "string"
+    },
+    "isolation": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Isolation"
+    },
+    "lines_drains": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Lines Drains",
+      "type": "array"
+    },
+    "medications": {
+      "items": {
+        "$ref": "#/$defs/Medication"
+      },
+      "title": "Medications",
+      "type": "array"
+    },
+    "mrn": {
+      "title": "Mrn",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "patient_id": {
+      "title": "Patient Id",
+      "type": "string"
+    },
+    "pending_labs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Pending Labs",
+      "type": "array"
+    },
+    "sex": {
+      "title": "Sex",
+      "type": "string"
+    },
+    "snapshot_time": {
+      "format": "date-time",
+      "title": "Snapshot Time",
+      "type": "string"
+    },
+    "source": {
+      "const": "bca-feed-sim",
+      "default": "bca-feed-sim",
+      "title": "Source",
+      "type": "string"
+    },
+    "weight_kg": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Weight Kg"
+    }
+  },
+  "required": [
+    "patient_id",
+    "mrn",
+    "name",
+    "dob",
+    "age",
+    "sex",
+    "bed",
+    "admitting_dx",
+    "code_status",
+    "fall_risk",
+    "snapshot_time"
+  ],
+  "title": "PatientSnapshot",
+  "type": "object"
+}

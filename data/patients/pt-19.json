@@ -1,0 +1,44 @@
+{
+  "patient_id": "pt-19",
+  "mrn": "SYN-100219",
+  "name": "Kai Madeup",
+  "dob": "1976-08-28",
+  "age": 50,
+  "sex": "male",
+  "bed": "Bed 19",
+  "admitting_dx": "Alcohol withdrawal",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [],
+  "medications": [
+    {
+      "name": "lorazepam",
+      "dose": "1 mg",
+      "route": "IV",
+      "frequency": "q4h PRN per CIWA",
+      "next_due": "2026-10-24T04:15:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-24T00:15:00Z"
+    },
+    {
+      "name": "thiamine",
+      "dose": "100 mg",
+      "route": "IV",
+      "frequency": "daily",
+      "next_due": "2026-10-24T09:00:00Z",
+      "high_alert": false,
+      "last_given": null
+    }
+  ],
+  "lines_drains": [
+    "PIV 20G left forearm"
+  ],
+  "pending_labs": [
+    "magnesium 05:00",
+    "CMP 05:00"
+  ],
+  "fall_risk": "high",
+  "weight_kg": 79.6,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

@@ -1,0 +1,50 @@
+{
+  "patient_id": "pt-03",
+  "mrn": "SYN-100203",
+  "name": "Bram Synthetic",
+  "dob": "1972-07-02",
+  "age": 54,
+  "sex": "male",
+  "bed": "Bed 3",
+  "admitting_dx": "Community-acquired pneumonia",
+  "code_status": "Full code",
+  "isolation": "droplet",
+  "allergies": [
+    {
+      "substance": "penicillin",
+      "reaction": "anaphylaxis",
+      "severity": "severe"
+    }
+  ],
+  "medications": [
+    {
+      "name": "ampicillin-sulbactam",
+      "dose": "3 g",
+      "route": "IV",
+      "frequency": "q6h",
+      "next_due": "2026-10-24T03:30:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-23T21:30:00Z"
+    },
+    {
+      "name": "acetaminophen",
+      "dose": "650 mg",
+      "route": "PO",
+      "frequency": "q6h PRN fever",
+      "next_due": null,
+      "high_alert": false,
+      "last_given": "2026-10-23T22:10:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 18G right antecubital"
+  ],
+  "pending_labs": [
+    "blood cultures x2",
+    "procalcitonin 06:00"
+  ],
+  "fall_risk": "low",
+  "weight_kg": 88.0,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

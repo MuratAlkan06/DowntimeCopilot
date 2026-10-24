@@ -1,0 +1,49 @@
+{
+  "patient_id": "pt-14",
+  "mrn": "SYN-100214",
+  "name": "Ines Fauxley",
+  "dob": "1992-12-01",
+  "age": 33,
+  "sex": "female",
+  "bed": "Bed 14",
+  "admitting_dx": "Asthma exacerbation",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [
+    {
+      "substance": "aspirin",
+      "reaction": "bronchospasm",
+      "severity": "severe"
+    }
+  ],
+  "medications": [
+    {
+      "name": "methylprednisolone",
+      "dose": "40 mg",
+      "route": "IV",
+      "frequency": "q8h",
+      "next_due": "2026-10-24T06:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-23T22:00:00Z"
+    },
+    {
+      "name": "albuterol",
+      "dose": "2.5 mg",
+      "route": "nebulized",
+      "frequency": "q4h",
+      "next_due": "2026-10-24T04:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-24T00:00:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 22G left hand"
+  ],
+  "pending_labs": [
+    "peak flow 06:00"
+  ],
+  "fall_risk": "low",
+  "weight_kg": 63.1,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

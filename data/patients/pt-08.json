@@ -1,0 +1,50 @@
+{
+  "patient_id": "pt-08",
+  "mrn": "SYN-100208",
+  "name": "Esme Notreal",
+  "dob": "1981-05-08",
+  "age": 45,
+  "sex": "female",
+  "bed": "Bed 8",
+  "admitting_dx": "Post-op day 1 laparoscopic cholecystectomy",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [
+    {
+      "substance": "codeine",
+      "reaction": "nausea",
+      "severity": "mild"
+    }
+  ],
+  "medications": [
+    {
+      "name": "hydromorphone",
+      "dose": "0.5 mg",
+      "route": "IV",
+      "frequency": "q3h PRN pain",
+      "next_due": "2026-10-24T03:15:00Z",
+      "high_alert": true,
+      "last_given": "2026-10-24T00:15:00Z"
+    },
+    {
+      "name": "ondansetron",
+      "dose": "4 mg",
+      "route": "IV",
+      "frequency": "q6h PRN nausea",
+      "next_due": null,
+      "high_alert": false,
+      "last_given": "2026-10-23T23:40:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 20G left forearm",
+    "JP drain right upper quadrant"
+  ],
+  "pending_labs": [
+    "CBC 05:00"
+  ],
+  "fall_risk": "moderate",
+  "weight_kg": 66.0,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

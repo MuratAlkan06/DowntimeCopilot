@@ -2,190 +2,277 @@
 
 **The system that works when every other system doesn't.**
 
-When a hospital's EHR goes down—ransomware, CrowdStrike, or a cloud outage—nursing supervisors lose the tools that keep patients safe: barcode med scanning, allergy alerts, shift handoffs, and order history. Downtime Copilot keeps the hospital running by preparing for outages, guiding staff through paper procedures with AI-powered safety checks, and automating recovery when systems return.
+An offline-first companion for hospital staff during an EHR outage. It briefs the unit on every patient the moment the screens go dark, guides staff through the hospital's own paper procedures, reads the paper forms back into structured records, and builds the backload queue when systems return. Amazon Bedrock does the reading and the writing; humans make every decision.
 
-## The Persona: Priya Nair
-
-**Nursing supervisor, 24-bed medical-surgical unit. 2:47 AM, ransomware alert. EHR goes dark for 11 hours.**
-
-- 6 nurses, 4 fresh admits, 40+ medications due at 4 AM
-- No barcode scanning → every dose is a safety risk without human verification
-- No allergy/drug-interaction alerts → medication errors spike
-- Day shift arrives at 7 AM with no handoff from night shift
-- When the EHR returns, everything written on paper has to be re-entered by exhausted staff, and errors pile up
-
-**The cost:** Medication errors, missed handoffs, delayed recovery, compliance risk. Priya needs a system that keeps meds safe *now*, hands off *clearly*, and recovers *fast*.
+Built at SpartHill Hacks 2026 (AWS track: *AI-Driven Automation & Critical Service Continuity*). All patient data is synthetic. Not for clinical use.
 
 ---
 
-## What Downtime Copilot Does
+## The persona
 
-Downtime Copilot works in three phases:
+**Priya Nair** is the night nursing supervisor on a 24-bed medical-surgical unit at a community hospital. At 2:47 AM the hospital's security team isolates the EHR after a ransomware alert; it will be down for eleven hours. She has six nurses, four fresh admissions, forty-plus medications due at 4 AM, and a binder of downtime forms nobody has opened since the last drill. Barcode medication scanning is gone, so every dose is a safety risk. The day shift arrives at 7 with no handoff. And when the system comes back, everything written on paper has to be re-entered by hand, correctly, by exhausted staff.
 
-### 🔄 BEFORE: Readiness (every day)
-- **Encrypted snapshots**: Every 15 minutes, save a timestamped patient packet (allergies, current meds, recent labs, upcoming doses) to a hospital device
-- **Downtime drill mode**: AI walks through a simulated outage; hospital gets a readiness score
-- **Readiness dashboard**: "ICU tablets last synced 2 hrs ago ⚠️" — catches stale data before crisis
+**Her need:** know each patient's essentials the moment the screens go dark, run the paper process without mistakes, and get every paper record back into the system when it returns without losing anything.
 
-### 🚨 DURING: Response (when systems are down)
+## The problem, and what already exists
 
-**Medication safety** (the critical piece):
-- Barcode scanning is gone. Bedrock and local rules check every dose:
-  - ⚠️ "Patient allergic to penicillin, amoxicillin requested"
-  - ⚠️ "Last heparin dose 2 hrs ago—this would be a double dose"
-  - ⏰ "4 patients on 3B have doses due in 30 min"
+EHR downtime is routine: ransomware isolation, vendor outages (Change Healthcare, February 2024), bad updates (CrowdStrike, July 2024), planned upgrades, power and network failures. Hospitals already have a checkpoint for it. Epic's **BCA (Business Continuity Access)** keeps a read-only copy of recent patient data on a web app and on a designated PC per department, and prints raw reports; Cerner's 724Access is the equivalent. Those tools get data *out*.
 
-**Shift handoff**:
-- Bedrock generates a shift handoff card from the snapshot + any notes captured during downtime
-- Printed or read aloud to the day shift; shows provenance of every fact
+Nothing gets it back *in*. Clinical documentation during downtime goes on paper, and after recovery staff **backload** it by hand: nurses re-enter every medication administration, the vitals, and intake/output for their shift; pharmacy re-enters the orders; unit staff re-enter allergies, history, height and weight. It takes hours, at the end of a shift, and things get lost.
 
-**Capture & structure**:
-- Photograph a paper form → Bedrock + Textract parses it → nurse verifies → queued for re-entry
-- Voice order: "Give 500mg Tylenol" → Bedrock transcribes → reads back for confirmation → logged
+Downtime Copilot sits on top of the checkpoint and builds the return trip:
 
-**Supervisor command center**: One screen shows all units' status, overdue meds, critical labs waiting to be called in
+| Layer | What hospitals have today | What Downtime Copilot adds |
+|---|---|---|
+| Briefing | Raw BCA report printouts | Prioritized one-page SBAR packet per patient, every line traceable to a snapshot field |
+| During | Paper forms, a binder, no alerts | Deterministic safety checks, role checklists, policy answers with section citations, capture of every paper form and verbal order |
+| Recovery | Manual backload from paper | Photographed forms read into structured records by two independent readers, a backload queue grouped by role, discrepancy flags, a shift digest |
 
-### 🔁 AFTER: Recovery (when the EHR returns)
-- **Re-entry queue**: Every action captured during downtime, structured and sorted by clinical priority (meds first)
-- **Conflict detection**: "Paper says 5mg given, order was 2.5mg — review" 
-- **Incident report**: Auto-generated timeline for compliance
+## What it does, in the order the night happens
 
----
+**Before.** Every 15 minutes the app pulls a snapshot of the unit's patients from the BCA feed (simulated here) and the hospital's downtime policy, and stores both encrypted on the device.
 
-## Outage Modes
+**Go to downtime.** One tap generates a downtime packet per patient from the last good snapshot: allergies, code status, isolation, active medications with next due times (high-alert meds marked), lines and drains, pending labs, fall risk, in SBAR order and prioritized by acuity. Packets are cached and printable. Role-specific checklists (charge nurse, RN, pharmacy, unit clerk) come from the policy. The rules engine runs the checks the EHR would have run.
 
-| Scenario | What's Down | What Works |
-|----------|-------------|-----------|
-| **EHR outage** (CrowdStrike, service outage) | EHR only | Snapshots + Bedrock (full cloud AI) |
-| **Ransomware / network shutdown** | EHR, network, internet | Snapshots + local rules only (Bedrock unavailable) |
+**During.** Staff work on paper. The app answers procedure questions from the hospital's own downtime policy with the section cited. Nurses photograph each completed paper form; Textract and Bedrock vision each read it, fields where they agree are high confidence, disagreements and unreadable fields are flagged, and the record enters the offline action queue. Verbal orders are recorded as read-backs, transcribed, structured, and flagged for provider co-sign.
 
-Both cases use the same app. The difference: with internet, you get AI summaries and form parsing. Without internet, you get rule-based med checks, checklists, and a queue to sync later.
-
----
-
-## Demo Script (5 minutes)
-
-1. **Open a patient packet** (10 sec): Show Priya opening patient "Sarah Chen" — allergies, current meds, last snapshot time
-2. **Medication safety in action** (30 sec): A nurse tries to give an order. Bedrock + local rules flag an allergy. Nurse reviews, confirms it's caught.
-3. **Shift handoff** (30 sec): Bedrock generates a handoff card from Sarah's snapshot + captured notes. Priya reads it aloud to day shift.
-4. **Photograph & parse** (30 sec): Nurse photographs a handwritten paper form. Bedrock structures it; nurse verifies; it enters the queue.
-5. **Offline indicator** (10 sec): Toggle network offline. Show med safety checks still work.
-6. **Recovery queue** (20 sec): When the EHR comes back, show re-entry queue, sorted by priority, conflict detected and flagged.
-
----
-
-## Getting Started as a Team
-
-### Prerequisites
-- Node.js 18+, npm/yarn
-- AWS account (team will receive credentials & Bedrock access at event)
-- Kiro account (credits provided for LLM calls)
-
-### Setup
-```bash
-git clone <this-repo>
-cd DowntimeCopilot
-npm install
-npm run dev
-```
-
-Agree on **one app framework** (React, Vue, etc.) **before splitting up**. Keep the first data shapes small:
-
-- **Patient**: `{ id, name, allergies[], medications[], snapshot_time }`
-- **Downtime note**: `{ id, patient_id, note_type, content, timestamp, source, review_status }`
-- **Med safety check**: local rule engine (no AI needed; runs offline)
-
-### Four-Person Split
-
-| Owner | Focus | First Deliverable |
-|-------|-------|-------------------|
-| **1. Frontend** | Patient list, med-entry form, policy Q&A screen, handoff card, recovery queue, offline toggle | Clickable app using mock data & stubbed API |
-| **2. Backend & data** | API design & implementation, synthetic patient snapshots (Synthea/FHIR), queue storage, local med-safety rule engine | API that returns a patient packet and stores a downtime note |
-| **3. Bedrock workflow** | Integrate Bedrock calls for handoff summary, form parsing, voice transcription; handle failures gracefully; require human review | Working Bedrock call that produces a sourced summary; staff reviews and approves |
-| **4. AWS & deployment** | Set up Bedrock credentials, Lambda functions, DynamoDB, S3 for snapshots; expose a safe endpoint for person 3 to call | Real Bedrock invocation in the app, visible in demo |
-
-**Day 1 rule:** Agree on API request/response shapes. Use mock Bedrock responses so everyone can work in parallel. Day 2: Replace mocks with real AWS.
-
----
-
-## Safety Principles
-
-- **AI is a helper, not a decision-maker.** Bedrock suggests; a nurse decides. No automatic EHR writes.
-- **Show your sources.** Every fact in a packet or summary says where it came from: snapshot timestamp, which note, which source section.
-- **Work offline first.** Medication safety checks use local rules and snapshot data. If Bedrock is unavailable, the app still works.
-- **Staff verify everything.** Every Bedrock output (handoff card, parsed form, transcribed order) is reviewed by a human before it's final.
-- **Synthetic data only.** Demo uses Synthea-generated FHIR data. Production requires hospital security, privacy, and clinical-safety review.
-
----
-
-## Success Metrics for the Demo
-
-✅ **Rubric gate 1 (Real person + real need)**: Priya Nair, medication safety during 11-hour outage  
-✅ **Rubric gate 2 (Working app)**: End-to-end flow visible—from med check to handoff to recovery queue  
-✅ **Rubric gate 3 (Bedrock doing real work)**: Handoff summary, form parsing, or voice transcription actually uses Amazon Bedrock, visible in the demo  
-✅ **Rubric gate 4 (You understand it)**: Three-phase model, two failure modes, clear role for AI vs. local rules  
-✅ **Polish**: Hospital staff would actually trust and use this
+**Recovery.** When systems return, the queue becomes the **Backload** worklist, grouped the way Epic groups it (nursing: med administration, vitals, I&O; pharmacy: orders; unit: allergies, history, height/weight). Each record is shown beside its image crop, pre-filled, and a human verifies it and marks it entered. The app diffs the restored EHR against the snapshot plus captured records and flags discrepancies. Bedrock writes the shift digest for the oncoming nurses. Every action is audited locally and mirrored to AWS when online.
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    ehr["Hospital EHR<br/>synthetic FHIR data"] -->|"every 15 min"| prep["BEFORE<br/>Save encrypted patient snapshot<br/>and downtime policy"]
-    prep --> app["DURING · Hospital device<br/>Patient packets · checklists<br/>local safety rules · capture notes<br/>encrypted offline queue"]
-    app -->|"EHR-only outage; internet still available"| bedrock["Amazon Bedrock<br/>Summarize patient handoffs<br/>answer policy questions with citations<br/>help structure paper notes"]
-    bedrock -->|"drafts for staff to check"| app
-    app -->|"after systems return"| recovery["AFTER<br/>Compare notes with restored EHR<br/>flag mismatches · prepare re-entry"]
-    recovery -->|"staff reviews and approves"| ehr
+flowchart TB
+  subgraph BEFORE[Before an outage]
+    EHR[Simulated EHR / BCA feed<br/>FHIR-shaped synthetic data] -->|every 15 min| SNAP[Encrypted snapshot + downtime policy<br/>on the device]
+  end
 
-    staff["Hospital staff<br/>review every alert and record"] --> app
-    offline["Network fully isolated?<br/>Bedrock is unavailable. Saved snapshots,<br/>checklists, local safety rules, and queue still work."]
-    offline -.-> app
+  subgraph DEVICE[Downtime Copilot on tablet / laptop — works offline]
+    SNAP --> PKT[Downtime packets - SBAR]
+    SNAP --> RULES[Rules engine<br/>R-ALG, R-DUP, R-DUE, R-STALE]
+    CHK[Role checklists] 
+    CAP[Form photo capture] --> Q[Offline action queue - encrypted]
+    VO[Verbal order read-back audio] --> Q
+    Q --> BL[Backload queue + discrepancy flags]
+    AUD[Audit log - append only]
+  end
+
+  subgraph AWS[AWS — used when the EHR is down but the internet is up]
+    BR[Amazon Bedrock<br/>Nova 2 Lite · Claude Sonnet 4.6 · Haiku 4.5<br/>packets · form reading · policy answers · shift digest]
+    GR[Bedrock Guardrails]
+    KB[Bedrock Knowledge Bases<br/>downtime policy retrieval]
+    TX[Amazon Textract<br/>second read of handwritten forms]
+    TR[Amazon Transcribe<br/>verbal orders]
+    DDB[DynamoDB<br/>action log + sync]
+    LAM[Lambda + EventBridge<br/>15-min snapshot puller, sync]
+    S3[S3 - SSE<br/>snapshots · images · audio · audit trail]
+  end
+
+  PKT <--> BR
+  CAP <--> BR
+  CAP <--> TX
+  VO <--> TR
+  CHK <--> KB
+  BR <--> GR
+  AUD --> DDB
+  SNAP <--> S3
+  EHR --> LAM --> S3
 ```
 
-**In one sentence:** We copy essential patient information before an outage, help staff work safely from that copy during the outage, then help them reconcile their notes when the EHR returns.
+### Bedrock does four jobs
 
-**What to show in the demo:** Open a patient packet, ask a question answered from the hospital's downtime policy, and show Bedrock producing a sourced draft that a staff member reviews. Then show the offline workflow and the recovery queue. This makes Bedrock's real role visible while showing that essential functions still work without internet.
+1. **Packets.** Writes the SBAR downtime packet from the structured snapshot. Facts only; every line carries the snapshot field path it came from, and a faithfulness check rejects any line that doesn't.
+2. **Form reading.** Reads photographed handwritten forms (vitals flowsheet, downtime MAR, admission note) into the `CapturedRecord` schema with a confidence per field. Runs beside Textract; agreement logic decides what the human sees.
+3. **Policy answers.** Answers procedure questions grounded in the hospital's downtime policy, citing numbered sections. Retrieval via Knowledge Bases when permitted, otherwise the full policy (four pages) is placed in context.
+4. **Shift digest.** Writes the SBAR handoff for the oncoming shift from the audit log and captured records.
 
-## Getting started as a team
+Every call passes output to Bedrock Guardrails (denied topic: dosing or treatment advice not in the record; PII handling; contextual grounding for policy answers and digest). The deterministic rules engine never calls a model.
 
-Build one small end-to-end demo before expanding the feature list:
+### Model routing
 
-1. Open a synthetic patient and show their saved allergies, medications, and snapshot time.
-2. Ask a question using a sample downtime policy. Amazon Bedrock answers using that policy and shows the relevant section; a staff member reviews the answer.
-3. Record a sample downtime note and show it in a queue marked **Needs review**.
-4. Show that the patient snapshot and a basic local safety check still work with the network disconnected.
+| Job | Model | Inference profile ID |
+|---|---|---|
+| Form reading, triage, cheap structured tasks | Amazon Nova 2 Lite | `us.amazon.nova-2-lite-v1:0` |
+| Packets, policy answers, digest | Claude Sonnet 4.6 | `us.anthropic.claude-sonnet-4-6` |
+| Fallback | Claude Haiku 4.5 | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
 
-### Suggested split for four people
+In us-east-1 and us-west-2 these models are only served through `us.` or `global.` inference profiles, never bare model IDs. Every AI call logs model, tokens, latency, and estimated cost; the dashboard shows cost per outage-hour.
 
-| Owner | Focus | First deliverable |
-| --- | --- | --- |
-| **1. Frontend** | Patient list and packet, policy question screen, downtime-note capture, review queue, offline indicator | Clickable app flow using agreed API shapes and mock data |
-| **2. Backend** | Shared data model and API; synthetic patient data; snapshot and downtime-note queue; basic local checks and recovery status | API returns a patient packet and accepts a note that remains queued |
-| **3. AI agent / workflow** | Turn a staff question into a grounded policy-answer request; present the answer with its source; handle unavailable/failed AI clearly; require staff review | Working policy Q&A workflow using a stubbed AI response first |
-| **4. Bedrock and AWS** | AWS setup and credentials; Bedrock invocation and policy grounding; expose a narrow endpoint for the agent workflow to call | Real Bedrock answer with a policy section/source, demonstrated in the app |
+### Outage modes
 
-**Keep the AI/cloud boundary clear:** Person 4 owns the AWS connection and a small service/API that safely calls Bedrock. Person 3 owns the staff-facing AI workflow that calls that service and handles sources, drafts, and review states. Person 3 should not manage AWS credentials or duplicate the Bedrock integration. Keep clinical safety checks rule-based and local; do not have an agent make care decisions.
+| Mode | Available | Deferred |
+|---|---|---|
+| EHR down, hospital network and internet up | Everything: local snapshots and checks, policy retrieval, Bedrock, Textract, Transcribe, DynamoDB/S3 sync, audit | Nothing, subject to service availability |
+| Ransomware / full network isolation | Cached packets and policy, rules engine, checklists, local form and order capture, encrypted queue, handoffs | Cloud AI, cloud OCR and transcription, remote audit sync, EHR reconciliation (all run when connectivity returns) |
 
-Agree together on the app framework, how to run the project, and the API/data shapes before splitting up. Keep the first shared records small:
+### Permission-aware fallbacks
 
-- **Patient:** ID, synthetic name, allergies, medications, snapshot time.
-- **Downtime note:** ID, patient ID, note type, content, timestamp, source, review status.
-- **Policy answer:** question, draft answer, policy section/source.
+The team AWS account is an AWS Workshop Studio account with an explicit-deny policy on many management APIs. **Step zero is `make probe`** (`tools/bedrock_probe.py --extras`). Every service has a fallback that keeps its feature alive; `RESULTS.md` records which path ran.
 
-Use mock data and a stubbed AI endpoint at first so everyone can build in parallel. Agree on endpoint request/response examples on day one, connect the pieces early, then replace the stub with a real Amazon Bedrock call. The event rubric requires an AWS AI service to do real work in the application; make the Bedrock feature visible in the demo, not just in the architecture. Do not use real patient data.
+| Service | If allowed | If denied |
+|---|---|---|
+| Claude on Bedrock | Packets, policy answers, digest | Nova 2 Lite / Nova 2 Pro for everything |
+| Bedrock Guardrails | Create one guardrail, `ApplyGuardrail` on all output | Second Bedrock call with a strict checker prompt, same interface |
+| Knowledge Bases | Policy retrieval with section chunks | Full policy in context; citations from section headers |
+| Textract | Second independent read of each form | Bedrock vision only; agreement column shows "single read" |
+| Transcribe | Verbal-order read-back audio to transcript | Typed read-back with the same structuring and co-sign flag |
+| DynamoDB | Action log mirror, sync status | Local SQLite only, JSON export to S3 if S3 is allowed |
+| Lambda + EventBridge | Cloud-side 15-min snapshot puller and sync | In-app scheduler |
+| S3 | Snapshots, images, audio, audit trail (SSE-S3; SSE-KMS if permitted) | Local filesystem store |
 
-### How the outage modes work
+## Data contracts
 
-| Mode | Available | Deferred until connectivity returns |
-| --- | --- | --- |
-| **EHR outage; hospital network and internet available** | Local snapshots and checks; policy retrieval; Bedrock summaries/guidance; Textract and Transcribe processing; sync and audit | Nothing, subject to service availability |
-| **Ransomware / network isolation** | Cached patient packets and policy; local rule-based safety checks; checklists; local form/order capture; encrypted action queue; handoffs | Cloud AI, cloud OCR/transcription, remote audit sync, and EHR reconciliation |
+Frozen after the 7:30 PM checkpoint; changes require a PR that updates every consumer. Pydantic models live in `contracts/`, JSON Schema exports in `contracts/schema/`.
 
-### Safety and trust boundaries
+```text
+PatientSnapshot   patient_id, mrn, name, dob, age, sex, bed, admitting_dx, code_status,
+                  isolation, allergies[{substance, reaction, severity}],
+                  medications[{name, dose, route, frequency, next_due, high_alert, last_given}],
+                  lines_drains[], pending_labs[], fall_risk, weight_kg,
+                  snapshot_time, source = "bca-feed-sim"
 
-- Patient facts in packets and summaries come from a timestamped snapshot or staff-confirmed downtime records; show provenance with each fact.
-- Medication checks use explicit local rules and snapshot data. They support—not replace—clinical judgment and institutional medication procedures.
-- AI output is a draft. A staff member reviews and confirms it; EHR re-entry is never automatic.
-- Keep the app useful without AI or internet. If cloud processing is unavailable, captured items remain queued for later review.
-- Encrypt device data and queued actions; restrict access by role; audit views, edits, confirmations, and sync.
-- Use synthetic patient data only in the demo. Production deployment requires hospital security, privacy, clinical-safety, and integration review.
+DowntimePacket    patient_id, generated_at, snapshot_time, model_id,
+                  sbar{situation[], background[], assessment[], recommendation[]}
+                  — each item {text, source_path}; alerts[{rule_id, text}];
+                  guardrail{status, reasons}; cost{tokens_in, tokens_out, usd}
+
+CapturedRecord    record_id, patient_id | null, form_type ∈ {vitals_flowsheet, downtime_mar,
+                  admission_note, verbal_order}, image_ref | audio_ref, captured_at, captured_by_role,
+                  reads{textract{fields, confidence}, bedrock{fields, confidence}},
+                  fields[{name, value, confidence, agreement ∈ {agree, disagree, single},
+                          crop | null, flag ∈ {null, unreadable, disagreement, out_of_range}}],
+                  status ∈ {needs_review, verified, entered, rejected},
+                  backload_group ∈ {nursing_med_admin, nursing_vitals, nursing_io,
+                                    pharmacy_orders, unit_registration},
+                  verified_by, verified_at, entered_at
+
+PolicyAnswer      question, answer, citations[{section_id, title, quote}], model_id,
+                  grounded (bool), guardrail{status, reasons}, cost{...}
+
+Discrepancy       discrepancy_id, rule_id, patient_id, record_id | null, description,
+                  severity ∈ {info, warning, critical}, status ∈ {open, acknowledged, resolved}
+
+ShiftDigest       shift_window, generated_at, model_id, unit_summary,
+                  per_patient[{patient_id, sbar{...}}], open_items[], cost{...}
+
+AuditEvent        event_id, ts, actor_role, action, target_type, target_id, details, synced
+```
+
+### Rules (deterministic, no model calls)
+
+| ID | Phase | Rule |
+|---|---|---|
+| R-ALG-01 | any | Active medication matches a documented allergy |
+| R-DUP-01 | any | Two active medications in the same therapeutic class |
+| R-DUE-01 | downtime | High-alert medication due within 60 minutes |
+| R-STALE-01 | downtime | Snapshot older than 30 minutes |
+| R-REC-01 | recovery | Medication administered on paper with no pre-downtime order |
+| R-REC-02 | recovery | Vitals out of range with no documented response within 30 minutes |
+| R-REC-03 | recovery | Duplicate administration inside the frequency window |
+| R-VO-01 | recovery | Verbal order without read-back or provider co-sign |
+
+## Team of five
+
+Each role has a P0 (the demo cannot run without it), P1 (the demo is good because of it), and P2 (above and beyond). Nothing is cut; everything is sequenced. Work in P0 order across the team before anyone starts P2.
+
+| # | Role | Owns | P0 (by 10 PM) | P1 (by 4 AM) | P2 (by 6:30 AM, only if P1 is green) |
+|---|---|---|---|---|---|
+| 1 | **App & Experience** | `web/` | Three-phase shell (Go to downtime · During · Recovery), patient packet view, capture upload, Backload queue UI, role switcher, print stylesheet | Service worker + offline indicator, snapshot-age banner, image-crop viewer beside fields, cost-per-hour widget | Bilingual patient-facing notice, polish pass with design review |
+| 2 | **Data, Snapshots & Rules** | `simulator/`, `app/rules/`, `data/patients/` | 12 FHIR-shaped synthetic patients, simulated BCA feed endpoint, 15-min snapshot job, local store, rules R-ALG-01 / R-DUP-01 / R-DUE-01 / R-STALE-01 with tests | Recovery rules R-REC-01..03 and R-VO-01, restored-EHR diff (the simulator returns with a few changes), S3 snapshot mirror | Lambda + EventBridge snapshot puller |
+| 3 | **Bedrock Intelligence** | `app/ai/`, `data/policy/` | Bedrock client with `--dry-run` mock mode, packet generation with source paths and faithfulness check, policy answers in-context with section citations, Guardrail (or checker fallback) | Shift digest (SBAR), model routing + cost logging, prompt files versioned in `app/ai/prompts/` | Knowledge Base for policy retrieval |
+| 4 | **Capture & Reconciliation** | `app/capture/`, `data/forms/` | Design and print the three paper forms (clear boxes), photo → Bedrock vision → `CapturedRecord` → queue → verify → entered flow | Textract second read + agreement logic, backload grouping, discrepancy surfacing in the queue | Transcribe verbal-order pipeline (record → transcript → structured order → co-sign flag) |
+| 5 | **Platform, Sync, Evals & Demo** | `tools/`, `app/sync/`, `evals/`, `DEMO.md`, `RESULTS.md`, the deck | Run the probe, decide fallbacks, dev environment + Makefile, local audit log, `DEMO.md` first draft, coordinate handwriting 30 forms tonight | DynamoDB mirror + sync status, eval harness (extraction accuracy per reader and combined, packet faithfulness, grounding rate, latency/cost), `RESULTS.md` generation | Lambda sync, pitch deck, two full rehearsals |
+
+Role 3 is also the integrator: PRs merge into `main` through them, and `main` must always run `make demo`.
+
+### Timeline (Friday Oct 23 → Saturday Oct 24)
+
+| Time | Checkpoint |
+|---|---|
+| 7:30 PM | Boilerplate merged, contracts frozen, everyone has a working `make dev`, forms printed |
+| 10:00 PM | P0 vertical slice end to end with mocked Bedrock (`--dry-run`) |
+| 1:00 AM | Real Bedrock end to end on three patients: packets, policy answer, one photographed form |
+| 4:00 AM | P1 integrated: Textract agreement, digest, recovery diff, DynamoDB mirror, evals running |
+| 6:30 AM | P2 items in only if P1 is green; otherwise documented as future work |
+| 8:00 AM | Internal freeze. Two full rehearsals on the hotspot, one with the network killed mid-demo |
+| 10:00 AM | Code freeze. Pitch prep 10–11, presentations 1–3 PM |
+
+### Working rules
+
+- Branch per role, PRs into `main`, Role 3 merges. `main` always runs `make demo`.
+- Contracts are frozen at 7:30 PM. Changing one means a PR that touches every consumer and a message to the team.
+- Any item over 3 hours: stop, ship what meets the acceptance line, move to the next P.
+- Credentials come by direct message only, live in `.env` (git-ignored), never in code, docs, or chat channels. `source .env` before running anything. When calls fail with `ExpiredToken`, fetch fresh keys; nobody debugs code.
+- Everything that touches a model is logged. `RESULTS.md` is generated by `make evals` and never hand-edited.
+
+## Repository layout
+
+```text
+.
+├── README.md  DEMO.md  RESULTS.md (generated)  Makefile  .env.example
+├── contracts/        # pydantic models + JSON Schema exports (frozen 7:30 PM)
+├── app/              # FastAPI backend
+│   ├── api/          # routes per phase: snapshot, downtime, capture, backload, digest, audit
+│   ├── ai/           # bedrock client (dry-run mode), prompts/, guardrail, routing, cost
+│   ├── capture/      # textract + bedrock vision reads, agreement, crops
+│   ├── rules/        # deterministic rules with IDs + tests
+│   ├── sync/         # dynamodb / s3 / lambda mirrors with local fallbacks
+│   └── store/        # sqlite, encryption at rest
+├── web/              # static PWA: index.html, app.js, sw.js, styles.css, print.css
+├── simulator/        # synthetic EHR / BCA feed, outage + restore controls, restored-state diff
+├── data/             # patients/*.json, policy/downtime_policy.md, forms/*.pdf
+├── evals/            # harness, fixtures/ (photographed forms + ground truth), report generator
+├── tools/            # bedrock_probe.py
+└── tests/
+```
+
+## Running it
+
+```bash
+cp .env.example .env        # paste the team AWS exports into .env, then:
+source .env
+make setup                  # venv + dependencies
+make probe                  # what this AWS account allows; decides fallbacks
+make dev                    # simulator on :8001, app on :8000
+make demo                   # seeds 12 patients, opens the app at "Before" with a healthy EHR
+make test
+make evals                  # generates RESULTS.md
+```
+
+Mock mode for anyone without credentials or network: `DRY_RUN=1 make dev` returns canned Bedrock, Textract, and Transcribe responses with the same shapes.
+
+## Demo script (90 seconds)
+
+1. 2:47 AM. Banner: *EHR unreachable.* Priya taps **Go to downtime**. Packets appear; open Bed 12: penicillin allergy, insulin due at 04:00 marked high-alert, R-DUE-01 firing, every line showing its snapshot source.
+2. Ask: *"How do I get a stat lab with the order system down?"* Cited answer, section 4.2 of the downtime policy.
+3. A teammate hands over a vitals flowsheet they just filled in by hand. Photograph it. Two readers; eight fields agree, one disagreement flagged, one unreadable flagged. Verify the flagged ones.
+4. Record a verbal order read-back. Transcript → structured order → *requires provider co-sign* → pharmacy backload group.
+5. Kill the network. The app keeps working: packets, checklists, capture, queue.
+6. Tap **Systems restored**. Backload queue: 14 items in three groups, 3 discrepancies (R-REC-01, R-REC-02). Verify one, mark entered, watch the audit log and sync status update.
+7. The shift digest writes itself for the 7 AM team. Close on `RESULTS.md`: extraction accuracy per reader and combined, packet faithfulness, grounding rate, cost per outage-hour.
+
+## Safety and trust boundaries
+
+- Every patient fact shows provenance: a timestamped snapshot field or a staff-verified record.
+- Medication and recovery checks are explicit local rules with IDs. They support clinical judgment; they never replace it.
+- AI output is always a draft. Nothing is written to the EHR, or marked entered, without a human.
+- High-alert medication fields require two verifications, mirroring independent double-check practice.
+- Device data and the queue are encrypted at rest; access is by role; every action is audited.
+- All data is synthetic. Production use would require security, privacy, clinical-safety, and integration review.
+
+## What judges asked for, and where it is
+
+| Criterion | Where |
+|---|---|
+| A real persona and a genuine need | Priya; the backload problem Epic's own downtime tip sheet describes |
+| A working application that actually runs | `make demo`; live Bedrock calls by default, mock mode as fallback |
+| Meaningful use of Amazon Bedrock doing real work | Packets, form reading, grounded policy answers, shift digest |
+| Polish a real person would trust | Provenance everywhere, deterministic rules with IDs, human verification, Guardrails, SBAR format, Epic's backload grouping |
+| Going above and beyond | Two-reader agreement, verbal orders, recovery diff, offline toggle, evals with honest numbers, cost per outage-hour |
+
+## Limitations
+
+The EHR, BCA feed, and outage are simulated. Handwriting accuracy is measured on the team's own forms, not clinical ones. Encryption at rest and role separation are demonstrated, not hardened. Service availability in the workshop account determined which cloud paths ran; `RESULTS.md` says which.
+
+## License
+
+MIT

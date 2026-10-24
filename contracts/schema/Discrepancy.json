@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "DiscrepancyStatus": {
+      "enum": [
+        "open",
+        "acknowledged",
+        "resolved"
+      ],
+      "title": "DiscrepancyStatus",
+      "type": "string"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "discrepancy_id": {
+      "title": "Discrepancy Id",
+      "type": "string"
+    },
+    "patient_id": {
+      "title": "Patient Id",
+      "type": "string"
+    },
+    "record_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Record Id"
+    },
+    "rule_id": {
+      "title": "Rule Id",
+      "type": "string"
+    },
+    "severity": {
+      "$ref": "#/$defs/Severity"
+    },
+    "status": {
+      "$ref": "#/$defs/DiscrepancyStatus",
+      "default": "open"
+    }
+  },
+  "required": [
+    "discrepancy_id",
+    "rule_id",
+    "patient_id",
+    "description",
+    "severity"
+  ],
+  "title": "Discrepancy",
+  "type": "object"
+}

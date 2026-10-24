@@ -1,0 +1,51 @@
+{
+  "patient_id": "pt-21",
+  "mrn": "SYN-100221",
+  "name": "Lena Ficto",
+  "dob": "1963-10-09",
+  "age": 63,
+  "sex": "female",
+  "bed": "Bed 21",
+  "admitting_dx": "Upper GI bleed",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [
+    {
+      "substance": "iodinated contrast",
+      "reaction": "hives",
+      "severity": "moderate"
+    }
+  ],
+  "medications": [
+    {
+      "name": "pantoprazole infusion",
+      "dose": "8 mg/h",
+      "route": "IV",
+      "frequency": "continuous",
+      "next_due": null,
+      "high_alert": false,
+      "last_given": "2026-10-24T02:00:00Z"
+    },
+    {
+      "name": "octreotide infusion",
+      "dose": "50 mcg/h",
+      "route": "IV",
+      "frequency": "continuous",
+      "next_due": null,
+      "high_alert": false,
+      "last_given": "2026-10-24T02:00:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 18G right antecubital",
+    "PIV 18G left antecubital"
+  ],
+  "pending_labs": [
+    "H&H 04:00",
+    "type and crossmatch 2 units"
+  ],
+  "fall_risk": "moderate",
+  "weight_kg": 74.0,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

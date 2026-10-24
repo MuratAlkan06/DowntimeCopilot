@@ -1,0 +1,44 @@
+{
+  "patient_id": "pt-16",
+  "mrn": "SYN-100216",
+  "name": "Jory Simms-Sim",
+  "dob": "1950-04-17",
+  "age": 76,
+  "sex": "male",
+  "bed": "Bed 16",
+  "admitting_dx": "COPD exacerbation (admitted 01:30)",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [],
+  "medications": [
+    {
+      "name": "prednisone",
+      "dose": "40 mg",
+      "route": "PO",
+      "frequency": "daily",
+      "next_due": "2026-10-24T09:00:00Z",
+      "high_alert": false,
+      "last_given": null
+    },
+    {
+      "name": "azithromycin",
+      "dose": "500 mg",
+      "route": "PO",
+      "frequency": "daily",
+      "next_due": "2026-10-24T09:00:00Z",
+      "high_alert": false,
+      "last_given": null
+    }
+  ],
+  "lines_drains": [
+    "PIV saline lock right forearm"
+  ],
+  "pending_labs": [
+    "ABG 04:00",
+    "CBC 05:00"
+  ],
+  "fall_risk": "moderate",
+  "weight_kg": 68.9,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

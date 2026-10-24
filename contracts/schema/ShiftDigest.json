@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "Cost": {
+      "additionalProperties": false,
+      "properties": {
+        "tokens_in": {
+          "minimum": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "minimum": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        },
+        "usd": {
+          "minimum": 0,
+          "title": "Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "tokens_in",
+        "tokens_out",
+        "usd"
+      ],
+      "title": "Cost",
+      "type": "object"
+    },
+    "PatientDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "patient_id": {
+          "title": "Patient Id",
+          "type": "string"
+        },
+        "sbar": {
+          "$ref": "#/$defs/Sbar"
+        }
+      },
+      "required": [
+        "patient_id",
+        "sbar"
+      ],
+      "title": "PatientDigest",
+      "type": "object"
+    },
+    "Sbar": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Assessment",
+          "type": "array"
+        },
+        "background": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Background",
+          "type": "array"
+        },
+        "recommendation": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Recommendation",
+          "type": "array"
+        },
+        "situation": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Situation",
+          "type": "array"
+        }
+      },
+      "title": "Sbar",
+      "type": "object"
+    },
+    "SbarItem": {
+      "additionalProperties": false,
+      "properties": {
+        "source_path": {
+          "title": "Source Path",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "source_path"
+      ],
+      "title": "SbarItem",
+      "type": "object"
+    },
+    "ShiftWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "ShiftWindow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cost": {
+      "$ref": "#/$defs/Cost"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "model_id": {
+      "title": "Model Id",
+      "type": "string"
+    },
+    "open_items": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Items",
+      "type": "array"
+    },
+    "per_patient": {
+      "items": {
+        "$ref": "#/$defs/PatientDigest"
+      },
+      "title": "Per Patient",
+      "type": "array"
+    },
+    "shift_window": {
+      "$ref": "#/$defs/ShiftWindow"
+    },
+    "unit_summary": {
+      "title": "Unit Summary",
+      "type": "string"
+    }
+  },
+  "required": [
+    "shift_window",
+    "generated_at",
+    "model_id",
+    "unit_summary",
+    "cost"
+  ],
+  "title": "ShiftDigest",
+  "type": "object"
+}

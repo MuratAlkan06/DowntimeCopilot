@@ -1,0 +1,14 @@
+{
+  "name": "Downtime Copilot",
+  "short_name": "Downtime",
+  "description": "Offline-first companion for hospital staff during an EHR outage. Synthetic data only.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f5f8",
+  "theme_color": "#0b5394",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

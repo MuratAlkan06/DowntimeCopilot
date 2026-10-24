@@ -1,0 +1,54 @@
+{
+  "patient_id": "pt-07",
+  "mrn": "SYN-100207",
+  "name": "Dov Fictiv",
+  "dob": "1955-01-30",
+  "age": 71,
+  "sex": "male",
+  "bed": "Bed 7",
+  "admitting_dx": "Atrial fibrillation with rapid ventricular response",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [],
+  "medications": [
+    {
+      "name": "enoxaparin",
+      "dose": "80 mg",
+      "route": "SC",
+      "frequency": "q12h",
+      "next_due": "2026-10-24T08:00:00Z",
+      "high_alert": true,
+      "last_given": "2026-10-23T20:00:00Z"
+    },
+    {
+      "name": "apixaban",
+      "dose": "5 mg",
+      "route": "PO",
+      "frequency": "q12h",
+      "next_due": "2026-10-24T09:00:00Z",
+      "high_alert": true,
+      "last_given": null
+    },
+    {
+      "name": "diltiazem",
+      "dose": "30 mg",
+      "route": "PO",
+      "frequency": "q6h",
+      "next_due": "2026-10-24T06:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-24T00:00:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 20G right forearm",
+    "telemetry"
+  ],
+  "pending_labs": [
+    "TSH",
+    "magnesium 05:00"
+  ],
+  "fall_risk": "moderate",
+  "weight_kg": 84.3,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}
