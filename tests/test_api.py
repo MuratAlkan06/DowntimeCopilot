@@ -1,6 +1,7 @@
 """DRY_RUN smoke test for every API endpoint: status, contract shape, and an audit event written."""
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 
 import pytest
@@ -8,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app import clock, sim_client
 from app.store import get_store, reset_store
-from contracts import (AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot, PolicyAnswer,
+from contracts import (Allergy, AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot, PolicyAnswer,
                        ShiftDigest)
 from simulator import main as sim
 
@@ -262,10 +263,82 @@ def test_recovery_restore_discrepancies(api):
     assert r.status_code == 200, r.text
     found = [Discrepancy.model_validate(d) for d in r.json()]
     rule_ids = {d.rule_id for d in found}
-    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= rule_ids
+    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT", "DIFF-ALLERGY"} <= rule_ids
     assert {d.patient_id for d in found if d.rule_id == "R-REC-01"} == {"pt-02"}
+    assert "R-REC-04" not in rule_ids  # the bed 12 MAR's 5000 units matches the heparin order
+    allergy = next(ch for ch in sim.state.restore_changes if ch["kind"] == "allergy_added")
+    (diff,) = [d for d in found if d.rule_id == "DIFF-ALLERGY"]
+    assert diff.patient_id == allergy["patient_id"] and diff.severity.value == "warning"
+    assert allergy["substance"] in diff.description and diff.record_id is None
     assert audited("recovery.restore")
     assert len(api.get("/discrepancies").json()) == len(found) and audited("discrepancy.list")
+
+
+VO_BED7 = "Read back: heparin 5000 units SC every 12 hours, Dr. Okafor, read back confirmed"  # DEMO.md step 4
+
+# DEMO.md step 6: seed --fresh, +15, declare, vitals (Bed 12) + MAR (Bed 2) + verbal order (Bed 7), +45, restore.
+# Exactly these, nothing else (rule_id, patient_id, severity).
+PLANTED = sorted([
+    ("R-REC-01", "pt-02", "critical"),    # heparin on paper, Bed 2 has no heparin order
+    ("R-REC-02", "pt-12", "warning"),     # 02:55 SpO2 89, no documented response by 03:25
+    ("R-VO-01", "pt-07", "warning"),      # verbal order not co-signed
+    ("DIFF-ADT", "pt-05", "info"),        # Bed 5 -> ICU 4
+    ("DIFF-ORDER", "pt-19", "warning"),   # pantoprazole backloaded by pharmacy
+    ("DIFF-ALLERGY", "pt-16", "warning"),  # cephalexin documented in the restored EHR
+])
+
+
+def scripted_flow(c: TestClient) -> list[Discrepancy]:
+    from simulator.state import DEFAULT_SEED
+    simc = TestClient(sim.app)
+    simc.post("/reset", json={"seed": DEFAULT_SEED})
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(c)
+    capture(c, "vitals_flowsheet")
+    capture(c, "downtime_mar", patient_id="pt-02")
+    r = c.post("/capture", data={"form_type": "verbal_order", "readback_text": VO_BED7, "patient_id": "pt-07"},
+               headers={"X-Role": "rn"})
+    assert r.status_code == 201, r.text
+    simc.post("/clock/advance", json={"minutes": 45})
+    r = c.post("/recovery/restore")
+    assert r.status_code == 200, r.text
+    return [Discrepancy.model_validate(d) for d in r.json()]
+
+
+def test_scripted_flow_yields_exactly_the_planted_set(api):
+    found = scripted_flow(api)
+    assert sorted((d.rule_id, d.patient_id, d.severity.value) for d in found) == PLANTED
+    assert len({d.discrepancy_id for d in found}) == len(PLANTED)
+
+
+def test_rec04_dose_mismatch_through_restore(api):
+    """A reviewer-corrected MAR dose (2500 units) against Bed 12's heparin 5000 units order."""
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)
+    rec = capture(api, "downtime_mar")
+    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "2500 units"}, headers={"X-Role": "rn"})
+    found = [Discrepancy.model_validate(d) for d in api.post("/recovery/restore").json()]
+    (hit,) = [d for d in found if d.rule_id == "R-REC-04"]
+    assert (hit.patient_id, hit.record_id, hit.severity.value) == ("pt-12", rec.record_id, "critical")
+    assert "2500 units" in hit.description and "5000 units" in hit.description
+
+
+def test_diff_restored_allergy_added_and_removed():
+    from app.api.backload import diff_restored
+    from simulator.state import load_patients
+    pre = {p.patient_id: p for p in load_patients()}
+    p = pre["pt-09"]  # latex
+    new = Allergy(substance="Cephalexin", reaction="rash", severity="moderate")
+    added = p.model_copy(update={"allergies": [*p.allergies, new]})
+    removed = p.model_copy(update={"allergies": []})
+    same_case = p.model_copy(update={"allergies": [a.model_copy(update={"substance": "LATEX"}) for a in p.allergies]})
+    hits = {k: [d for d in diff_restored(pre, {**pre, "pt-09": v}) if d.rule_id == "DIFF-ALLERGY"]
+            for k, v in (("added", added), ("removed", removed), ("same", same_case))}
+    assert [d.patient_id for d in hits["added"]] == ["pt-09"] and "Cephalexin" in hits["added"][0].description
+    assert len(hits["removed"]) == 1 and "missing from the restored EHR" in hits["removed"][0].description
+    assert hits["same"] == []  # case-only spelling difference is not a changed allergy list
+    assert diff_restored(pre, pre) == []
 
 
 def test_restore_inside_response_window_omits_rec02(api):
@@ -287,6 +360,164 @@ def test_digest(api):
     assert r.status_code == 200
     d = ShiftDigest.model_validate(r.json())
     assert len(d.per_patient) == 12 and d.unit_summary and audited("digest.generate")
+
+
+def _digest_lines(d: ShiftDigest) -> list:
+    return [i for p in d.per_patient for s in ("situation", "background", "assessment", "recommendation")
+            for i in getattr(p.sbar, s)]
+
+
+def test_digest_verified_only_display_names_and_provenance(api):
+    """Scripted flow, then verify + enter the Bed 12 vitals only: the MAR and verbal order stay needs_review."""
+    import re
+    found = scripted_flow(api)
+    recs = {r["form_type"]: r for g in api.get("/backload").json().values() for r in g}
+    vitals, mar, vo = (recs[k]["record_id"] for k in ("vitals_flowsheet", "downtime_mar", "verbal_order"))
+    assert api.post(f"/backload/{vitals}/verify", json={"verified_by": "RN Test"}).status_code == 200
+    assert api.post(f"/backload/{vitals}/entered").status_code == 200
+    d = ShiftDigest.model_validate(api.get("/digest").json())
+    assert len(d.per_patient) == 12
+    lines = _digest_lines(d)
+    text = " ".join([d.unit_summary, *d.open_items, *(i.text for i in lines)])
+    # display names, never raw ids
+    assert not re.search(r"\bpt-\d+|\brec-[0-9a-f]+|\bspo2\b|resp_rate|vitals_flowsheet|downtime_mar", text)
+    assert "Bed 12" in text and "SpO2 89 (out of range)" in text
+    # open items lead with the patient; the R-REC-02 description carries display labels from emission
+    bed12 = next(p for p in get_store().latest_snapshot() if p.patient_id == "pt-12")
+    assert any(i.startswith(f"Bed 12 · {bed12.name} — R-REC-02 (warning): Out-of-range vitals (Resp rate 27, SpO2 89)")
+               for i in d.open_items), d.open_items
+    # provenance: every line cites resolvable refs; verified record and audit events are cited by id / seq
+    refs = {i.source_path for i in lines}
+    seqs = {str(s) for s, _ in get_store().audit_log()}
+    for i in lines:
+        for ref in i.source_path.split(","):
+            kind, _, rest = ref.partition(".")
+            assert kind in ("snapshot", "captured", "discrepancy", "audit"), ref
+            assert kind != "audit" or rest in seqs
+    assert f"captured.{vitals}" in refs and any(r.startswith("audit.") for r in refs)
+    # verified-only: the needs_review MAR / verbal order contribute no content and are never cited
+    assert f"captured.{mar}" not in refs and f"captured.{vo}" not in refs
+    assert "heparin" not in text.lower() and "Okafor" not in text
+    held = {f"discrepancy.{x.discrepancy_id}" for x in found if x.record_id in (mar, vo)}
+    assert held and not held & refs
+    bed2 = next(p for p in d.per_patient if p.patient_id == "pt-02")
+    assert any("awaiting verification" in i.text for i in bed2.sbar.recommendation)
+    assert next(e for e in events("digest.generate")).details["guardrail"]["status"] == "passed"
+
+
+@pytest.mark.parametrize("raw, shown", [
+    ("SAFETY: Bed 12 SpO2 89, no response. (discrepancy.d-7045e5ab3c76)", "SAFETY: Bed 12 SpO2 89, no response."),
+    ("VERIFY: MAR for pt-02 awaits verification (audit.24)", "VERIFY: MAR for Bed 2 awaits verification"),
+    ("Bed 12 vitals [source: captured.rec-077b971694aa, snapshot.pt-12.admitting_dx].", "Bed 12 vitals."),
+    ("see audit.7 and the audit log.", "see and the audit log."),
+])
+def test_display_strips_provenance_refs_from_prose(raw, shown):
+    """Live Sonnet (S6) appended refs to open items; refs belong in source_path, never in prose."""
+    from app.ai.digest import display
+    assert display(raw, {"pt-02": "Bed 2", "pt-12": "Bed 12"}) == shown
+
+
+def test_digest_drops_lines_without_resolvable_provenance(api, monkeypatch):
+    import json as _json
+    from app.ai import client as ai
+    go_to_downtime(api)
+    real = ai.call
+
+    def fake(job, prompt, user, **kw):
+        if job != "digest":
+            return real(job, prompt, user, **kw)
+        return real(job, prompt, user, **{**kw, "mock": lambda: _json.dumps({
+            "unit_summary": "pt-12 spo2 fine", "open_items": ["check pt-12"],
+            "per_patient": [{"patient_id": "pt-12", "sbar": {
+                "situation": [{"text": "pt-12 roster", "source_path": "snapshot.pt-12.admitting_dx"},
+                              {"text": "invented", "source_path": "snapshot.pt-12.made_up"},
+                              {"text": "no source", "source_path": ""}]}}]})})
+
+    monkeypatch.setattr(ai, "call", fake)
+    d = ShiftDigest.model_validate(api.get("/digest").json())
+    bed12 = next(p for p in d.per_patient if p.patient_id == "pt-12")
+    assert [(i.text, i.source_path) for i in bed12.sbar.situation] == [("Bed 12 roster", "snapshot.pt-12.admitting_dx")]
+    assert d.unit_summary == "Bed 12 SpO2 fine" and d.open_items == ["check Bed 12"]
+    assert len(d.per_patient) == 12  # patients the model left out get the deterministic SBAR
+
+
+def _pt(pid: str, bed: str, name: str) -> PatientSnapshot:
+    return PatientSnapshot.model_validate({
+        "patient_id": pid, "mrn": f"SYN-{pid}", "name": name, "dob": "1960-01-01", "age": 66, "sex": "female",
+        "bed": bed, "admitting_dx": "test", "code_status": "Full code", "allergies": [], "medications": [],
+        "fall_risk": "low", "snapshot_time": "2026-10-24T02:47:00+00:00"})
+
+
+def test_canned_open_items_lead_with_patient_sorted_by_severity():
+    """Deterministic open items: "Bed · Name — RULE (severity): …", critical -> warning -> info, stable within a
+    severity; a discrepancy whose patient is not on the roster reads "Unit — "."""
+    from app.ai.digest import _canned, facts
+    pts = [_pt("pt-03", "Bed 3", "Ana Ruiz"), _pt("pt-16", "Bed 16", "Lee Park")]
+
+    def d(n, rule, pid, sev):
+        return Discrepancy(discrepancy_id=f"d-{n}", rule_id=rule, patient_id=pid, description=f"item {n}",
+                           severity=sev)
+
+    discs = [d(1, "DIFF-ADT", "pt-03", "info"), d(2, "R-REC-02", "pt-16", "warning"),
+             d(3, "R-REC-01", "pt-03", "critical"), d(4, "DIFF-ORDER", "pt-16", "warning"),
+             d(5, "DIFF-ALLERGY", "pt-99", "info")]
+    assert _canned(pts, facts(pts, [], discs, []), 0)["open_items"] == [
+        "Bed 3 · Ana Ruiz — R-REC-01 (critical): item 3",
+        "Bed 16 · Lee Park — R-REC-02 (warning): item 2",
+        "Bed 16 · Lee Park — DIFF-ORDER (warning): item 4",
+        "Bed 3 · Ana Ruiz — DIFF-ADT (info): item 1",
+        "Unit — DIFF-ALLERGY (info): item 5",
+    ]
+
+
+def test_incident_correction_row_renders_blank_not_none():
+    from app.ai.incident import timeline
+    ts = datetime(2026, 10, 24, 3, 0)
+    edits = [(5, AuditEvent(event_id="e5", ts=ts, actor_role="rn", action="backload.edit", target_type="captured_record",
+                            target_id="rec-x", details={"field": "initials", "before": None, "after": "JK"})),
+             (6, AuditEvent(event_id="e6", ts=ts, actor_role="rn", action="backload.edit", target_type="captured_record",
+                            target_id="rec-x", details={"field": "spo2", "before": "89", "after": ""}))]
+    assert [r["detail"] for r in timeline(edits, [], [], [])] == ["Paper record: Initials blank → JK",
+                                                                  "Paper record: SpO2 89 → blank"]
+
+
+def test_incident_timeline_filtered_in_seq_order_with_summary(api):
+    scripted_flow(api)
+    recs = {r["form_type"]: r for g in api.get("/backload").json().values() for r in g}
+    vitals = recs["vitals_flowsheet"]["record_id"]
+    api.post(f"/backload/{vitals}/verify", json={"verified_by": "RN Test"})
+    api.post(f"/backload/{vitals}/entered")
+    api.get("/audit"), api.get("/packets"), api.get(f"/blobs/{recs['vitals_flowsheet']['image_ref']}")  # view noise
+    r = api.get("/incident")
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) == {"generated_at", "outage_started_at", "restored_at", "model_id", "summary", "guardrail",
+                         "cost", "counts", "timeline"}
+    rows = body["timeline"]
+    assert all(set(x) == {"seq", "ts", "role", "action", "event", "patient", "detail"} for x in rows)
+    actions = {x["action"] for x in rows}
+    assert actions == {"downtime.start", "capture.create", "backload.verify", "backload.entered", "recovery.restore"}
+    assert not any(a.endswith((".view", ".list")) or a in ("ai.call", "rules.evaluate", "snapshot.pull")
+                   for a in actions)
+    assert [x["seq"] for x in rows] == sorted(x["seq"] for x in rows)  # store sequence order
+    events_in_order = [x["event"] for x in rows]
+    assert events_in_order[:2] == ["Downtime declared", "Downtime packets generated"]
+    assert events_in_order.count("Paper form captured") == 3
+    restore_at = events_in_order.index("Systems restored")
+    assert events_in_order.index("Verified") > restore_at and events_in_order[-1] == "Marked entered in the EHR"
+    discs = [x for x in rows if x["event"].startswith("Discrepancy ")]
+    assert sorted(x["event"].split()[1] for x in discs) == sorted(rid for rid, _, _ in PLANTED)
+    assert discs[0]["event"] == "Discrepancy R-REC-01" and discs[0]["patient"] == "Bed 2"  # critical first
+    assert body["counts"] == {"captures": 3, "verified": 1, "entered": 1, "corrections": 0, "discrepancies": 6,
+                              "critical": 1}
+    assert len(body["summary"]) == 2 and all(body["summary"])  # DRY_RUN canned two paragraphs
+    assert "03:00" in body["summary"][0] and "03:45" in body["summary"][0]
+    assert body["guardrail"]["status"] == "passed" and body["model_id"].startswith("dry-run:us.anthropic")
+    text = " ".join([*body["summary"], *(f"{x['patient'] or ''} {x['detail']}" for x in rows)])
+    assert not re.search(r"\bpt-\d+|\brec-[0-9a-f]+|\bspo2\b|vitals_flowsheet", text)
+    assert audited("incident.view")
+    again = api.get("/incident").json()
+    assert again["timeline"] == rows  # its own incident.view and ai.call rows never enter the timeline
 
 
 def test_restore_status_audit_and_digest_on_unit_clock(api):

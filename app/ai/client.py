@@ -37,6 +37,7 @@ ROUTES: dict[str, str] = {
     "packet": SONNET_4_6,
     "policy": SONNET_4_6,
     "digest": SONNET_4_6,
+    "incident": SONNET_4_6,
 }
 
 # USD per 1M tokens (input, output). ESTIMATES for the cost widget.

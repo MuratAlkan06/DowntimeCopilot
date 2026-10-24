@@ -168,6 +168,7 @@ AuditEvent        event_id, ts, actor_role, action, target_type, target_id, deta
 | R-REC-01 | recovery | Medication administered on paper with no pre-downtime order |
 | R-REC-02 | recovery | Vitals out of range with no documented response within 30 minutes |
 | R-REC-03 | recovery | Duplicate administration inside the frequency window |
+| R-REC-04 | recovery | Paper-recorded dose differs from the ordered dose for the same medication |
 | R-VO-01 | recovery | Verbal order without read-back or provider co-sign |
 
 ## Team of five

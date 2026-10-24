@@ -78,6 +78,20 @@ VITAL_RANGE_DEFAULTS: dict[str, tuple[float, float]] = {
 }
 
 
+# Display names for captured-record field keys; same labels as the web client (web/js/dom.js FIELD_LABELS).
+# Single source for server-side prose: rule descriptions (R-REC-02) are written with these labels at
+# emission, so the discrepancy panel, the digest and the incident report all show "SpO2 89", never "spo2=89".
+FIELD_LABELS: dict[str, str] = {
+    "bed": "Bed", "time": "Time", "temp_c": "Temp (°C)", "heart_rate": "Heart rate", "resp_rate": "Resp rate",
+    "bp_systolic": "BP systolic", "bp_diastolic": "BP diastolic", "spo2": "SpO2", "pain_score": "Pain score",
+    "initials": "Initials", "medication": "Medication", "dose": "Dose", "route": "Route", "time_given": "Time given",
+    "second_verifier": "Second verifier", "allergies": "Allergies", "height_cm": "Height (cm)",
+    "weight_kg": "Weight (kg)", "history": "History", "frequency": "Frequency",
+    "ordering_provider": "Ordering provider", "read_back": "Read-back", "provider_cosign": "Provider co-sign",
+    "response": "Response",
+}
+
+
 def vital_ranges() -> dict[str, tuple[float, float]]:
     """Defaults, each overridable as VITAL_RANGE_<FIELD>="low,high" (e.g. VITAL_RANGE_SPO2="90,100")."""
     out = dict(VITAL_RANGE_DEFAULTS)

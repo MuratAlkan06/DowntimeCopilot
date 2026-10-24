@@ -161,6 +161,13 @@ class Store:
         rows = self._exec("SELECT body, synced FROM audit ORDER BY seq DESC LIMIT ?", (limit,))
         return [AuditEvent.model_validate_json(_dec(b)).model_copy(update={"synced": bool(s)}) for b, s in rows]
 
+    def audit_log(self) -> list[tuple[int, AuditEvent]]:
+        """Every event with its store sequence number, oldest first. `seq` is the provenance handle the
+        digest and the incident report cite (`audit.<seq>`); AuditEvent itself has no seq field."""
+        rows = self._exec("SELECT seq, body, synced FROM audit ORDER BY seq")
+        return [(seq, AuditEvent.model_validate_json(_dec(b)).model_copy(update={"synced": bool(s)}))
+                for seq, b, s in rows]
+
     def unsynced_audit(self) -> list[AuditEvent]:
         rows = self._exec("SELECT body FROM audit WHERE synced = 0 ORDER BY seq")
         return [AuditEvent.model_validate_json(_dec(r[0])) for r in rows]

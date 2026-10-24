@@ -136,6 +136,15 @@ def test_rec02_fires_once_window_closed_at_judgment_time():
     assert [d.rule_id for d in hits] == ["R-REC-02"] and "at 02:55" in hits[0].description
 
 
+def test_rec02_description_uses_display_labels():
+    """Written with display labels at emission, so the panel, digest and report never show "spo2=89"."""
+    vitals = rec("vitals_flowsheet", {"time": "02:55", "resp_rate": "27", "spo2": "89", "heart_rate": "92"},
+                 at=judged("03:00"), group="nursing_vitals")
+    (hit,) = run("R-REC-02", RecoveryContext({"pt-t": base()}, [vitals], now=judged("03:45")))
+    assert hit.description == ("Out-of-range vitals (Resp rate 27, SpO2 89) at 02:55 with no documented response "
+                               "within 30 min")
+
+
 def test_rec02_fires_exactly_at_window_close():
     assert len(run("R-REC-02", RecoveryContext({"pt-t": base()}, [vitals_0255()], now=judged("03:25")))) == 1
 
@@ -169,6 +178,56 @@ def test_rec03_quiet_outside_window():
     assert run("R-REC-03", ctx) == []
 
 
+# ------------------------------------------------------------ R-REC-04
+def mar_dose(dose, medication="apixaban"):
+    return rec("downtime_mar", {"medication": medication, "dose": dose, "time_given": "03:10"})
+
+
+def ordered(dose, name="apixaban"):
+    return {"pt-t": base(medications=[{**med(name), "dose": dose}])}
+
+
+def test_rec04_fires_on_dose_mismatch():
+    hits = run("R-REC-04", RecoveryContext(ordered("2.5 mg"), [mar_dose("5 mg")]))
+    assert [(d.rule_id, d.severity.value, d.record_id) for d in hits] == [("R-REC-04", "critical", "r1")]
+    assert "5 mg" in hits[0].description and "2.5 mg" in hits[0].description
+
+
+def test_rec04_quiet_on_matching_dose():
+    assert run("R-REC-04", RecoveryContext(ordered("2.5 mg"), [mar_dose("2.5 mg")])) == []
+
+
+@pytest.mark.parametrize("paper, order", [
+    ("5 milligrams", "5 mg"), ("5mg", "5 mg"), ("5 MG", "5 mg"), ("0.005 g", "5 mg"), ("1 g", "1000 mg"),
+    ("5,000 units", "5000 units"), ("5000 unit", "5000 units"), ("8 mg/hr", "8 mg/h"),
+])
+def test_rec04_same_dose_different_unit_string_is_quiet(paper, order):
+    """Boundary (decided S6): unit spellings are canonicalized and mass units compared in mg."""
+    assert run("R-REC-04", RecoveryContext(ordered(order), [mar_dose(paper)])) == []
+
+
+@pytest.mark.parametrize("paper, order", [("5 units", "5 mg"), ("8 mg/h", "8 mg"), ("5 mcg", "5 mg")])
+def test_rec04_same_number_different_dimension_fires(paper, order):
+    assert len(run("R-REC-04", RecoveryContext(ordered(order), [mar_dose(paper)]))) == 1
+
+
+@pytest.mark.parametrize("paper_med, paper, order_med, order", [
+    ("apixaban", None, "apixaban", "2.5 mg"),                     # unreadable dose: flagged for review
+    ("insulin lispro", "6 units", "insulin lispro", "sliding scale"),  # no fixed ordered dose
+    ("ondansetron", "5 mg", "apixaban", "2.5 mg"),                # no order for this med: R-REC-01's case
+])
+def test_rec04_quiet_when_not_comparable(paper_med, paper, order_med, order):
+    ctx = RecoveryContext(ordered(order, order_med), [mar_dose(paper, paper_med)])
+    assert run("R-REC-04", ctx) == []
+
+
+def test_parse_dose():
+    assert engine.parse_dose("5000 units") == (5000.0, "units")
+    assert engine.parse_dose("50 mcg/h") == (0.05, "mg/h")
+    assert engine.parse_dose("per DKA protocol") is None and engine.parse_dose("800-160 mg") is None
+    assert engine.parse_dose("5 tablets") is None and engine.parse_dose(None) is None
+
+
 # ------------------------------------------------------------ R-VO-01
 def test_vo01_fires_without_cosign():
     ctx = RecoveryContext({"pt-t": base()},
@@ -187,8 +246,11 @@ def test_vo01_quiet_with_readback_and_cosign():
 # ------------------------------------------------------------ registry + seeded data
 def test_registry_is_exactly_the_readme_table():
     assert set(RULES) == {"R-ALG-01", "R-DUP-01", "R-DUE-01", "R-STALE-01",
-                          "R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01"}
+                          "R-REC-01", "R-REC-02", "R-REC-03", "R-REC-04", "R-VO-01"}
     assert all(r.description for r in RULES.values())
+    readme = (Path(__file__).resolve().parent.parent / "README.md").read_text()
+    table = dict(re.findall(r"^\| (R-[A-Z]+-\d+) \| \w+ \| (.+?) \|$", readme, re.MULTILINE))
+    assert table == {rid: r.description for rid, r in RULES.items()}
 
 
 @pytest.mark.parametrize("pid,rule_id", [("pt-03", "R-ALG-01"), ("pt-05", "R-ALG-01"), ("pt-07", "R-DUP-01"),

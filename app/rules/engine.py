@@ -193,7 +193,9 @@ def r_rec_02(ctx: RecoveryContext) -> list[Discrepancy]:
     out = []
     for r in _records(ctx, FormType.vitals_flowsheet):
         f = fields(r)
-        abnormal = [f"{k}={v}" for k, v in f.items() if out_of_range(k, v)]
+        # Display labels at emission (config.FIELD_LABELS, single source): the discrepancy panel, digest and
+        # incident report all inherit "(Resp rate 27, SpO2 89)", never raw "resp_rate=27".
+        abnormal = [f"{config.FIELD_LABELS.get(k, k)} {v}" for k, v in f.items() if out_of_range(k, v)]
         if not abnormal or (f.get("response") or "").strip():
             continue
         t = record_time(r)
@@ -236,6 +238,56 @@ def r_rec_03(ctx: RecoveryContext) -> list[Discrepancy]:
             out.append(discrepancy("R-REC-03", r.patient_id, r.record_id,
                                    f"{med} given at {t:%H:%M}, previous dose {max(hit):%H:%M} is inside the "
                                    f"{int(window.total_seconds() // 3600)}h window", Severity.critical))
+    return out
+
+
+# Dose strings: "<amount> <unit>" with an optional "/<time>" rate ("8 mg/h"). Unit spellings are
+# canonicalized and mass units are compared in mg, so "5 mg", "5mg", "5 milligrams" and "0.005 g" are the
+# same dose. Anything else ("sliding scale", "per DKA protocol", "800-160 mg") is not a single fixed dose
+# and is never judged by R-REC-04 (docs/decisions.md, S6).
+_DOSE = re.compile(r"(\d+(?:\.\d+)?)\s*([a-zµ]+)(?:\s*/\s*([a-z]+))?", re.IGNORECASE)
+_UNIT = {"mg": ("mg", 1.0), "milligram": ("mg", 1.0), "milligrams": ("mg", 1.0),
+         "g": ("mg", 1000.0), "gm": ("mg", 1000.0), "gram": ("mg", 1000.0), "grams": ("mg", 1000.0),
+         "mcg": ("mg", 0.001), "µg": ("mg", 0.001), "ug": ("mg", 0.001), "microgram": ("mg", 0.001),
+         "micrograms": ("mg", 0.001), "unit": ("units", 1.0), "units": ("units", 1.0), "u": ("units", 1.0),
+         "iu": ("units", 1.0), "meq": ("meq", 1.0), "ml": ("ml", 1.0), "milliliter": ("ml", 1.0),
+         "milliliters": ("ml", 1.0)}
+_PER = {"h": "h", "hr": "h", "hour": "h", "min": "min", "minute": "min"}
+
+
+def parse_dose(value: str | None) -> tuple[float, str] | None:
+    """(amount in the canonical unit, canonical unit[/time]) for one fixed dose, else None."""
+    m = _DOSE.fullmatch((value or "").strip().replace(",", ""))
+    if not m:
+        return None
+    unit = _UNIT.get(m.group(2).lower())
+    per = _PER.get((m.group(3) or "").lower()) if m.group(3) else ""
+    if unit is None or per is None:
+        return None
+    return float(m.group(1)) * unit[1], unit[0] + (f"/{per}" if per else "")
+
+
+def same_dose(a: tuple[float, str], b: tuple[float, str]) -> bool:
+    return a[1] == b[1] and abs(a[0] - b[0]) <= 1e-9 * max(abs(a[0]), abs(b[0]), 1.0)
+
+
+@rule("R-REC-04", "recovery", "Paper-recorded dose differs from the ordered dose for the same medication")
+def r_rec_04(ctx: RecoveryContext) -> list[Discrepancy]:
+    out = []
+    for r in _records(ctx, FormType.downtime_mar):
+        f = fields(r)
+        med, paper = f.get("medication"), parse_dose(f.get("dose"))
+        snap = ctx.snapshots.get(r.patient_id)
+        if not med or paper is None or snap is None:
+            continue  # unreadable dose is already flagged for review; no order at all is R-REC-01
+        orders = [m for m in snap.medications if same_medication(med, m.name)]
+        fixed = [d for d in (parse_dose(m.dose) for m in orders) if d is not None]
+        if not fixed or any(same_dose(paper, d) for d in fixed):
+            continue  # no fixed ordered dose to compare (sliding scale, protocol), or it matches
+        ordered = ", ".join(m.dose for m in orders if parse_dose(m.dose) is not None)
+        out.append(discrepancy("R-REC-04", r.patient_id, r.record_id,
+                               f"{med} {f.get('dose')} recorded on paper but the order is {ordered}; "
+                               "confirm the dose given against the order", Severity.critical))
     return out
 
 
