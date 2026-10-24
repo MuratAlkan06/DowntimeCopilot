@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { h, mount, stateBox, chip, fmtTime, fmtDateTime, asList, cachedNote, labelize, usd } from './dom.js';
 import { store, set, on, GROUPS, ROLE_GROUPS, patientLabel, roleLabel } from './state.js';
 import { renderRecord } from './records.js';
-import { ruleSeverity } from './packets.js';
+import { ruleSeverity, loadStatus } from './packets.js';
 
 const $ = (id) => document.getElementById(id);
 let records = [];
@@ -42,7 +42,9 @@ async function restore() {
       ? 'Still offline — reconciliation runs when connectivity returns.' : `Restore failed (${r.error}).`));
     return;
   }
-  set('restoredAt', new Date().toISOString());
+  // Restore time is the server's unit clock (GET /status restored_at), never the browser clock.
+  const s = await loadStatus();
+  set('restoredAt', s?.restored_at || store.unitNow);
   discrepancies = asList(r.data, 'discrepancies', 'items');
   renderDiscrepancies();
   mount($('recovery-status'), h('span', {}, `Systems restored ${fmtTime(store.restoredAt)} · ${discrepancies.length} discrepancies flagged.`));

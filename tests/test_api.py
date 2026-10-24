@@ -1,10 +1,12 @@
 """DRY_RUN smoke test for every API endpoint: status, contract shape, and an audit event written."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
-from app import sim_client
+from app import clock, sim_client
 from app.store import get_store, reset_store
 from contracts import (AuditEvent, CapturedRecord, Discrepancy, DowntimePacket, PatientSnapshot, PolicyAnswer,
                        ShiftDigest)
@@ -21,10 +23,12 @@ def api(tmp_path, monkeypatch):
     monkeypatch.setenv("SYNC_EXPORT_DIR", str(tmp_path / "logs"))
     monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
     sim.state.reset(7)
+    clock.reset()
     reset_store()
     from app.main import app
     with TestClient(app) as c:
         yield c
+    clock.reset()
     reset_store()
 
 
@@ -257,6 +261,27 @@ def test_digest(api):
     assert r.status_code == 200
     d = ShiftDigest.model_validate(r.json())
     assert len(d.per_patient) == 12 and d.unit_summary and audited("digest.generate")
+
+
+def test_restore_status_audit_and_digest_on_unit_clock(api):
+    """DEMO.md: +15 min, declare (03:00), +45 min, restore (03:45). Every stamp is unit time, never wall clock."""
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)
+    simc.post("/clock/advance", json={"minutes": 45})
+    assert api.get("/status").json()["restored_at"] is None
+    assert api.post("/recovery/restore").status_code == 200
+    s = api.get("/status").json()
+    restored = datetime.fromisoformat(s["restored_at"])
+    assert restored == sim.state.now == datetime.fromisoformat(s["now"])
+    close = timedelta(seconds=5)
+    assert abs(events("downtime.start")[-1].ts - (restored - timedelta(minutes=45))) < close
+    assert abs(events("recovery.restore")[-1].ts - restored) < close
+    d = ShiftDigest.model_validate(api.get("/digest").json())
+    assert d.shift_window.end == restored and abs(d.generated_at - restored) < close
+    start = restored - timedelta(minutes=45)
+    assert all(start - close < datetime.fromisoformat(c["ts"]) < restored + close
+               for c in api.get("/costs").json()["calls"])
 
 
 def test_audit_costs_sync(api):

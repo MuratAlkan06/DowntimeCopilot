@@ -5,6 +5,7 @@ from datetime import datetime
 
 import httpx
 
+from app import clock as unit_clock
 from app import config
 from app.store import get_store
 from contracts import PatientSnapshot
@@ -36,6 +37,7 @@ def clock() -> dict:
     """Simulator clock + EHR state ({now, outage, restored, ...}); raises SimUnavailable."""
     status = _call("GET", "/clock").json()
     get_store().set_kv("sim_now", status["now"])
+    unit_clock.sync(datetime.fromisoformat(status["now"]))
     return status
 
 
@@ -45,6 +47,7 @@ def now() -> datetime:
     try:
         value = _call("GET", "/clock").json()["now"]
         store.set_kv("sim_now", value)
+        unit_clock.sync(datetime.fromisoformat(value))
         return datetime.fromisoformat(value)
     except SimUnavailable:
         cached = store.get_kv("sim_now")

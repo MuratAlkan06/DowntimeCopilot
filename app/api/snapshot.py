@@ -107,12 +107,15 @@ def status(role: str = Depends(actor_role)) -> dict:
     now = sim_client.now()
     snap_time = max((p.snapshot_time for p in snap), default=None)
     store.audit(role, "status.view", "status")
+    phase = store.get_kv("phase", "before")
     return {
-        "phase": store.get_kv("phase", "before"),
+        "phase": phase,
         "now": now.isoformat(),
         "snapshot_time": snap_time.isoformat() if snap_time else None,
         "snapshot_age_minutes": int((now - snap_time).total_seconds() // 60) if snap_time else None,
         "patients": len(snap),
         "outage_started_at": store.get_kv("outage_started_at"),
         "outage_id": store.get_kv("outage_id"),
+        # Unit-clock time of POST /recovery/restore; null outside the recovery phase (a later outage).
+        "restored_at": store.get_kv("restored_at") if phase == "recovery" else None,
     }

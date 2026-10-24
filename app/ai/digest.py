@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
+from app import clock
 from app.ai import client as ai
 from app.ai.guardrail import get_guardrail
-from app.store import utcnow
 from contracts import (CapturedRecord, Cost, Discrepancy, PatientDigest, PatientSnapshot, Sbar, ShiftDigest,
                        ShiftWindow)
 
@@ -51,6 +51,6 @@ def build_digest(patients: list[PatientSnapshot], records: list[CapturedRecord],
         per = [PatientDigest.model_validate(x) for x in canned["per_patient"]]
         summary, items = canned["unit_summary"] + " (deterministic digest: model output unparseable)", canned["open_items"]
     get_guardrail().check(summary, grounding=user)  # TODO: surface digest guardrail status (no field in contract)
-    return ShiftDigest(shift_window=ShiftWindow(start=start, end=end), generated_at=utcnow(), model_id=res.model_id,
+    return ShiftDigest(shift_window=ShiftWindow(start=start, end=end), generated_at=clock.unit_now(), model_id=res.model_id,
                        unit_summary=summary, per_patient=per, open_items=items,
                        cost=Cost(tokens_in=res.tokens_in, tokens_out=res.tokens_out, usd=res.usd))
