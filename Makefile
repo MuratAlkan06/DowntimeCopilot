@@ -13,7 +13,7 @@ SIM_URL ?= http://localhost:$(SIM_PORT)
 APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup probe schemas forms dev demo test evals guard
+.PHONY: setup probe schemas forms dev demo test evals guard export-audit
 
 setup:  ## venv + dependencies
 	python3 -m venv $(VENV)
@@ -45,6 +45,9 @@ demo:  ## clean store + 12 patients at "Before" with a healthy EHR; prints the U
 	@if [ "$(DEMO_OPEN)" = "1" ]; then \
 		if command -v open >/dev/null; then open "$(APP_URL)"; else xdg-open "$(APP_URL)" || true; fi; \
 	fi
+
+export-audit:  ## audit log -> exports/ in AUDIO_BUCKET (local file in DRY_RUN). AT=2026-10-24T09:00:00Z re-names one export (idempotent). Needs `make dev`
+	@curl -fsS -X POST "http://localhost:$(APP_PORT)/sync/export$(if $(AT),?at=$(AT))"; echo
 
 test:  ## unit tests
 	$(PY) -m pytest -q

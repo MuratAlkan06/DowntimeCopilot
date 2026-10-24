@@ -184,7 +184,8 @@ def test_bucket_created_and_hardened_once_per_process():
     pab = aws.kw("put_public_access_block")["PublicAccessBlockConfiguration"]
     assert set(pab) == {"BlockPublicAcls", "IgnorePublicAcls", "BlockPublicPolicy", "RestrictPublicBuckets"}
     assert all(pab.values())
-    (rule,) = aws.kw("put_bucket_lifecycle_configuration")["LifecycleConfiguration"]["Rules"]
+    rules = aws.kw("put_bucket_lifecycle_configuration")["LifecycleConfiguration"]["Rules"]
+    (rule,) = [r for r in rules if r["Filter"] == {"Prefix": "audio/"}]  # S10: audio expiry scoped to audio/
     assert rule["Status"] == "Enabled" and rule["Expiration"] == {"Days": 1}
 
 

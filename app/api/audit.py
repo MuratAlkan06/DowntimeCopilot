@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app import sim_client
 from app.api import actor_role
 from app.store import get_store
+from app.sync import s3 as s3sync
 from app.sync import worker as sync_worker
 from contracts import AuditEvent
 
@@ -64,3 +65,19 @@ def sync_status() -> dict:
     """Non-contract. {mode, mirrored, pending, last_success_ts, last_error}; same keys in DRY_RUN. Not audited:
     the web chip polls it, and an audit row per poll would itself be a pending item."""
     return sync_worker.status()
+
+
+@router.post("/sync/export")
+def sync_export(at: datetime | None = None, role: str = Depends(actor_role)) -> dict:
+    """Non-contract. Audit log as JSONL under exports/ in the app bucket (local file in DRY_RUN or with no bucket).
+    `at` (default: now, unit clock) names the object; the same `at` never writes a second copy. An AWS error is
+    a 502 with its code, never a 500."""
+    store = get_store()
+    try:
+        out = s3sync.export_audit(store, at or store.now())
+    except Exception as exc:  # noqa: BLE001 - report the code, keep the handler alive
+        code = s3sync.error_code(exc) or type(exc).__name__
+        store.audit(role, "sync.export_failed", "audit", None, {"error": code})
+        raise HTTPException(502, f"audit export failed: {code}") from None
+    store.audit(role, "sync.export", "audit", out["key"], {k: out[k] for k in ("target", "created", "events")})
+    return out

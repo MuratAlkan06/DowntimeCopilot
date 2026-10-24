@@ -122,6 +122,15 @@ class Store:
             self._db.commit()
         return pull_id
 
+    def newest_pull(self) -> tuple[int, str, str, list[PatientSnapshot]] | None:
+        """(pull_id, kind, pulled_at, patients) of the newest pull of any kind (S3 snapshot mirror)."""
+        rows = self._exec("SELECT pull_id, kind, pulled_at FROM pulls ORDER BY pull_id DESC LIMIT 1")
+        if not rows:
+            return None
+        pull_id, kind, pulled_at = rows[0]
+        bodies = self._exec("SELECT body FROM snapshots WHERE pull_id = ? ORDER BY patient_id", (pull_id,))
+        return pull_id, kind, pulled_at, [PatientSnapshot.model_validate_json(_dec(b)) for (b,) in bodies]
+
     def latest_snapshot(self, kind: str = "pre") -> list[PatientSnapshot]:
         rows = self._exec(
             "SELECT s.body FROM snapshots s WHERE s.pull_id = (SELECT MAX(pull_id) FROM pulls WHERE kind = ?)",

@@ -5,7 +5,9 @@ save). This daemon thread pushes them to the active mirror (app.sync.base), olde
 row after its put succeeds, so the outbox survives a restart and a put is never lost. On an error it records
 `sync.last_error` (operation and error code only, no item content) and backs off: interval x 2^failures,
 capped at BACKOFF_MAX_S. An AccessDenied latches LocalFallback, writes one `sync.fallback` audit event, and
-drains on locally. Nothing here raises into a handler; POST /sync drains through the same lock.
+drains on locally. After a clean drain it also mirrors the newest snapshot pull to S3 snapshots/
+(app.sync.s3.snapshot_step; live mode with AUDIO_BUCKET only). Nothing here raises into a handler; POST /sync
+drains through the same lock.
 """
 from __future__ import annotations
 
@@ -13,7 +15,7 @@ import logging
 import threading
 
 from app.store import get_store
-from app.sync import base
+from app.sync import base, s3
 from app.sync.dynamodb import Denied
 
 log = logging.getLogger(__name__)
@@ -83,6 +85,8 @@ def run(stop: threading.Event, interval: float) -> None:
         try:
             n = drain()
             failures, wait = 0, (0 if n == BATCH else interval)
+            if n < BATCH:
+                s3.snapshot_step(get_store())
         except Denied:
             failures, wait = 0, 0  # LocalFallback is latched; drain locally now
         except Exception as exc:  # noqa: BLE001 - the worker must never die

@@ -246,3 +246,110 @@ def test_handlers_never_raise_on_sync_failure(api, monkeypatch):
     get_store()._db.execute("DROP TABLE sync_outbox")  # even a broken local outbox never fails a handler
     assert api.get("/costs").status_code == 200
     assert any(e.action == "costs.view" for e in get_store().list_audit())
+
+
+# ------------------------------------------------------------------ S3: lifecycle merge, snapshots, exports
+
+from app.sync import s3 as s3sync  # noqa: E402
+
+S9_AUDIO_RULE = {"ID": "expire-after-1-day", "Filter": {"Prefix": ""}, "Status": "Enabled",
+                 "Expiration": {"Days": 1}, "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 1}}
+FOREIGN_RULE = {"ID": "someone-elses", "Filter": {"Prefix": "tmp/"}, "Status": "Enabled", "Expiration": {"Days": 3}}
+
+
+class FakeS3:
+    def __init__(self, rules=None, objects=()):
+        self.rules, self.objects, self.calls = rules, dict.fromkeys(objects, b""), []
+
+    def head_bucket(self, **kw):
+        self.calls.append(("head_bucket", kw))
+
+    def get_bucket_lifecycle_configuration(self, Bucket):
+        self.calls.append(("get_bucket_lifecycle_configuration", {}))
+        if self.rules is None:
+            raise err("NoSuchLifecycleConfiguration", "GetBucketLifecycleConfiguration")
+        return {"Rules": [dict(r) for r in self.rules]}
+
+    def put_bucket_lifecycle_configuration(self, Bucket, LifecycleConfiguration):
+        self.calls.append(("put_bucket_lifecycle_configuration", {}))
+        self.rules = LifecycleConfiguration["Rules"]
+
+    def head_object(self, Bucket, Key):
+        self.calls.append(("head_object", {"Key": Key}))
+        if Key not in self.objects:
+            raise err("404", "HeadObject")
+
+    def put_object(self, **kw):
+        self.calls.append(("put_object", kw))
+        self.objects[kw["Key"]] = kw["Body"]
+
+    def ops(self, op):
+        return [kw for o, kw in self.calls if o == op]
+
+
+def test_lifecycle_merge_scopes_audio_rule_and_appends_ours():
+    merged = s3sync.merge_lifecycle([S9_AUDIO_RULE, FOREIGN_RULE])
+    audio, foreign, snaps, exports = merged
+    assert audio == S9_AUDIO_RULE | {"Filter": {"Prefix": "audio/"}}  # same id and 1-day expiry, now scoped
+    assert foreign == FOREIGN_RULE
+    assert snaps["Filter"] == {"Prefix": "snapshots/"} and snaps["Expiration"] == {"Days": 7}
+    assert exports["Filter"] == {"Prefix": "exports/"} and exports["Expiration"] == {"Days": 7}
+    assert s3sync.merge_lifecycle(merged) == merged  # idempotent
+    assert not any(s3sync._is_global(r) for r in merged)
+
+
+def test_ensure_lifecycle_reads_merges_and_writes_only_on_change():
+    fake = FakeS3(rules=[S9_AUDIO_RULE])
+    rules = s3sync.ensure_lifecycle(fake, "b")
+    assert [r["ID"] for r in rules] == ["expire-after-1-day", "expire-snapshots-after-7-days",
+                                        "expire-exports-after-7-days"]
+    assert fake.rules == rules and len(fake.ops("put_bucket_lifecycle_configuration")) == 1
+    s3sync.ensure_lifecycle(fake, "b")
+    assert len(fake.ops("put_bucket_lifecycle_configuration")) == 1  # already merged: no second write
+    empty = FakeS3(rules=None)
+    assert len(s3sync.ensure_lifecycle(empty, "b")) == 3
+
+
+def test_snapshot_mirror_puts_newest_pull_once(store, monkeypatch):
+    from contracts import PatientSnapshot
+    monkeypatch.setenv("AUDIO_BUCKET", "bkt")
+    s3sync._ready.clear()
+    assert s3sync.mirror_snapshot(store, FakeS3(rules=[])) is None  # no pull yet
+    sim.state.reset(7)
+    pts = [PatientSnapshot.model_validate(p) for p in TestClient(sim.app).get("/bca/snapshot").json()[:2]]
+    store.save_snapshot(pts, "pre")
+    fake = FakeS3(rules=[S9_AUDIO_RULE])
+    key = s3sync.mirror_snapshot(store, fake)
+    assert key.startswith("snapshots/pre-") and key.endswith(".json")
+    (put,) = fake.ops("put_object")
+    assert put["Bucket"] == "bkt" and put["ServerSideEncryption"] == "AES256" and put["Key"] == key
+    assert s3sync.mirror_snapshot(store, fake) is None and len(fake.ops("put_object")) == 1
+    assert [r["Filter"]["Prefix"] for r in fake.rules] == ["audio/", "snapshots/", "exports/"]
+
+
+def test_audit_export_to_s3_is_idempotent_per_timestamp(store, monkeypatch):
+    monkeypatch.setenv("AUDIO_BUCKET", "bkt")
+    s3sync._ready.clear()
+    store.audit("rn", "capture.create", "record", "rec-1")
+    at = datetime(2100, 1, 1, 9, 30, 15, 999, tzinfo=timezone.utc)
+    fake = FakeS3(rules=[])
+    first = s3sync.export_audit(store, at, fake)
+    assert first == {"target": "s3", "key": "exports/audit-21000101T093015Z.jsonl", "created": True, "events": 1}
+    again = s3sync.export_audit(store, at, fake)
+    assert again["created"] is False and len(fake.ops("put_object")) == 1  # same timestamp key: no second copy
+    (put,) = fake.ops("put_object")
+    assert put["ServerSideEncryption"] == "AES256" and b'"synced"' not in put["Body"]
+
+
+def test_export_endpoint_and_dry_run_local_file(api, tmp_path):
+    assert api.post("/snapshot/pull").status_code == 200
+    r1 = api.post("/sync/export", params={"at": "2100-01-01T00:00:00Z"})
+    assert r1.status_code == 200, r1.text
+    out = r1.json()
+    assert out["target"] == "local" and out["created"] is True and out["key"] == "exports/audit-21000101T000000Z.jsonl"
+    path = tmp_path / "logs" / out["key"]
+    body = path.read_bytes()
+    assert out["events"] == len(body.splitlines()) >= 1
+    r2 = api.post("/sync/export", params={"at": "2100-01-01T00:00:00Z"}).json()
+    assert r2["created"] is False and r2["key"] == out["key"] and path.read_bytes() == body
+    assert [e.details["created"] for e in get_store().list_audit() if e.action == "sync.export"] == [False, True]
