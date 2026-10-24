@@ -12,7 +12,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from contracts import Medication, PatientSnapshot
+from contracts import Allergy, Medication, PatientSnapshot
 
 DATA_DIR = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent.parent / "data"))
 DEFAULT_SEED = 20261024
@@ -23,6 +23,12 @@ CLOCK_START = datetime(2026, 10, 24, 2, 45, tzinfo=timezone.utc)
 # has exactly one (pt-14, 40 min), so the readiness panel and R-STALE-01 have a real example.
 
 _INTERVAL = re.compile(r"q(\d+)h", re.IGNORECASE)
+
+# Patients the scripted demo writes paper records for (DEMO.md: Bed 12 vitals, Bed 2 MAR, Bed 7 verbal
+# order). The changed-allergy restore delta never lands on them, so it never interacts with those beats.
+DEMO_CRITICAL = frozenset({"pt-12", "pt-07", "pt-02"})
+# Reported by the patient during downtime and charted in the EHR on restore; no seeded patient has it.
+NEW_ALLERGY = Allergy(substance="cephalexin", reaction="rash", severity="moderate")
 
 
 def frequency_hours(frequency: str) -> int | None:
@@ -87,8 +93,9 @@ class SimState:
         self.outage = True
 
     def restore(self) -> list[dict]:
-        """Bring the EHR back with deliberate differences for the recovery diff:
-        one pharmacy-backloaded order and one patient transfer (seeded choice, never Bed 12)."""
+        """Bring the EHR back with deliberate differences for the recovery diff: one pharmacy-backloaded
+        order and one patient transfer (seeded choice, never Bed 12), and one changed allergy list (a new
+        documented allergy, seeded choice outside the demo-critical patients and the other two picks)."""
         if not self.outage:
             self.start_outage()
         self.outage = False
@@ -96,7 +103,9 @@ class SimState:
             return self.restore_changes
         self.restored = True
         ids = sorted(pid for pid in self.patients if pid != "pt-12")
-        order_pid, transfer_pid = self.rng.sample(ids, 2)
+        order_pid, transfer_pid = self.rng.sample(ids, 2)  # drawn first: keeps the earlier seeded picks stable
+        allergy_pid = self.rng.choice(sorted(pid for pid in self.patients
+                                             if pid not in DEMO_CRITICAL | {order_pid, transfer_pid}))
 
         p = self.patients[order_pid]
         new_med = Medication(
@@ -109,8 +118,12 @@ class SimState:
         new_bed = "ICU 4"
         self.patients[transfer_pid] = t.model_copy(update={"bed": new_bed})
 
+        a = self.patients[allergy_pid]
+        self.patients[allergy_pid] = a.model_copy(update={"allergies": [*a.allergies, NEW_ALLERGY]})
+
         self.restore_changes = [
             {"kind": "pharmacy_backloaded_order", "patient_id": order_pid, "medication": new_med.name},
             {"kind": "transfer", "patient_id": transfer_pid, "from_bed": t.bed, "to_bed": new_bed},
+            {"kind": "allergy_added", "patient_id": allergy_pid, "substance": NEW_ALLERGY.substance},
         ]
         return self.restore_changes

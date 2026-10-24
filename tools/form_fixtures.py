@@ -47,7 +47,7 @@ FORMS: dict[str, dict] = {
             (1.0, [("spo2", "SpO2 (%)", 0.5), ("pain_score", "Pain score (0-10)", 0.5)]),
         ],
         # pain_score is written then scribbled out: ground truth is unreadable (null), never a guess.
-        "truth": {"bed": "12", "time": "03:30", "temp_c": "37.8", "heart_rate": "104", "resp_rate": "22",
+        "truth": {"bed": "12", "time": "02:55", "temp_c": "37.8", "heart_rate": "104", "resp_rate": "22",
                   "bp_systolic": "148", "bp_diastolic": "86", "spo2": "89", "pain_score": None, "initials": "PN"},
         "scribbled": {"pain_score": "4"},
     },
@@ -61,7 +61,7 @@ FORMS: dict[str, dict] = {
                    ("second_verifier", "Second verifier (high-alert meds)", 0.5)]),
         ],
         # heparin is high-alert: the blank second_verifier is what the two-person verify catches.
-        "truth": {"bed": "12", "medication": "heparin", "dose": "5000 units", "route": "SC", "time_given": "03:10",
+        "truth": {"bed": "12", "medication": "heparin", "dose": "5000 units", "route": "SC", "time_given": "02:50",
                   "initials": "PN", "second_verifier": None},
         "scribbled": {},
     },

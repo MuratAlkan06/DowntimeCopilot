@@ -90,7 +90,7 @@ async function fetchPatients() {
   const list = $('patient-list');
   if (!store.patients.size) mount(list, stateBox('loading', 'Loading patients…'));
   if (!selectedId && !$('packet').hasChildNodes()) {
-    mount($('packet'), stateBox('empty', 'Packets appear here. Tap "Go to downtime", then choose a patient.'));
+    mount($('packet'), stateBox('empty', 'Packets appear here. Tap "Declare downtime", then choose a patient.'));
   }
   const [r, rules] = await Promise.all([api('/patients'), api('/rules/current'), loadStatus()]);
   if (rules.ok && rules.data?.patients) store.ruleHits = rules.data.patients;
@@ -111,7 +111,7 @@ async function fetchPatients() {
   patients.forEach((p) => store.patients.set(p.patient_id, p));
   emit('patients', patients);
   renderReadiness();
-  noteSnapshot(patients.map((p) => p.snapshot_time));
+  if (!r.offline) noteSnapshot(patients.map((p) => p.snapshot_time));
   if (!patients.length) {
     mount(list, stateBox('empty', 'No patients in the snapshot yet. Run the simulator feed, then refresh.'));
     return;
@@ -119,7 +119,7 @@ async function fetchPatients() {
   mount(list, cachedNote(r), h('ul', { class: 'patient-list', role: 'list' }, [...patients].sort(bedSort).map(patientRow)));
   if (!selectedId) mount($('packet'), stateBox('empty', store.downtimeStartedAt
     ? 'Select a patient to open their downtime packet.'
-    : 'Tap "Go to downtime" to generate packets, or select a patient to view the last packet.'));
+    : 'Tap "Declare downtime" to generate packets, or select a patient to view the last packet.'));
 }
 
 function patientRow(p) {
@@ -160,7 +160,7 @@ export async function openPacket(id) {
       { label: 'Retry', onClick: () => openPacket(id) }));
     return;
   }
-  noteSnapshot(r.data?.snapshot_time);
+  // No noteSnapshot here: one patient's snapshot can be older than the unit's (R-STALE-01).
   mount(pane, renderPacket(r.data, store.patients.get(id), r));
 }
 
@@ -239,8 +239,8 @@ export async function loadStatus() {
   if (!r.ok || !r.data || typeof r.data !== 'object') return null;
   const s = r.data;
   if (s.now) set('unitNow', s.now);
+  if (r.offline) return s; // cached copy: do not overwrite the snapshot time or outage markers from it
   noteSnapshot(s.snapshot_time);
-  if (r.offline) return s; // cached copy: do not overwrite the outage markers from it
   if ((s.outage_id || null) !== store.outageId) set('outageId', s.outage_id || null);
   if (s.outage_started_at && s.outage_started_at !== store.downtimeStartedAt) set('downtimeStartedAt', s.outage_started_at);
   if (s.restored_at && s.restored_at !== store.restoredAt) set('restoredAt', s.restored_at);
@@ -267,7 +267,7 @@ export async function printAllPackets() {
   const list = r.ok ? asList(r.data, 'packets') : [];
   if (!list.length) {
     mount(status, stateBox(r.ok ? 'empty' : (r.offline ? 'offline' : 'error'), r.ok
-      ? 'No packets yet. Tap "Go to downtime" first.'
+      ? 'No packets yet. Tap "Declare downtime" first.'
       : `Couldn't load packets to print (${r.error}).`));
     return;
   }

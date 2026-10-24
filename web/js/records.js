@@ -1,7 +1,7 @@
 // CapturedRecord rendering shared by capture (During) and the backload queue (Recovery).
 import { api } from './api.js';
-import { h, chip, fmtTime, labelize, stateBox, mount } from './dom.js';
-import { store, emit, patientLabel, roleLabel } from './state.js';
+import { h, chip, fmtTime, labelize, fieldLabel, stateBox, mount } from './dom.js';
+import { store, emit, patientLabel, roleLabel, GROUPS } from './state.js';
 
 const FORM_LABELS = {
   vitals_flowsheet: 'Vitals flowsheet',
@@ -11,11 +11,29 @@ const FORM_LABELS = {
 };
 
 const STATUS_KIND = { needs_review: 'warn', verified: 'info', entered: 'ok', rejected: 'crit' };
+const groupLabel = (id) => GROUPS.find((g) => g.id === id)?.label || labelize(id);
 
-function fieldState(f) {
-  if (f.flag || f.agreement === 'disagree' || f.value == null) return 'flagged';
-  if (f.agreement === 'agree') return 'agree';
-  return 'single';
+// A reviewer edit (PATCH .../fields/{name}) recomputes the field's flag and leaves the readers' raw values
+// in `reads`; `agreement` keeps the readers' original verdict. So a field is "corrected" when its value
+// matches neither reader, or when the readers disagreed and the disagreement flag is gone (the reviewer
+// picked one reader's value). State follows the current flag, never the original agreement alone.
+const corrected = (f, tx, br) => (f.agreement === 'disagree' && f.flag !== 'disagreement')
+  || ([tx, br].some((r) => r && f.name in (r.fields || {})) && ![tx, br].some((r) => r && r.fields?.[f.name] === f.value));
+
+function fieldState(f, tx, br) {
+  if (f.flag || f.value == null) return 'flagged';
+  if (corrected(f, tx, br)) return 'corrected';
+  if (f.agreement === 'disagree') return 'flagged';
+  return f.agreement === 'agree' ? 'agree' : 'single';
+}
+
+// After a save or verify the card is re-rendered: put focus back on the control the user was on (or the
+// next one that still applies), never on <body>.
+function restoreFocus(card, selector) {
+  const target = [...card.querySelectorAll(selector)].find((b) => !b.disabled)
+    || [...card.querySelectorAll('.record-actions button')].find((b) => !b.disabled)
+    || card;
+  target.focus();
 }
 
 // Per-field crop of the photo: blob `crop:<record_id>:<field>` (server stores one per field box).
@@ -29,7 +47,7 @@ function cropCell(rec, f) {
   // Click (or Enter) opens the crop at full size in a new tab.
   const link = h('a', { class: 'crop-link', href: src, target: '_blank', rel: 'noopener', title: 'Open full size in a new tab' },
     h('img', {
-      class: 'field-crop', loading: 'lazy', alt: `Photo of the ${labelize(f.name)} box`, src,
+      class: 'field-crop', loading: 'lazy', alt: `Photo of the ${fieldLabel(f.name)} box`, src,
       onerror: () => link.replaceWith(h('span', { class: 'muted small' }, 'No crop')),
     }));
   return h('td', { class: 'crop-cell' }, link);
@@ -41,10 +59,10 @@ function valueCell(rec, f, getCard, msg, onChange, tx, bv) {
     f.value ?? h('em', {}, 'unreadable'),
     f.agreement === 'disagree' ? h('div', { class: 'reader-values' }, `Textract: ${tx?.fields?.[f.name] ?? '—'} · Bedrock: ${bv ?? '—'}`) : null,
     rec.status === 'needs_review'
-      ? h('button', { class: 'btn btn-quiet btn-sm field-edit', type: 'button', 'aria-label': `Edit ${labelize(f.name)}`, onclick: edit }, 'Edit')
+      ? h('button', { class: 'btn btn-quiet btn-sm field-edit', type: 'button', 'aria-label': `Edit ${fieldLabel(f.name)}`, onclick: edit }, 'Edit')
       : null);
   function edit() {
-    const input = h('input', { class: 'input input-sm', value: f.value ?? '', 'aria-label': `New value for ${labelize(f.name)}` });
+    const input = h('input', { class: 'input input-sm', value: f.value ?? '', 'aria-label': `New value for ${fieldLabel(f.name)}` });
     const save = async (e) => {
       e.preventDefault();
       mount(msg, stateBox('loading', 'Saving correction…'));
@@ -54,14 +72,16 @@ function valueCell(rec, f, getCard, msg, onChange, tx, bv) {
         mount(msg, stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — correction not saved.' : `Correction not saved (${r.error}).`));
         return;
       }
-      getCard().replaceWith(renderRecord(r.data, { onChange }));
+      const next = renderRecord(r.data, { onChange });
+      getCard().replaceWith(next);
+      restoreFocus(next, `tr[data-field="${CSS.escape(f.name)}"] .field-edit`);
       onChange?.(r.data);
       emit('records-changed', r.data);
     };
     mount(td, h('form', { class: 'field-edit-form', onsubmit: save }, input,
       h('span', { class: 'field-edit-actions' },
         h('button', { class: 'btn btn-primary btn-sm', type: 'submit' }, 'Save'),
-        h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: show }, 'Cancel'))));
+        h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: () => { show(); td.querySelector('.field-edit')?.focus(); } }, 'Cancel'))));
     input.focus();
   }
   show();
@@ -83,10 +103,6 @@ async function loadVerification(rec, box, verifyBtn) {
       first ? h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: () => document.getElementById('role-select')?.focus() }, 'Switch role') : null)));
 }
 
-// A reviewer edit (PATCH .../fields/{name}) leaves the readers' raw values in `reads`.
-const corrected = (f, tx, br) => [tx, br].some((r) => r && f.name in (r.fields || {}))
-  && ![tx, br].some((r) => r && r.fields?.[f.name] === f.value);
-
 function agreementChip(f) {
   if (f.agreement === 'agree') return chip('Readers agree', 'ok');
   if (f.agreement === 'disagree') return chip('Readers disagree', 'crit');
@@ -95,10 +111,11 @@ function agreementChip(f) {
 
 export function renderRecord(rec, { onChange } = {}) {
   const fields = rec.fields || [];
-  const flagged = fields.filter((f) => fieldState(f) === 'flagged').length;
-  const agree = fields.filter((f) => f.agreement === 'agree' && !f.flag).length;
   const tx = rec.reads?.textract;
   const br = rec.reads?.bedrock;
+  const states = fields.map((f) => fieldState(f, tx, br));
+  const count = (st) => states.filter((x) => x === st).length;
+  const flagged = count('flagged');
   const readers = [tx ? 'Textract' : null, br ? 'Bedrock vision' : null].filter(Boolean);
   const msg = h('div', { class: 'record-msg', 'aria-live': 'polite' });
   const verifyBox = h('div', { class: 'verify-box' });
@@ -108,7 +125,7 @@ export function renderRecord(rec, { onChange } = {}) {
       flagged ? `Verify (${flagged} flagged checked)` : 'Verify')
     : null;
 
-  card = h('article', { class: `record status-${rec.status || 'needs_review'}`, 'data-id': rec.record_id },
+  card = h('article', { class: `record status-${rec.status || 'needs_review'}`, 'data-id': rec.record_id, tabindex: '-1' },
     h('header', { class: 'record-head' },
       h('div', {},
         h('h3', { class: 'record-title' }, FORM_LABELS[rec.form_type] || labelize(rec.form_type), ' · ', patientLabel(rec.patient_id)),
@@ -118,7 +135,10 @@ export function renderRecord(rec, { onChange } = {}) {
           readers.length === 1 ? ' (single read)' : '',
           ' · ', h('span', { class: 'mono' }, rec.record_id)),
       ),
-      chip(labelize(rec.status || 'needs_review'), STATUS_KIND[rec.status] || 'neutral'),
+      h('span', { class: 'chips record-chips' },
+        // Where this record lands at backload (Recovery groups by it, so its section title shows it there).
+        rec.backload_group ? h('span', { class: 'chip chip-neutral record-group' }, `Backload: ${groupLabel(rec.backload_group)}`) : null,
+        chip(labelize(rec.status || 'needs_review'), STATUS_KIND[rec.status] || 'neutral')),
     ),
     rec.form_type === 'verbal_order'
       ? h('div', { class: 'alert alert-warn' }, h('span', { class: 'rule-badge' }, 'R-VO-01'), h('span', {}, 'Requires provider co-sign before entry.'))
@@ -126,21 +146,23 @@ export function renderRecord(rec, { onChange } = {}) {
     fields.length
       ? h('div', { class: 'table-wrap' }, h('table', { class: 'fields-table' },
         h('thead', {}, h('tr', {}, ['Field', 'Photo', 'Value', 'Confidence', 'Readers', 'Review'].map((t) => h('th', { scope: 'col' }, t)))),
-        h('tbody', {}, fields.map((f) => {
-          const st = fieldState(f);
+        h('tbody', {}, fields.map((f, i) => {
+          const st = states[i];
           const bv = br?.fields?.[f.name];
-          return h('tr', { class: `field field-${st}` },
-            h('th', { scope: 'row' }, labelize(f.name)),
+          return h('tr', { class: `field field-${st}`, 'data-field': f.name },
+            h('th', { scope: 'row' }, fieldLabel(f.name)),
             cropCell(rec, f),
             valueCell(rec, f, () => card, msg, onChange, tx, bv),
             h('td', { class: 'num' }, typeof f.confidence === 'number' ? `${Math.round(f.confidence * 100)}%` : '—'),
-            h('td', {}, corrected(f, tx, br) ? chip('Corrected by reviewer', 'info') : agreementChip(f)),
-            h('td', {}, st === 'flagged' ? chip(`Review: ${labelize(f.flag || 'disagreement')}`, 'warn') : chip('OK', 'ok')));
+            h('td', {}, st === 'corrected' ? chip('Corrected by reviewer', 'info') : agreementChip(f)),
+            h('td', {}, st === 'flagged' ? chip(`Review: ${labelize(f.flag || 'disagreement')}`, 'warn')
+              : st === 'corrected' ? chip('Corrected', 'info') : chip('OK', 'ok')));
         }))))
       : h('p', { class: 'muted' }, 'No fields were read from this form.'),
     verifyBox,
     h('footer', { class: 'record-foot' },
-      h('span', { class: 'record-summary' }, `${agree} agree · ${flagged} flagged for review`,
+      h('span', { class: 'record-summary' }, `${count('agree')} agree · `,
+        count('corrected') ? `${count('corrected')} corrected · ` : '', `${flagged} flagged for review`,
         rec.verified_by ? ` · Verified by ${whoLabel(rec.verified_by)} ${fmtTime(rec.verified_at)}` : '',
         rec.entered_at ? ` · Entered ${fmtTime(rec.entered_at)}` : ''),
       h('span', { class: 'record-actions' },
@@ -173,9 +195,10 @@ function syncActions(card, rec) {
   });
 }
 
-function redraw(card, rec, onChange) {
+function redraw(card, rec, onChange, action) {
   const next = renderRecord(rec, { onChange });
   card.replaceWith(next);
+  if (action) restoreFocus(next, `.record-actions [data-action="${action}"]`);
   onChange?.(rec);
   emit('records-changed', rec);
   return next;
@@ -191,7 +214,7 @@ async function act(rec, action, card, msg, onChange) {
     // Offline: the last state the server gave us is `rec`. Online: re-read it (the error body carries no record).
     const cur = (r.offline ? null : await serverRecord(rec.record_id)) || rec;
     if (cur.status !== rec.status) {
-      mount(redraw(card, cur, onChange).querySelector('.record-msg'), note);
+      mount(redraw(card, cur, onChange, action).querySelector('.record-msg'), note);
       return;
     }
     mount(msg, note);
@@ -202,5 +225,5 @@ async function act(rec, action, card, msg, onChange) {
     return;
   }
   // Success: the server returns the record; if it ever does not, re-read rather than assume a status.
-  redraw(card, r.data?.record_id ? r.data : (await serverRecord(rec.record_id)) || rec, onChange);
+  redraw(card, r.data?.record_id ? r.data : (await serverRecord(rec.record_id)) || rec, onChange, action);
 }

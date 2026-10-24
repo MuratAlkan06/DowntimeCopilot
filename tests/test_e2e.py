@@ -1,8 +1,11 @@
 """End to end in DRY_RUN: the README demo script, step by step, through the HTTP API only."""
 from __future__ import annotations
 
+from fastapi.testclient import TestClient
+
 from app.store import get_store
 from contracts import Agreement, CapturedRecord, Discrepancy, DowntimePacket, PolicyAnswer, ShiftDigest
+from simulator import main as sim
 from tests.test_api import PNG, api, audited  # noqa: F401 - fixture
 
 RN, CHARGE, RX = {"X-Role": "rn"}, {"X-Role": "charge_nurse"}, {"X-Role": "pharmacy"}
@@ -10,7 +13,9 @@ RN, CHARGE, RX = {"X-Role": "rn"}, {"X-Role": "charge_nurse"}, {"X-Role": "pharm
 
 def test_demo_script_end_to_end(api):  # noqa: F811
     c = api
+    clock = TestClient(sim.app)
     assert c.get("/status").json()["phase"] == "before"
+    clock.post("/clock/advance", json={"minutes": 15})  # downtime at 03:00
     assert len(c.post("/snapshot/pull").json()) == 12
 
     # 1. Go to downtime: a packet per patient; Bed 12 shows R-DUE-01 and every line cites its source.
@@ -40,7 +45,16 @@ def test_demo_script_end_to_end(api):  # noqa: F811
     assert flags["resp_rate"] == "disagreement" and flags["pain_score"] == "unreadable"
     assert vitals.captured_by_role == "rn" and vitals.patient_id == "pt-12"
 
-    # 4. Verbal order read-back for Bed 12 (high-alert heparin) -> pharmacy backload, needs co-sign.
+    mar = CapturedRecord.model_validate(
+        c.post("/capture", files={"file": ("mar.png", PNG, "image/png")}, data={"form_type": "downtime_mar"},
+               headers=RN).json())
+    mar_02 = CapturedRecord.model_validate(  # heparin given to Bed 2, which has no heparin order
+        c.post("/capture", files={"file": ("mar.png", PNG, "image/png")},
+               data={"form_type": "downtime_mar", "patient_id": "pt-02"}, headers=RN).json())
+    clock.post("/clock/advance", json={"minutes": 45})  # 03:45: the 30-min vitals response window has closed
+
+    # 4. Verbal order read-back for Bed 12 (high-alert heparin) -> pharmacy backload, needs co-sign. Taken after
+    # the window: inside it, a pt-12 order would count as the documented response to the vitals (R-REC-02).
     r = c.post("/capture", data={"form_type": "verbal_order", "patient_id": "pt-12",
                                  "readback_text": "heparin 5000 units SC q12h, Dr. Quill, read back and confirmed"},
                headers=RN)
@@ -48,23 +62,20 @@ def test_demo_script_end_to_end(api):  # noqa: F811
     vo = CapturedRecord.model_validate(r.json())
     assert vo.backload_group.value == "pharmacy_orders"
 
-    mar = CapturedRecord.model_validate(
-        c.post("/capture", files={"file": ("mar.png", PNG, "image/png")}, data={"form_type": "downtime_mar"},
-               headers=RN).json())
-    assert len(get_store().list_records()) == 3
+    assert len(get_store().list_records()) == 4
 
     # 6. Systems restored: restored-EHR diff + recovery rules, restore time on the unit clock.
     r = c.post("/recovery/restore", headers=CHARGE)
     assert r.status_code == 200, r.text
     found = [Discrepancy.model_validate(d) for d in r.json()]
-    assert {"R-REC-01", "R-REC-02", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= {d.rule_id for d in found}
+    assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT"} <= {d.rule_id for d in found}
     assert any(d.rule_id == "R-VO-01" and d.record_id == vo.record_id for d in found)
     status = c.get("/status").json()
     assert status["restored_at"] and status["restored_at"] >= status["outage_started_at"]
 
     queue = c.get("/backload", headers=RN).json()
     assert [x["record_id"] for x in queue["nursing_vitals"]] == [vitals.record_id]
-    assert [x["record_id"] for x in queue["nursing_med_admin"]] == [mar.record_id]
+    assert {x["record_id"] for x in queue["nursing_med_admin"]} == {mar.record_id, mar_02.record_id}
 
     # Verify one record and mark it entered.
     assert c.post(f"/backload/{vitals.record_id}/verify", json={}, headers=RN).json()["status"] == "verified"

@@ -5,8 +5,7 @@ First draft (Role 5). The script follows the README "Demo script". Times are tar
 ## Setup before the demo
 
 - [ ] `source .env` with fresh keys (or `DRY_RUN=1` for mock mode); `make probe` still green for Bedrock, Textract, Transcribe
-- [ ] `make dev` running (simulator :8001, app :8000), then `make demo`: 12 patients seeded, app open at "Before" with a healthy EHR
-- [ ] Clean demo state (do this FIRST): stop the stack, delete the local store (`rm -f *.sqlite`), restart `make dev`, re-seed via `make demo` — the app store survives simulator resets, so stale backload records linger otherwise
+- [ ] `make dev` running (simulator :8001, app :8000), then `make demo`: it empties the app store (`seed --fresh`, so no stale backload records linger), seeds 12 patients at "Before" with a healthy EHR, and prints the app URL. It opens a browser only with `DEMO_OPEN=1 make demo`
 - [ ] Also clear the demo browser's site data for the app origin (or use a fresh browser profile) so the service-worker caches and local storage start clean
 - [ ] THEN advance the unit clock 15 minutes so Bed 12's insulin (due 04:00) enters the 60-minute window and fires R-DUE-01 as scripted: `curl -X POST localhost:8001/clock/advance -H 'Content-Type: application/json' -d '{"minutes":15}'` (re-seeding resets the clock to 02:45, so always advance after cleaning)
 - [ ] Printed vitals flowsheet filled in by hand, with one ambiguous field and one illegible field
@@ -32,12 +31,20 @@ Safe-refusal beat (live only): *"How much insulin should I give for a blood suga
 
 ## Run of show
 
-1. **0:00 - 2:47 AM.** Banner: *EHR unreachable.* Priya taps **Go to downtime**. Packets appear; open Bed 12: penicillin allergy, insulin due at 04:00 marked high-alert, R-DUE-01 firing, every line showing its snapshot source.
-2. **0:15 - Policy question.** Ask: *"How do I get a stat lab with the order system down?"* Cited answer, section 4.2 of the downtime policy.
-3. **0:25 - Form capture.** A teammate hands over a vitals flowsheet they just filled in by hand. Photograph it. Two readers; eight fields agree, one disagreement flagged, one unreadable flagged. Verify the flagged ones.
-4. **0:45 - Verbal order.** Record a verbal order read-back. Transcript, then structured order, then *requires provider co-sign*, then the pharmacy backload group.
-5. **0:55 - Kill the network.** The app keeps working: packets, checklists, capture, queue.
-6. **1:05 - Systems restored.** Tap **Systems restored**. Backload queue: 14 items in three groups, 3 discrepancies (R-REC-01, R-REC-02). Verify one, mark entered, watch the audit log and sync status update.
-7. **1:20 - Handoff and evidence.** The shift digest writes itself for the 7 AM team. Close on `RESULTS.md`: extraction accuracy per reader and combined, packet faithfulness, grounding rate, cost per outage-hour.
+1. **0:00 - 2:47 AM.** On the **Go to downtime** tab, Priya taps **Declare downtime**. Banner: *EHR unreachable.* 12 packets appear (about 20 s live); open Bed 12: penicillin allergy, insulin due at 04:00 marked high-alert, R-DUE-01 firing, every line showing its snapshot source.
+2. **0:15 - Policy question.** Open **During**: the policy panel is first. Ask: *"How do I get a stat lab with the order system down?"* Chips *Grounded in policy* and *Guardrail: passed*, cited section 4.2 of the downtime policy (paragraph-level 4.2.x live).
+3. **0:25 - Form capture.** In **Capture a paper form**, choose *Vitals flowsheet* and photograph the form, then **Read form**. Each field shows its photo crop. Mock mode: 7 fields agree, 3 flagged for review (Resp rate disagreement, SpO2 out of range, Pain score unreadable). Live: Nova reads every field; Textract's second read of the printed form is still a follow-up (S4), so fields show single reads, with SpO2 and Pain score flagged. Edit a flagged value: the row turns *Corrected by reviewer* and the flagged count drops. Then **Verify**.
+4. **0:45 - Verbal order.** Choose *Verbal order (read-back)*, patient Bed 7 (not Bed 12: a ~03:00 order for Bed 12 would count as the response to its 02:55 vitals and clear the step-6 R-REC-02). Record the read-back, or type it: *"Read back: heparin 5000 units SC every 12 hours, Dr. Okafor, read back confirmed"*. Structured order, then *R-VO-01 Requires provider co-sign before entry*, then the pharmacy backload group. Heparin is high-alert: **Verify (1 of 2)** shows *1 of 2 verifications* and asks a different person (switch role) for the second.
+5. **0:55 - Kill the network** (Wi-Fi off, or **Simulate offline**). The app keeps working: packets open from the cache, checklists render, re-asking a policy question already asked on this device replays its recorded answer, and a new capture is queued on the device. A shift digest already written also reopens offline. Back online, the queue uploads by itself.
+6. **1:05 - Systems restored.** Before this beat, off-screen during step 3: capture the **Downtime MAR** fixture with **Patient: Bed 2** (not "Read from form"). Bed 2 has no heparin order, so this is the planted R-REC-01 case. Left on "Read from form", the MAR's bed 12 is used and R-REC-03 fires on Bed 12 instead (heparin inside its 8 h window), not R-REC-01. Then, still off-screen, advance the unit clock 45 minutes so the shift window and the R-REC-02 judgments read as a real outage: `curl -X POST localhost:8001/clock/advance -H 'Content-Type: application/json' -d '{"minutes":45}'`. Then tap **Systems restored**. Backload queue: 3 items in three groups (vitals, med administration, pharmacy orders). Discrepancies: exactly 6 (default seed, mock and live, pinned by `test_scripted_flow_yields_exactly_the_planted_set`):
+   - R-REC-01 Bed 2, critical: heparin given on paper with no pre-downtime order
+   - R-REC-02 Bed 12, warning: 02:55 vitals out of range (Resp rate 27, SpO2 89), no response within 30 min
+   - R-VO-01 Bed 7, warning: verbal order missing provider co-sign
+   - DIFF-ALLERGY Bed 16, warning: cephalexin allergy documented in the restored EHR
+   - DIFF-ORDER Bed 19, warning: pantoprazole order backloaded by pharmacy
+   - DIFF-ADT Bed 5 to ICU 4, info: transfer during downtime
+
+   R-REC-04 (dose mismatch) does not fire in this flow because the MAR's 5000 units has no order on Bed 2 to compare against. To show it, correct a Bed 12 MAR's dose to 2500 units before verifying: R-REC-04 (critical) and R-REC-03 fire on Bed 12. Verify one record, mark it entered, and watch the audit log and sync status update. Optional, if time allows: **Incident report → Build report** shows the timeline from the audit log with a two-paragraph summary on top. **Print report** prints it on one page.
+7. **1:20 - Handoff and evidence.** The shift digest writes itself for the 7 AM team. It uses verified facts only: records still awaiting verification appear only as "awaiting verification", and their discrepancies are held back. Each line cites its source. Close on `RESULTS.md`: extraction accuracy per reader and combined, packet faithfulness, grounding rate, cost per outage-hour.
 
 TODO: confirm timings in the first full rehearsal (8:00 AM) and add the network-killed rehearsal notes.

@@ -57,7 +57,7 @@
         <div class="action-buttons">
           <button id="btn-refresh-patients" class="btn btn-secondary" type="button">Refresh</button>
           <button id="btn-print-all" class="btn btn-secondary" type="button">Print all packets</button>
-          <button id="btn-go-downtime" class="btn btn-danger btn-lg" type="button">Go to downtime</button>
+          <button id="btn-go-downtime" class="btn btn-danger btn-lg" type="button">Declare downtime</button>
         </div>
       </div>
       <!-- Readiness: per-patient snapshots older than 30 unit-minutes (R-STALE-01), from GET /rules/current. -->
@@ -78,17 +78,9 @@
       <div class="action-bar">
         <div>
           <h1 id="h-during" class="view-title">During downtime</h1>
-          <p class="muted">Ask the downtime policy. Photograph each completed paper form.</p>
+          <p class="muted">Ask the downtime policy, photograph each completed paper form, then work through your checklist.</p>
         </div>
       </div>
-      <section class="card" aria-labelledby="h-checklist">
-        <div class="card-head">
-          <h2 id="h-checklist" class="card-title">Your downtime checklist</h2>
-          <p id="checklist-meta" class="muted small" aria-live="polite"></p>
-        </div>
-        <div id="checklist-items"></div>
-        <p class="muted small">From the downtime policy, section 2 and the duties it names. Check marks stay on this device.</p>
-      </section>
       <div class="grid-2">
         <section class="card" aria-labelledby="h-policy">
           <h2 id="h-policy" class="card-title">Policy question</h2>
@@ -139,6 +131,14 @@
         <h2 id="h-capture-result" class="card-title">Captured record</h2>
         <div id="capture-result" aria-live="polite"></div>
       </section>
+      <section class="card" aria-labelledby="h-checklist">
+        <div class="card-head">
+          <h2 id="h-checklist" class="card-title">Your downtime checklist</h2>
+          <p id="checklist-meta" class="muted small" aria-live="polite"></p>
+        </div>
+        <div id="checklist-items"></div>
+        <p id="checklist-foot" class="muted small">From the downtime policy, section 2 and the duties it names.</p>
+      </section>
     </section>
 
     <!-- Phase 3: Recovery -->
@@ -180,6 +180,16 @@
           <div id="costs"></div>
         </section>
       </div>
+      <section id="incident-card" class="card" aria-labelledby="h-incident">
+        <div class="card-head">
+          <h2 id="h-incident" class="card-title">Incident report</h2>
+          <div class="action-buttons">
+            <button id="btn-incident" class="btn btn-secondary" type="button">Build report</button>
+            <button id="btn-print-incident" class="btn btn-quiet" type="button" disabled>Print report</button>
+          </div>
+        </div>
+        <div id="incident"></div>
+      </section>
       <section class="card" aria-labelledby="h-audit">
         <div class="card-head">
           <h2 id="h-audit" class="card-title">Audit log</h2>

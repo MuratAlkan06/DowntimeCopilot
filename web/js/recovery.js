@@ -64,8 +64,9 @@ async function restore() {
       ? 'Still offline — reconciliation runs when connectivity returns.' : `Restore failed (${r.error}).`));
     return;
   }
-  const st = await loadStatus(); // restore time on the unit clock
-  if (!st?.restored_at) set('restoredAt', new Date().toISOString());
+  // Restore time is the server's unit clock (GET /status restored_at), never the browser clock.
+  const s = await loadStatus();
+  set('restoredAt', s?.restored_at || store.unitNow);
   discrepancies = asList(r.data, 'discrepancies', 'items');
   renderDiscrepancies();
   mount($('recovery-status'), h('span', {}, `Systems restored ${fmtTime(store.restoredAt, { unit: true })} · ${discrepancies.length} discrepancies flagged.`));
@@ -184,7 +185,9 @@ export async function loadAudit() {
       { label: 'Retry', onClick: loadAudit }));
     return;
   }
-  const events = asList(r.data, 'events', 'items').slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  // GET /audit is newest-first by store sequence (ORDER BY seq DESC). Keep that order: equal or
+  // clamped unit-clock stamps can tie, so sorting by ts would misplace the newest rows.
+  const events = asList(r.data, 'events', 'items');
   if (!events.length) { mount(el, stateBox('empty', 'No audit events yet.')); return; }
   const synced = events.filter((e) => e.synced).length;
   mount(el,
@@ -197,6 +200,50 @@ export async function loadAudit() {
         h('td', {}, labelize(e.action)),
         h('td', {}, `${labelize(e.target_type)}${e.target_id ? ` · ${e.target_id}` : ''}`),
         h('td', {}, e.synced ? chip('Synced', 'ok') : chip('Pending', 'neutral'))))))));
+}
+
+// ---------------------------------------------------------------- incident report
+
+export async function loadIncident() {
+  const el = $('incident');
+  const printBtn = $('btn-print-incident');
+  mount(el, stateBox('loading', 'Building the incident report…'));
+  const r = await api('/incident');
+  if (!r.ok) {
+    printBtn.disabled = true;
+    mount(el, stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline and no report is cached yet.' : `Couldn't build the incident report (${r.error}).`,
+      { label: 'Retry', onClick: loadIncident }));
+    return;
+  }
+  const d = r.data || {};
+  const rows = asList(d.timeline);
+  mount(el, h('div', { class: 'incident' },
+    cachedNote(r),
+    h('p', { class: 'print-only incident-title' }, 'EHR downtime incident report'),
+    h('p', { class: 'muted small' },
+      `Outage ${fmtTime(d.outage_started_at)} – ${d.restored_at ? fmtTime(d.restored_at, { unit: true }) : 'not restored yet'} · `,
+      `Written ${fmtTime(d.generated_at)} · `, h('span', { class: 'mono' }, d.model_id || '')),
+    asList(d.summary).map((p) => h('p', { class: 'answer-text' }, p)),
+    h('p', { class: 'muted small' }, `Summary is an AI draft (safety check: ${labelize(d.guardrail?.status || 'unknown')}); the timeline is the audit log.`),
+    rows.length
+      ? h('div', { class: 'table-wrap' }, h('table', { class: 'data-table incident-table' },
+        h('thead', {}, h('tr', {}, ['Time', 'Event', 'Patient', 'Detail', 'Role'].map((t) => h('th', { scope: 'col' }, t)))),
+        h('tbody', {}, rows.map((x) => h('tr', {},
+          h('td', { class: 'mono' }, fmtTime(x.ts)),
+          h('td', {}, x.event),
+          h('td', {}, x.patient || '—'),
+          h('td', {}, x.detail || ''),
+          h('td', {}, x.role))))))
+      : stateBox('empty', 'No lifecycle events yet. Declare downtime to start the timeline.'),
+  ));
+  printBtn.disabled = !rows.length;
+}
+
+/** One-page print of the report only (print.css: body.printing-incident). */
+function printIncident() {
+  document.body.classList.add('printing-incident');
+  window.addEventListener('afterprint', () => document.body.classList.remove('printing-incident'), { once: true });
+  window.print();
 }
 
 // ---------------------------------------------------------------- costs
@@ -252,7 +299,10 @@ export function initRecovery() {
   $('btn-audit').addEventListener('click', loadAudit);
   $('btn-sync').addEventListener('click', syncAudit);
   $('btn-costs').addEventListener('click', loadCosts);
+  $('btn-incident').addEventListener('click', loadIncident);
+  $('btn-print-incident').addEventListener('click', printIncident);
   renderDiscrepancies();
+  mount($('incident'), h('p', { class: 'muted' }, 'Timeline of the outage from the audit log, with a two-paragraph summary. Printable on one page.'));
   mount($('digest'), h('p', { class: 'muted' }, 'The SBAR handoff for the oncoming shift, written from the audit log and captured records.'));
   on('role', () => { if (records.length) renderBackload(); });
   on('records-changed', () => { if (store.phase === 'recovery') { syncAudit(); loadCosts(); } });

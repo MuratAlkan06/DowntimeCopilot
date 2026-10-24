@@ -1,6 +1,5 @@
 // Fetch wrapper: same-origin relative URLs, never throws, tracks connectivity.
 // Result shape: { ok, status, data, error, offline, cachedAt }.
-
 import { store } from './state.js';
 
 const listeners = new Set();
@@ -63,14 +62,20 @@ async function fromCache(path) {
   return { ok: false, status: 0, data: null, offline: true, error: 'Offline and not cached on this device yet' };
 }
 
-export async function api(path, { method = 'GET', json, form, headers } = {}) {
-  // The role switcher is the actor for every request (audit, captured_by_role, two-person verify).
-  const init = { method, headers: { Accept: 'application/json', 'X-Role': store.role, ...(headers || {}) } };
+// Cache key of the last answer to a policy question; must match replayKey in sw.js, which writes it.
+const normQuestion = (q) => String(q ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+export const policyReplayKey = (q) => `/policy/ask?replay=${encodeURIComponent(normQuestion(q))}`;
+
+/** `replay`: cache key a read-only POST (policy answers) falls back to when offline. */
+export async function api(path, { method = 'GET', json, form, headers, replay } = {}) {
+  // Every write carries the role switcher's role (X-Role): the server audits it as the actor.
+  const role = method === 'GET' ? {} : { 'X-Role': store.role };
+  const init = { method, headers: { Accept: 'application/json', ...role, ...(headers || {}) } };
   if (json !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(json); }
   if (form) init.body = form;
 
   if (net.simulated) {
-    if (method === 'GET') return fromCache(path);
+    if (method === 'GET' || replay) return fromCache(replay || path);
     return { ok: false, status: 0, data: null, offline: true, error: 'Offline — action not sent' };
   }
 
@@ -79,7 +84,7 @@ export async function api(path, { method = 'GET', json, form, headers } = {}) {
     res = await fetch(path, init);
   } catch {
     setFetchFailed(true);
-    if (method === 'GET') return fromCache(path);
+    if (method === 'GET' || replay) return fromCache(replay || path);
     return { ok: false, status: 0, data: null, offline: true, error: 'Network unreachable — action not sent' };
   }
 
