@@ -59,6 +59,16 @@ class Store:
             self._db.commit()
             return rows
 
+    def clear(self) -> None:
+        """Delete every row (demo reset: `python -m simulator.seed --fresh`). The schema stays, so a
+        running app keeps its open connection and simply sees an empty store."""
+        with self._lock:
+            tables = [r[0] for r in self._db.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")]
+            for t in tables:
+                self._db.execute(f"DELETE FROM {t}")  # names come from sqlite_master, not user input
+            self._db.commit()
+
     # ------------------------------------------------------------ kv
     def set_kv(self, key: str, value: str | None) -> None:
         self._exec("INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)", (key, value))
