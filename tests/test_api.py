@@ -264,12 +264,63 @@ def test_recovery_restore_discrepancies(api):
     rule_ids = {d.rule_id for d in found}
     assert {"R-REC-01", "R-REC-02", "R-REC-03", "R-VO-01", "DIFF-ORDER", "DIFF-ADT", "DIFF-ALLERGY"} <= rule_ids
     assert {d.patient_id for d in found if d.rule_id == "R-REC-01"} == {"pt-02"}
+    assert "R-REC-04" not in rule_ids  # the bed 12 MAR's 5000 units matches the heparin order
     allergy = next(ch for ch in sim.state.restore_changes if ch["kind"] == "allergy_added")
     (diff,) = [d for d in found if d.rule_id == "DIFF-ALLERGY"]
     assert diff.patient_id == allergy["patient_id"] and diff.severity.value == "warning"
     assert allergy["substance"] in diff.description and diff.record_id is None
     assert audited("recovery.restore")
     assert len(api.get("/discrepancies").json()) == len(found) and audited("discrepancy.list")
+
+
+VO_BED7 = "Read back: heparin 5000 units SC every 12 hours, Dr. Okafor, read back confirmed"  # DEMO.md step 4
+
+# DEMO.md step 6: seed --fresh, +15, declare, vitals (Bed 12) + MAR (Bed 2) + verbal order (Bed 7), +45, restore.
+# Exactly these, nothing else (rule_id, patient_id, severity).
+PLANTED = sorted([
+    ("R-REC-01", "pt-02", "critical"),    # heparin on paper, Bed 2 has no heparin order
+    ("R-REC-02", "pt-12", "warning"),     # 02:55 SpO2 89, no documented response by 03:25
+    ("R-VO-01", "pt-07", "warning"),      # verbal order not co-signed
+    ("DIFF-ADT", "pt-05", "info"),        # Bed 5 -> ICU 4
+    ("DIFF-ORDER", "pt-19", "warning"),   # pantoprazole backloaded by pharmacy
+    ("DIFF-ALLERGY", "pt-16", "warning"),  # cephalexin documented in the restored EHR
+])
+
+
+def scripted_flow(c: TestClient) -> list[Discrepancy]:
+    from simulator.state import DEFAULT_SEED
+    simc = TestClient(sim.app)
+    simc.post("/reset", json={"seed": DEFAULT_SEED})
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(c)
+    capture(c, "vitals_flowsheet")
+    capture(c, "downtime_mar", patient_id="pt-02")
+    r = c.post("/capture", data={"form_type": "verbal_order", "readback_text": VO_BED7, "patient_id": "pt-07"},
+               headers={"X-Role": "rn"})
+    assert r.status_code == 201, r.text
+    simc.post("/clock/advance", json={"minutes": 45})
+    r = c.post("/recovery/restore")
+    assert r.status_code == 200, r.text
+    return [Discrepancy.model_validate(d) for d in r.json()]
+
+
+def test_scripted_flow_yields_exactly_the_planted_set(api):
+    found = scripted_flow(api)
+    assert sorted((d.rule_id, d.patient_id, d.severity.value) for d in found) == PLANTED
+    assert len({d.discrepancy_id for d in found}) == len(PLANTED)
+
+
+def test_rec04_dose_mismatch_through_restore(api):
+    """A reviewer-corrected MAR dose (2500 units) against Bed 12's heparin 5000 units order."""
+    simc = TestClient(sim.app)
+    simc.post("/clock/advance", json={"minutes": 15})
+    go_to_downtime(api)
+    rec = capture(api, "downtime_mar")
+    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "2500 units"}, headers={"X-Role": "rn"})
+    found = [Discrepancy.model_validate(d) for d in api.post("/recovery/restore").json()]
+    (hit,) = [d for d in found if d.rule_id == "R-REC-04"]
+    assert (hit.patient_id, hit.record_id, hit.severity.value) == ("pt-12", rec.record_id, "critical")
+    assert "2500 units" in hit.description and "5000 units" in hit.description
 
 
 def test_diff_restored_allergy_added_and_removed():
