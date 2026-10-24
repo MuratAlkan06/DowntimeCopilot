@@ -1,0 +1,44 @@
+{
+  "patient_id": "pt-02",
+  "mrn": "SYN-100202",
+  "name": "Orla Placeholder",
+  "dob": "1948-03-14",
+  "age": 78,
+  "sex": "female",
+  "bed": "Bed 2",
+  "admitting_dx": "Heart failure exacerbation",
+  "code_status": "DNR/DNI",
+  "isolation": null,
+  "allergies": [],
+  "medications": [
+    {
+      "name": "furosemide",
+      "dose": "40 mg",
+      "route": "IV",
+      "frequency": "q12h",
+      "next_due": "2026-10-24T06:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-23T18:00:00Z"
+    },
+    {
+      "name": "metoprolol tartrate",
+      "dose": "25 mg",
+      "route": "PO",
+      "frequency": "q12h",
+      "next_due": "2026-10-24T08:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-23T20:00:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 20G left forearm"
+  ],
+  "pending_labs": [
+    "BMP 05:00",
+    "BNP 05:00"
+  ],
+  "fall_risk": "high",
+  "weight_kg": 61.2,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

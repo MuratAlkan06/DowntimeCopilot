@@ -1,0 +1,45 @@
+{
+  "patient_id": "pt-11",
+  "mrn": "SYN-100211",
+  "name": "Gita Dummyworth",
+  "dob": "1967-02-11",
+  "age": 59,
+  "sex": "female",
+  "bed": "Bed 11",
+  "admitting_dx": "Diabetic ketoacidosis, resolving",
+  "code_status": "Full code",
+  "isolation": null,
+  "allergies": [],
+  "medications": [
+    {
+      "name": "insulin regular infusion",
+      "dose": "per DKA protocol",
+      "route": "IV",
+      "frequency": "titrate hourly",
+      "next_due": "2026-10-24T03:00:00Z",
+      "high_alert": true,
+      "last_given": "2026-10-24T02:00:00Z"
+    },
+    {
+      "name": "potassium chloride",
+      "dose": "20 mEq",
+      "route": "IV",
+      "frequency": "q4h per protocol",
+      "next_due": "2026-10-24T05:00:00Z",
+      "high_alert": true,
+      "last_given": "2026-10-24T01:00:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 18G left antecubital",
+    "PIV 20G right forearm"
+  ],
+  "pending_labs": [
+    "BMP q2h next 04:00",
+    "POC glucose hourly"
+  ],
+  "fall_risk": "low",
+  "weight_kg": 58.4,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

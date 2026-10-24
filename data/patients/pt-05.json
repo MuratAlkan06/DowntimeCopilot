@@ -1,0 +1,51 @@
+{
+  "patient_id": "pt-05",
+  "mrn": "SYN-100205",
+  "name": "Cleo Mockridge",
+  "dob": "1960-11-19",
+  "age": 65,
+  "sex": "female",
+  "bed": "Bed 5",
+  "admitting_dx": "Urinary tract infection with sepsis",
+  "code_status": "Full code",
+  "isolation": "contact",
+  "allergies": [
+    {
+      "substance": "sulfonamide antibiotics",
+      "reaction": "rash",
+      "severity": "moderate"
+    }
+  ],
+  "medications": [
+    {
+      "name": "sulfamethoxazole-trimethoprim",
+      "dose": "800-160 mg",
+      "route": "PO",
+      "frequency": "q12h",
+      "next_due": "2026-10-24T09:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-23T21:00:00Z"
+    },
+    {
+      "name": "ondansetron",
+      "dose": "4 mg",
+      "route": "IV",
+      "frequency": "q6h PRN nausea",
+      "next_due": null,
+      "high_alert": false,
+      "last_given": null
+    }
+  ],
+  "lines_drains": [
+    "PIV 20G left hand",
+    "Foley catheter"
+  ],
+  "pending_labs": [
+    "urine culture",
+    "lactate 04:00"
+  ],
+  "fall_risk": "moderate",
+  "weight_kg": 70.5,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}

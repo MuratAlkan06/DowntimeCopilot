@@ -1,0 +1,51 @@
+{
+  "patient_id": "pt-09",
+  "mrn": "SYN-100209",
+  "name": "Finn Sampleton",
+  "dob": "1944-09-22",
+  "age": 82,
+  "sex": "male",
+  "bed": "Bed 9",
+  "admitting_dx": "Left hip fracture, pre-op",
+  "code_status": "DNR",
+  "isolation": null,
+  "allergies": [
+    {
+      "substance": "latex",
+      "reaction": "contact dermatitis",
+      "severity": "mild"
+    }
+  ],
+  "medications": [
+    {
+      "name": "morphine",
+      "dose": "2 mg",
+      "route": "IV",
+      "frequency": "q4h PRN pain",
+      "next_due": "2026-10-24T04:30:00Z",
+      "high_alert": true,
+      "last_given": "2026-10-24T00:30:00Z"
+    },
+    {
+      "name": "acetaminophen",
+      "dose": "1 g",
+      "route": "PO",
+      "frequency": "q6h",
+      "next_due": "2026-10-24T06:00:00Z",
+      "high_alert": false,
+      "last_given": "2026-10-24T00:00:00Z"
+    }
+  ],
+  "lines_drains": [
+    "PIV 20G right hand",
+    "Foley catheter"
+  ],
+  "pending_labs": [
+    "type and screen",
+    "INR 05:00"
+  ],
+  "fall_risk": "high",
+  "weight_kg": 72.8,
+  "snapshot_time": "2026-10-24T02:45:00Z",
+  "source": "bca-feed-sim"
+}
