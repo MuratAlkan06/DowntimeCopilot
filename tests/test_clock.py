@@ -1,6 +1,7 @@
 """Unit clock (app.clock): audit, cost and digest stamps follow the simulator clock once it has been read."""
 from __future__ import annotations
 
+import threading
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -132,6 +133,23 @@ def test_frozen_clock_audit_is_newest_first_by_seq_with_ordered_stamps(unit):
     assert [e.action for e in events[:3]] == ["audit.list", "backload.entered", "backload.verify"]
     stamps = [e.ts for e in reversed(events)]
     assert stamps == sorted(stamps)
+
+
+def test_parallel_audit_writers_stamp_in_seq_order(unit):
+    """Store.audit stamps under the insert lock: with parallel writers, seq order is also ts order."""
+    sim_client.now()
+
+    def write(i: int) -> None:
+        for _ in range(50):
+            unit.audit("rn", f"test.parallel.{i}", "test")
+
+    threads = [threading.Thread(target=write, args=(i,)) for i in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    stamps = [e.ts for e in reversed(unit.list_audit(1000))]  # oldest seq first
+    assert len(stamps) == 400 and stamps == sorted(stamps)
 
 
 def test_digest_generated_at_on_unit_clock(unit):

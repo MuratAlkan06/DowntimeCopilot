@@ -43,6 +43,10 @@ def scheduled_pull(role: str = "scheduler") -> bool:
 def pull_and_store(role: str = "system") -> list[PatientSnapshot]:
     store = get_store()
     try:
+        sim_client.clock()  # sync the unit clock first: a fresh process's first pull is audited in unit time
+    except sim_client.SimUnavailable:
+        pass  # the pull still runs; a never-synced process keeps the wall-clock fallback stamp (app/clock.py)
+    try:
         patients = sim_client.pull_snapshot()
     except sim_client.SimUnavailable as exc:
         store.audit(role, "snapshot.pull_failed", "snapshot", None, {"error": str(exc)})

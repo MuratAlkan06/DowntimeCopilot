@@ -60,6 +60,16 @@ def test_snapshot_pull_and_view(api):
     assert s["phase"] == "before" and s["patients"] == 12 and audited("status.view")
 
 
+def test_first_pull_of_fresh_process_is_audited_in_unit_time(api):
+    """Fresh store, never-synced unit clock, simulator reachable: the FIRST request is POST /snapshot/pull.
+    The pull syncs the unit clock before it audits, so the row is in the simulator era (02:45), not wall-clock."""
+    from simulator.state import CLOCK_START
+    assert clock._synced is None and not get_store().list_audit()
+    assert api.post("/snapshot/pull").status_code == 200
+    pull = next(e for e in get_store().list_audit() if e.action == "snapshot.pull")
+    assert CLOCK_START <= pull.ts < CLOCK_START + timedelta(minutes=15)
+
+
 def test_patients_list(api):
     assert api.get("/patients").json() == []
     api.post("/snapshot/pull")
