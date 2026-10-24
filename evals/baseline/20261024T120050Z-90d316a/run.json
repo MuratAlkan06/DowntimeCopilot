@@ -1,0 +1,216 @@
+{
+  "budget": {
+    "limit_usd": 2.0,
+    "max_projected_usd": 0.88,
+    "spent_with_allowances_usd": 0.547976
+  },
+  "finished_at": "2026-10-24T12:02:21+00:00",
+  "git_dirty": false,
+  "git_sha": "90d316a3df10e97a71ea6325d56ed22ad8b0b7d2",
+  "manifest": {
+    "budget": {
+      "limit_usd": 2.0,
+      "step_estimates_usd": {
+        "forms": 0.25,
+        "packets": 0.4,
+        "policy": 0.2,
+        "speech": 0.03
+      },
+      "unmetered_allowance_usd": {
+        "guardrail_check": 0.01,
+        "textract_page": 0.07,
+        "transcribe_job": 0.01
+      }
+    },
+    "clock_advance_minutes": {
+      "before_costs": 45,
+      "before_downtime": 15
+    },
+    "form_fixtures": [
+      "vitals_flowsheet-01",
+      "downtime_mar-01",
+      "admission_note-01"
+    ],
+    "note": "Fixed BEFORE any run. One live run uses exactly these inputs; the first complete run is published.",
+    "questions": [
+      {
+        "expected_section": "4.2",
+        "question": "How do I get a stat lab with the order system down?"
+      },
+      {
+        "expected_section": "6",
+        "question": "How do I take a verbal order and do the read-back during downtime?"
+      },
+      {
+        "expected_section": "5",
+        "question": "How do I give medications without barcode scanning?"
+      },
+      {
+        "expected_section": "1",
+        "question": "Who declares downtime, and how is it announced?"
+      },
+      {
+        "expected_section": "7",
+        "question": "What does each role backload when the EHR comes back?"
+      }
+    ],
+    "seed_patients": 12,
+    "speech_fixture": {
+      "patient_id": "pt-07",
+      "stem": "verbal_order-01"
+    },
+    "version": 1
+  },
+  "paths": {
+    "aws_region": "us-east-1",
+    "guardrail_mode": "bedrock",
+    "routes": {
+      "checker": "us.amazon.nova-2-lite-v1:0",
+      "digest": "us.anthropic.claude-sonnet-4-6",
+      "form_read": "us.amazon.nova-2-lite-v1:0",
+      "incident": "us.anthropic.claude-sonnet-4-6",
+      "packet": "us.anthropic.claude-sonnet-4-6",
+      "policy": "us.anthropic.claude-sonnet-4-6",
+      "readiness": "us.anthropic.claude-sonnet-4-6",
+      "structure": "us.amazon.nova-2-lite-v1:0",
+      "triage": "us.amazon.nova-2-lite-v1:0"
+    },
+    "textract_enabled": true
+  },
+  "photographed_fixtures": 0,
+  "run_id": "20261024T120050Z-90d316a",
+  "services": [
+    {
+      "probe": "ALLOWED",
+      "service": "Claude on Bedrock"
+    },
+    {
+      "probe": "ALLOWED",
+      "service": "Bedrock Guardrails"
+    },
+    {
+      "probe": "ALLOWED (list only); creation UNVERIFIED",
+      "service": "Knowledge Bases"
+    },
+    {
+      "probe": "ALLOWED",
+      "service": "Textract"
+    },
+    {
+      "probe": "ALLOWED",
+      "service": "Transcribe"
+    },
+    {
+      "probe": "ALLOWED",
+      "service": "DynamoDB"
+    },
+    {
+      "probe": "AVAILABLE, DEFERRED",
+      "service": "Lambda + EventBridge"
+    },
+    {
+      "probe": "ALLOWED",
+      "service": "S3"
+    }
+  ],
+  "started_at": "2026-10-24T12:00:50+00:00",
+  "truth": {
+    "admission_note-01": {
+      "fields": {
+        "allergies": "penicillin (hives)",
+        "bed": "12",
+        "height_cm": "178",
+        "history": "type 2 diabetes, hypertension",
+        "weight_kg": "92.4"
+      },
+      "form_type": "admission_note",
+      "image": "admission_note-01.jpg",
+      "seed": 20261023,
+      "synthetic": true
+    },
+    "downtime_mar-01": {
+      "fields": {
+        "bed": "12",
+        "dose": "5000 units",
+        "initials": "PN",
+        "medication": "heparin",
+        "route": "SC",
+        "second_verifier": null,
+        "time_given": "02:50"
+      },
+      "form_type": "downtime_mar",
+      "image": "downtime_mar-01.jpg",
+      "seed": 20261023,
+      "synthetic": true
+    },
+    "verbal_order-01": {
+      "audio": "verbal_order-01.wav",
+      "bed": "7",
+      "fields": {
+        "dose": "5000 units",
+        "frequency": "now",
+        "medication": "heparin",
+        "ordering_provider": "Dr. Quill",
+        "provider_cosign": "no",
+        "read_back": "yes",
+        "route": "SC"
+      },
+      "form_type": "verbal_order",
+      "patient_id": "pt-07",
+      "rate_wpm": 165,
+      "script": "Verbal order for bed 7: heparin five thousand units subcutaneous now. Ordering provider Doctor Quill. Read-back confirmed.",
+      "synthetic": true,
+      "transcript": "Verbal order for bed 7: heparin 5000 units subcutaneous now. Ordering provider Doctor Quill. Read-back confirmed.",
+      "voice": "Samantha"
+    },
+    "vitals_flowsheet-01": {
+      "fields": {
+        "bed": "12",
+        "bp_diastolic": "86",
+        "bp_systolic": "148",
+        "heart_rate": "104",
+        "initials": "PN",
+        "pain_score": null,
+        "resp_rate": "22",
+        "spo2": "89",
+        "temp_c": "37.8",
+        "time": "02:55"
+      },
+      "form_type": "vitals_flowsheet",
+      "image": "vitals_flowsheet-01.jpg",
+      "seed": 20261023,
+      "synthetic": true
+    }
+  },
+  "unmetered": {
+    "guardrail_apply": 5,
+    "textract_analyze_document": 3,
+    "transcribe_jobs": 1
+  },
+  "vital_ranges": {
+    "bp_diastolic": [
+      50,
+      100
+    ],
+    "bp_systolic": [
+      90,
+      160
+    ],
+    "heart_rate": [
+      50,
+      110
+    ],
+    "resp_rate": [
+      10,
+      24
+    ],
+    "spo2": [
+      92,
+      100
+    ],
+    "temp_c": [
+      36.0,
+      38.0
+    ]
+  }
+}

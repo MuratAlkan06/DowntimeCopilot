@@ -1,0 +1,105 @@
+{
+  "fixture": "verbal_order-01",
+  "record": {
+    "audio_ref": "blob:45e722daea034d8db4e54f65bce37cc7",
+    "backload_group": "pharmacy_orders",
+    "captured_at": "2026-10-24T03:00:00Z",
+    "captured_by_role": "charge_nurse",
+    "entered_at": null,
+    "fields": [
+      {
+        "agreement": "single",
+        "confidence": 1.0,
+        "crop": null,
+        "flag": null,
+        "name": "medication",
+        "value": "Heparin"
+      },
+      {
+        "agreement": "single",
+        "confidence": 1.0,
+        "crop": null,
+        "flag": null,
+        "name": "dose",
+        "value": "5000 units"
+      },
+      {
+        "agreement": "single",
+        "confidence": 1.0,
+        "crop": null,
+        "flag": null,
+        "name": "route",
+        "value": "subcutaneous"
+      },
+      {
+        "agreement": "single",
+        "confidence": 1.0,
+        "crop": null,
+        "flag": null,
+        "name": "frequency",
+        "value": "now"
+      },
+      {
+        "agreement": "single",
+        "confidence": 1.0,
+        "crop": null,
+        "flag": null,
+        "name": "ordering_provider",
+        "value": "Doctor Quill"
+      },
+      {
+        "agreement": "single",
+        "confidence": 1.0,
+        "crop": null,
+        "flag": null,
+        "name": "read_back",
+        "value": "confirmed"
+      },
+      {
+        "agreement": "single",
+        "confidence": 0.0,
+        "crop": null,
+        "flag": "unreadable",
+        "name": "provider_cosign",
+        "value": null
+      }
+    ],
+    "form_type": "verbal_order",
+    "image_ref": null,
+    "patient_id": "pt-07",
+    "reads": {
+      "bedrock": {
+        "confidence": {
+          "dose": 1.0,
+          "frequency": 1.0,
+          "medication": 1.0,
+          "ordering_provider": 1.0,
+          "provider_cosign": 0.0,
+          "read_back": 1.0,
+          "route": 1.0
+        },
+        "fields": {
+          "dose": "5000 units",
+          "frequency": "now",
+          "medication": "Heparin",
+          "ordering_provider": "Doctor Quill",
+          "provider_cosign": null,
+          "read_back": "confirmed",
+          "route": "subcutaneous"
+        }
+      },
+      "textract": null
+    },
+    "record_id": "rec-102093bef23a",
+    "status": "needs_review",
+    "verified_at": null,
+    "verified_by": null
+  },
+  "transcribe": {
+    "detail": "",
+    "outcome": "transcribed",
+    "seconds": 22.22,
+    "text": "Verbal order for bed 7, Heparin 5000 units subcutaneous now. Ordering provider Doctor Quill. Read back confirmed."
+  },
+  "x_transcribe": "transcribed"
+}

@@ -7,7 +7,11 @@ never typed here; they come from the bundle.
 ## faithfulness
 
 One run of 12 packets. Every first-pass line resolved, so the regenerate-once path and the omission path did not
-run in this bundle; their behaviour is covered by unit tests only, not by this measurement.
+run in this bundle; their behaviour is covered by unit tests only, not by this measurement. The line count differs
+from the previous baseline (`20261024T102817Z-a020e81`, kept under `evals/baseline/` as history) for two reasons.
+The seeded snapshot changed in exactly two strings: pt-09's INR and pt-21's H&H pending labs now carry the
+`(critical)` marker added after that run, and both packets gained the lines that mention it. The other per-packet
+differences (pt-02, pt-07, pt-11, pt-16) come from identical inputs, so they are run-to-run model variance.
 
 ## grounding
 
@@ -34,17 +38,19 @@ counted as a false flag.
 One synthetic text-to-speech clip (`verbal_order-01.wav`, voice Samantha, 165 wpm), so this is not a measure of
 accuracy on real speech. Every structuring miss is a normalization gap and not a hearing error: "Doctor Quill"
 for "Dr. Quill", "confirmed" for "yes", "subcutaneous" for "SC". `provider_cosign` was left unread because the
-read-back never mentions a co-sign. S9 saw the same behaviour live.
+read-back never mentions a co-sign. S9 saw the same behaviour live, and this run repeats the previous baseline's
+four misses field for field. Verbal-order structuring is still the weakest measured step.
 
 ## latency_cost
 
 `checker` is the packet guardrail. Packets send grounding without a query, so `BedrockGuardrail` routes them to
-the Nova 2 Lite checker, which is metered here. ApplyGuardrail runs only for policy answers. Harness bug, fixed
-after this run: `run.json` `unmetered.guardrail_apply` says 17, but the real number of ApplyGuardrail calls was
-5 (one per policy answer). The report now derives the count from the bundle, and the bundle was left as recorded.
-The same bug inflated the budget guard's running allowance (`spent_with_allowances_usd`) by 12 × $0.01, which only
-made the guard stricter. Latency comes from `/costs` and covers the model call only (no HTTP, no Textract or
-Transcribe time).
+the Nova 2 Lite checker, which is metered here. ApplyGuardrail runs only for policy answers (one per answer). USD
+comes from the app's `PRICING` table at the `us.` geographic-profile rates, which list 10% above the `global.`
+rates. The table was corrected to those rates before this run, so this bundle's spend is about 10% higher than the
+previous baseline's for the same tokens. The rest of the difference is token-count variance. The previous
+baseline's `unmetered.guardrail_apply` over-count (a harness bug fixed before this run) does not appear here.
+Latency comes from `/costs` and covers the model call only (no HTTP, no Textract or Transcribe time); medians move
+run to run.
 
 ## outage_cost
 
