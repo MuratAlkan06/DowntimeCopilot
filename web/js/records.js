@@ -25,11 +25,14 @@ const whoLabel = (v) => String(v || '').split(' + ').map(roleLabel).join(' + ');
 
 function cropCell(rec, f) {
   if (!rec.image_ref || !f.crop) return h('td', { class: 'crop-cell' }, h('span', { class: 'muted small' }, '—'));
-  return h('td', { class: 'crop-cell' }, h('img', {
-    class: 'field-crop', loading: 'lazy', alt: `Photo of the ${labelize(f.name)} box`,
-    src: `/blobs/${encodeURIComponent(cropRef(rec, f.name))}`,
-    onerror: (e) => e.target.replaceWith(h('span', { class: 'muted small' }, 'No crop')),
-  }));
+  const src = `/blobs/${encodeURIComponent(cropRef(rec, f.name))}`;
+  // Click (or Enter) opens the crop at full size in a new tab.
+  const link = h('a', { class: 'crop-link', href: src, target: '_blank', rel: 'noopener', title: 'Open full size in a new tab' },
+    h('img', {
+      class: 'field-crop', loading: 'lazy', alt: `Photo of the ${labelize(f.name)} box`, src,
+      onerror: () => link.replaceWith(h('span', { class: 'muted small' }, 'No crop')),
+    }));
+  return h('td', { class: 'crop-cell' }, link);
 }
 
 function valueCell(rec, f, getCard, msg, onChange, tx, bv) {
@@ -101,7 +104,7 @@ export function renderRecord(rec, { onChange } = {}) {
   const verifyBox = h('div', { class: 'verify-box' });
   let card;
   const verifyBtn = rec.status === 'needs_review'
-    ? h('button', { class: 'btn btn-primary', type: 'button', onclick: () => act(rec, 'verify', card, msg, onChange) },
+    ? h('button', { class: 'btn btn-primary', type: 'button', 'data-action': 'verify', onclick: () => act(rec, 'verify', card, msg, onChange) },
       flagged ? `Verify (${flagged} flagged checked)` : 'Verify')
     : null;
 
@@ -144,7 +147,7 @@ export function renderRecord(rec, { onChange } = {}) {
         verifyBtn,
         rec.status === 'verified' || rec.status === 'needs_review'
           ? h('button', {
-            class: 'btn btn-success', type: 'button', disabled: rec.status !== 'verified',
+            class: 'btn btn-success', type: 'button', 'data-action': 'entered', disabled: rec.status !== 'verified',
             title: rec.status !== 'verified' ? 'A human must verify before marking entered' : null,
             onclick: () => act(rec, 'entered', card, msg, onChange),
           }, 'Mark entered in EHR')
@@ -156,21 +159,48 @@ export function renderRecord(rec, { onChange } = {}) {
   return card;
 }
 
+// The record as the server holds it now (null when offline or not found). There is no single-record GET.
+async function serverRecord(id) {
+  const r = await api('/backload', { headers: asRole() });
+  if (!r.ok || r.offline || !r.data) return null;
+  return Object.values(r.data).flat().find((x) => x?.record_id === id) || null;
+}
+
+// Buttons follow the record's status, never the outcome of the last click: "Mark entered" only when verified.
+function syncActions(card, rec) {
+  card.querySelectorAll('.record-actions button[data-action]').forEach((b) => {
+    b.disabled = b.dataset.action === 'verify' ? rec.status !== 'needs_review' : rec.status !== 'verified';
+  });
+}
+
+function redraw(card, rec, onChange) {
+  const next = renderRecord(rec, { onChange });
+  card.replaceWith(next);
+  onChange?.(rec);
+  emit('records-changed', rec);
+  return next;
+}
+
 async function act(rec, action, card, msg, onChange) {
   card.querySelectorAll('.record-actions button').forEach((b) => { b.disabled = true; });
   mount(msg, stateBox('loading', action === 'verify' ? 'Saving verification…' : 'Marking entered…'));
   // Identity is the role switcher's role (X-Role); the server rejects the same role verifying twice.
   const r = await api(`/backload/${encodeURIComponent(rec.record_id)}/${action}`, { method: 'POST', json: {}, headers: asRole() });
   if (!r.ok) {
-    mount(msg, stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — not saved. Try again when connected.' : `Not saved (${r.error}).`));
-    card.querySelectorAll('.record-actions button').forEach((b) => { b.disabled = false; });
+    const note = stateBox(r.offline ? 'offline' : 'error', r.offline ? 'Offline — not saved. Try again when connected.' : `Not saved (${r.error}).`);
+    // Offline: the last state the server gave us is `rec`. Online: re-read it (the error body carries no record).
+    const cur = (r.offline ? null : await serverRecord(rec.record_id)) || rec;
+    if (cur.status !== rec.status) {
+      mount(redraw(card, cur, onChange).querySelector('.record-msg'), note);
+      return;
+    }
+    mount(msg, note);
+    syncActions(card, cur);
+    if (!r.offline && cur.status === 'needs_review') {
+      loadVerification(cur, card.querySelector('.verify-box'), card.querySelector('.record-actions [data-action="verify"]'));
+    }
     return;
   }
-  const updated = r.data && r.data.record_id ? r.data
-    : { ...rec, status: action === 'verify' ? 'verified' : 'entered', verified_by: rec.verified_by || store.role,
-      verified_at: rec.verified_at || new Date().toISOString(), entered_at: action === 'entered' ? new Date().toISOString() : rec.entered_at };
-  const next = renderRecord(updated, { onChange });
-  card.replaceWith(next);
-  onChange?.(updated);
-  emit('records-changed', updated);
+  // Success: the server returns the record; if it ever does not, re-read rather than assume a status.
+  redraw(card, r.data?.record_id ? r.data : (await serverRecord(rec.record_id)) || rec, onChange);
 }

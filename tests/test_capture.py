@@ -174,7 +174,24 @@ def test_thresholds_env_overridable_and_flag_field(monkeypatch):
     assert flag("92") is None and flag("91") == FieldFlag.out_of_range
     monkeypatch.setenv("VITAL_RANGE_SPO2", "90,100")
     assert flag("90") is None and flag("89.9") == FieldFlag.out_of_range
-    assert not out_of_range("pain_score", "10") and not out_of_range("spo2", "unreadable")
+    assert not out_of_range("pain_score", "10")
+
+
+@pytest.mark.parametrize("value", ["abc", "1O4", "9 8", "98.6.1", "nan", "inf", "1e2", "unreadable"])
+def test_unparseable_numeric_vital_is_flagged(value):
+    assert out_of_range("heart_rate", value)
+    (f,) = merge(None, ReaderOutput(fields={"heart_rate": value}, confidence={"heart_rate": 0.95}))
+    assert f.flag == FieldFlag.out_of_range
+
+
+@pytest.mark.parametrize("value", ["22", " 22 ", "22.", "22.0", "+22"])
+def test_numeric_vital_in_range_is_not_flagged(value):
+    assert not out_of_range("resp_rate", value)
+
+
+def test_empty_vital_keeps_unreadable_semantics_and_free_text_fields_untouched():
+    assert not out_of_range("spo2", None) and not out_of_range("spo2", "") and not out_of_range("spo2", "  ")
+    assert not out_of_range("response", "abc") and not out_of_range("pain_score", "abc")
 
 
 def test_dry_run_fixture_records_are_contract_valid(env):

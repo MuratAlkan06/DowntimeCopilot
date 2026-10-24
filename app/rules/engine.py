@@ -12,6 +12,7 @@ Captured-record field names the recovery rules read (shared with app/capture):
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Callable
@@ -57,14 +58,22 @@ class RecoveryContext:
 
 # ------------------------------------------------------------------ helpers
 
+_NUMBER = re.compile(r"[+-]?(?:\d+\.?\d*|\.\d+)")  # digits with at most one decimal point
+
+
 def out_of_range(name: str, value: str | None) -> bool:
+    """True when a configured numeric vital is beyond its inclusive range, or is not a number at all
+    ("abc", "1O4"): an unparseable vital is never shown as in range. None/empty is left to the
+    unreadable path."""
     ranges = config.vital_ranges()
     if name not in ranges or value is None:
         return False
-    try:
-        v = float(str(value).strip())
-    except ValueError:
+    s = str(value).strip()
+    if not s:
         return False
+    if not _NUMBER.fullmatch(s):
+        return True
+    v = float(s)
     lo, hi = ranges[name]
     return not (lo <= v <= hi)
 

@@ -340,6 +340,8 @@ def test_edit_flags_and_locks_after_verify(api):
     assert {x["name"]: x for x in r["fields"]}["pain_score"]["flag"] is None  # human read it: no longer unreadable
     r = api.patch(f"/backload/{rec.record_id}/fields/spo2", json={"value": "85"}).json()
     assert {x["name"]: x for x in r["fields"]}["spo2"]["flag"] == "out_of_range"
+    r = api.patch(f"/backload/{rec.record_id}/fields/resp_rate", json={"value": "1O"}).json()  # letter O
+    assert {x["name"]: x for x in r["fields"]}["resp_rate"]["flag"] == "out_of_range"
     r = api.patch(f"/backload/{rec.record_id}/fields/heart_rate", json={"value": ""}).json()
     hr = {x["name"]: x for x in r["fields"]}["heart_rate"]
     assert hr["value"] is None and hr["flag"] == "unreadable"
