@@ -115,6 +115,25 @@ button, input, select, textarea { font: inherit; color: inherit; }
   background: var(--c-surface); color: var(--c-text);
 }
 
+.downtime-nav {
+  position: sticky; top: 0; z-index: 5;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--c-surface);
+  border-bottom: 2px solid var(--c-crit);
+  box-shadow: var(--shadow);
+}
+.downtime-tab {
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: 52px; padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md); font-weight: 500;
+  background: transparent; color: var(--c-muted);
+  border: 2px solid #e5e7eb; border-radius: var(--radius);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.downtime-tab:hover { color: var(--c-text); border-color: var(--c-accent); background: #eff6ff; }
+.downtime-tab[aria-current="page"] { background: var(--c-accent); color: white; font-weight: 600; border-color: var(--c-accent); box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2); }
+
 /* ---------------------------------------------------------------- banners */
 .banners { display: grid; gap: var(--sp-1); padding: var(--sp-2) var(--sp-5) 0; }
 .banner {
@@ -133,6 +152,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 main { padding: var(--sp-6) var(--sp-5) var(--sp-6); max-width: 1440px; margin: 0 auto; }
 main:focus { outline: none; }
 .view { display: grid; gap: var(--sp-4); }
+.route-view { display: grid; gap: var(--sp-4); }
 .action-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .action-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .view-title { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }

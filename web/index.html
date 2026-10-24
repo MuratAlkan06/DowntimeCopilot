@@ -33,10 +33,9 @@
     </div>
   </header>
 
-  <nav class="phase-nav" aria-label="Downtime phase">
-    <button class="phase-tab" type="button" data-phase="downtime"><span class="phase-num" aria-hidden="true">1</span><span>Go to downtime</span></button>
-    <button class="phase-tab" type="button" data-phase="during"><span class="phase-num" aria-hidden="true">2</span><span>During</span></button>
-    <button class="phase-tab" type="button" data-phase="recovery"><span class="phase-num" aria-hidden="true">3</span><span>Recovery</span></button>
+  <nav class="downtime-nav" aria-label="Downtime workflow" hidden>
+    <button class="downtime-tab" type="button" data-route="snapshots"><span>Snapshots</span></button>
+    <button class="downtime-tab" type="button" data-route="capture"><span>Capture</span></button>
   </nav>
 
   <div class="banners" aria-live="polite">
@@ -48,21 +47,20 @@
   </div>
 
   <main id="main" tabindex="-1">
-    <!-- Phase 1: Go to downtime -> packets -->
-    <section id="view-downtime" class="view" data-view="downtime" aria-labelledby="h-downtime">
+    <!-- Normal Operation: Patient list and recovery -->
+    <section id="view-normal" class="view" data-route="normal" aria-labelledby="h-normal">
       <div class="action-bar">
         <div>
-          <h1 id="h-downtime" class="view-title">Downtime packets</h1>
-          <p id="downtime-status" class="muted">Generate one SBAR packet per patient from the last good snapshot.</p>
+          <h1 id="h-normal" class="view-title">Hospital operations</h1>
+          <p id="normal-status" class="muted">Normal patient list and system status.</p>
         </div>
-        <div class="action-buttons">
+        <div class="action-buttons" id="normal-actions">
           <button id="btn-refresh-patients" class="btn btn-secondary" type="button">Refresh</button>
-          <button id="btn-print-all" class="btn btn-secondary" type="button">Print all packets</button>
-          <button id="btn-go-downtime" class="btn btn-danger btn-lg" type="button">Declare downtime</button>
         </div>
       </div>
-      <!-- Readiness: per-patient snapshots older than 30 unit-minutes (R-STALE-01), from GET /rules/current. -->
       <div id="readiness" class="banner banner-info readiness" role="status" hidden></div>
+
+      <!-- Patient list (always visible) -->
       <div class="split">
         <aside class="card list-pane" aria-labelledby="h-patients">
           <h2 id="h-patients" class="card-title">Patients</h2>
@@ -70,140 +68,119 @@
         </aside>
         <article id="packet" class="card packet-pane" aria-live="polite"></article>
       </div>
-      <!-- "Print all packets" renders every packet here, print only: one page per patient (print.css). -->
-      <div id="print-all" class="print-all" aria-hidden="true"></div>
-    </section>
 
-    <!-- Phase 2: During -->
-    <section id="view-during" class="view" data-view="during" aria-labelledby="h-during" hidden>
-      <div class="action-bar">
-        <div>
-          <h1 id="h-during" class="view-title">During downtime</h1>
-          <p class="muted">Ask the downtime policy, photograph each completed paper form, then work through your checklist.</p>
-        </div>
-      </div>
-      <div class="grid-2">
-        <section class="card" aria-labelledby="h-policy">
-          <h2 id="h-policy" class="card-title">Policy question</h2>
-          <form id="policy-form" class="stack">
-            <label for="policy-q" class="field-label">Ask about a downtime procedure</label>
-            <textarea id="policy-q" class="input" rows="3" required placeholder="How do I get a stat lab with the order system down?"></textarea>
-            <div id="policy-suggestions" class="chips"></div>
-            <button class="btn btn-primary" type="submit">Ask the policy</button>
-          </form>
-          <div id="policy-answer" aria-live="polite"></div>
-        </section>
-
-        <section class="card" aria-labelledby="h-capture">
-          <h2 id="h-capture" class="card-title">Capture a paper form</h2>
-          <form id="capture-form" class="stack" enctype="multipart/form-data">
-            <div class="row-2">
-              <label class="stack-tight">
-                <span class="field-label">Form type</span>
-                <select id="capture-type" name="form_type" class="select" required>
-                  <option value="vitals_flowsheet">Vitals flowsheet</option>
-                  <option value="downtime_mar">Downtime MAR</option>
-                  <option value="admission_note">Admission note</option>
-                  <option value="verbal_order">Verbal order (read-back)</option>
-                </select>
-              </label>
-              <label class="stack-tight">
-                <span class="field-label">Patient (optional)</span>
-                <select id="capture-patient" name="patient_id" class="select">
-                  <option value="">Read from form</option>
-                </select>
-              </label>
-            </div>
-            <label class="file-drop">
-              <span id="capture-file-label" class="field-label">Photograph or choose the form</span>
-              <input id="capture-file" name="file" type="file" accept="image/*" capture="environment">
-            </label>
-            <div id="recorder" class="recorder" hidden>
-              <button id="rec-toggle" class="btn btn-secondary btn-sm" type="button" aria-pressed="false">Record read-back</button>
-              <button id="rec-discard" class="btn btn-quiet btn-sm" type="button" hidden>Discard recording</button>
-              <span id="rec-status" class="recorder-status" role="status" aria-live="polite"></span>
-            </div>
-            <img id="capture-preview" class="capture-preview" alt="Preview of the selected form" hidden>
-            <label id="readback-wrap" class="stack-tight" hidden>
-              <span class="field-label">Typed read-back (if no audio)</span>
-              <textarea id="capture-readback" name="readback_text" class="input" rows="3" placeholder="Read back: insulin lispro 4 units subcut now, Dr. Okafor, read back confirmed"></textarea>
-            </label>
-            <button class="btn btn-primary" type="submit">Read form</button>
-          </form>
-          <div id="capture-pending" aria-live="polite"></div>
-        </section>
-      </div>
-      <section class="card" aria-labelledby="h-capture-result">
-        <h2 id="h-capture-result" class="card-title">Captured record</h2>
-        <div id="capture-result" aria-live="polite"></div>
-      </section>
-      <section class="card" aria-labelledby="h-checklist">
-        <div class="card-head">
-          <h2 id="h-checklist" class="card-title">Your downtime checklist</h2>
-          <p id="checklist-meta" class="muted small" aria-live="polite"></p>
-        </div>
-        <div id="checklist-items"></div>
-        <p id="checklist-foot" class="muted small">From the downtime policy, section 2 and the duties it names.</p>
-        <p id="checklist-cached" class="muted small" aria-live="polite"></p>
-      </section>
-    </section>
-
-    <!-- Phase 3: Recovery -->
-    <section id="view-recovery" class="view" data-view="recovery" aria-labelledby="h-recovery" hidden>
-      <div class="action-bar">
-        <div>
-          <h1 id="h-recovery" class="view-title">Recovery &amp; backload</h1>
-          <p id="recovery-status" class="muted">When the EHR returns, diff it against the snapshot and captured records.</p>
-        </div>
-        <div class="action-buttons">
-          <button id="btn-refresh-backload" class="btn btn-secondary" type="button">Refresh</button>
-          <button id="btn-restore" class="btn btn-success btn-lg" type="button">Systems restored</button>
-        </div>
-      </div>
-      <section class="card" aria-labelledby="h-disc">
-        <h2 id="h-disc" class="card-title">Discrepancies</h2>
-        <div id="discrepancies"></div>
-      </section>
-      <section class="card" aria-labelledby="h-backload">
+      <!-- Recovery/Backload section (only visible after restoration) -->
+      <section id="recovery-section" class="card" aria-labelledby="h-backload" hidden>
         <div class="card-head">
           <h2 id="h-backload" class="card-title">Backload queue</h2>
           <span id="backload-summary" class="muted"></span>
         </div>
         <div id="backload"></div>
       </section>
-      <div class="grid-2">
-        <section class="card" aria-labelledby="h-digest">
-          <div class="card-head">
-            <h2 id="h-digest" class="card-title">Shift digest</h2>
-            <button id="btn-digest" class="btn btn-secondary" type="button">Write digest</button>
+    </section>
+
+    <!-- Downtime Mode: Snapshots and Capture pages -->
+    <section id="view-downtime" class="view" data-route="downtime" aria-labelledby="h-downtime" hidden>
+      <div class="action-bar">
+        <div>
+          <h1 id="h-downtime" class="view-title">Downtime workflow</h1>
+          <p class="muted">Manage patient snapshots and capture records during outage.</p>
+        </div>
+      </div>
+
+      <!-- Snapshots Tab -->
+      <div id="route-snapshots" class="route-view" hidden>
+        <div class="action-bar">
+          <div>
+            <h2 class="view-subtitle">Snapshots</h2>
+            <p class="muted">Review cached patient data from the last good snapshot.</p>
           </div>
-          <div id="digest"></div>
+          <div class="action-buttons">
+            <button id="btn-refresh-packets" class="btn btn-secondary" type="button">Refresh</button>
+            <button id="btn-print-all" class="btn btn-secondary" type="button">Print all packets</button>
+          </div>
+        </div>
+        <!-- Readiness: per-patient snapshots older than 30 unit-minutes (R-STALE-01), from GET /rules/current. -->
+        <div id="readiness-downtime" class="banner banner-info readiness" role="status" hidden></div>
+        <div class="split">
+          <aside class="card list-pane" aria-labelledby="h-packets">
+            <h2 id="h-packets" class="card-title">Patients</h2>
+            <div id="snapshot-patient-list"></div>
+          </aside>
+          <article id="snapshot-packet" class="card packet-pane" aria-live="polite"></article>
+        </div>
+        <!-- "Print all packets" renders every packet here, print only: one page per patient (print.css). -->
+        <div id="print-all" class="print-all" aria-hidden="true"></div>
+      </div>
+
+      <!-- Capture Tab -->
+      <div id="route-capture" class="route-view" hidden>
+        <div class="action-bar">
+          <div>
+            <h2 class="view-subtitle">Capture</h2>
+            <p class="muted">Document what happens during outage: forms, checklist, notes.</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <section class="card" aria-labelledby="h-policy">
+            <h2 id="h-policy" class="card-title">Policy question</h2>
+            <form id="policy-form" class="stack">
+              <label for="policy-q" class="field-label">Ask about a downtime procedure</label>
+              <textarea id="policy-q" class="input" rows="3" required placeholder="How do I get a stat lab with the order system down?"></textarea>
+              <div id="policy-suggestions" class="chips"></div>
+              <button class="btn btn-primary" type="submit">Ask the policy</button>
+            </form>
+            <div id="policy-answer" aria-live="polite"></div>
+          </section>
+
+          <section class="card" aria-labelledby="h-capture-form">
+            <h2 id="h-capture-form" class="card-title">Capture a paper form</h2>
+            <form id="capture-form" class="stack" enctype="multipart/form-data">
+              <div class="row-2">
+                <label class="stack-tight">
+                  <span class="field-label">Form type</span>
+                  <select id="capture-type" name="form_type" class="select" required>
+                    <option value="vitals_flowsheet">Vitals flowsheet</option>
+                    <option value="downtime_mar">Downtime MAR</option>
+                    <option value="admission_note">Admission note</option>
+                    <option value="verbal_order">Verbal order (read-back)</option>
+                  </select>
+                </label>
+                <label class="stack-tight">
+                  <span class="field-label">Patient (optional)</span>
+                  <select id="capture-patient" name="patient_id" class="select">
+                    <option value="">Read from form</option>
+                  </select>
+                </label>
+              </div>
+              <label class="file-drop">
+                <span id="capture-file-label" class="field-label">Photograph or choose the form</span>
+                <input id="capture-file" name="file" type="file" accept="image/*" capture="environment">
+              </label>
+              <img id="capture-preview" class="capture-preview" alt="Preview of the selected form" hidden>
+              <label id="readback-wrap" class="stack-tight" hidden>
+                <span class="field-label">Typed read-back (if no audio)</span>
+                <textarea id="capture-readback" name="readback_text" class="input" rows="3" placeholder="Read back: insulin lispro 4 units subcut now, Dr. Okafor, read back confirmed"></textarea>
+              </label>
+              <button class="btn btn-primary" type="submit">Read form</button>
+            </form>
+            <div id="capture-pending" aria-live="polite"></div>
+          </section>
+        </div>
+        <section class="card" aria-labelledby="h-capture-result">
+          <h2 id="h-capture-result" class="card-title">Captured record</h2>
+          <div id="capture-result" aria-live="polite"></div>
         </section>
-        <section class="card" aria-labelledby="h-costs">
+        <section class="card" aria-labelledby="h-checklist">
           <div class="card-head">
-            <h2 id="h-costs" class="card-title">AI cost</h2>
-            <button id="btn-costs" class="btn btn-quiet" type="button">Refresh</button>
+            <h2 id="h-checklist" class="card-title">Your downtime checklist</h2>
+            <p id="checklist-meta" class="muted small" aria-live="polite"></p>
           </div>
-          <div id="costs"></div>
+          <div id="checklist-items"></div>
+          <p id="checklist-foot" class="muted small">From the downtime policy, section 2 and the duties it names.</p>
+          <p id="checklist-cached" class="muted small" aria-live="polite"></p>
         </section>
       </div>
-      <section id="incident-card" class="card" aria-labelledby="h-incident">
-        <div class="card-head">
-          <h2 id="h-incident" class="card-title">Incident report</h2>
-          <div class="action-buttons">
-            <button id="btn-incident" class="btn btn-secondary" type="button">Build report</button>
-            <button id="btn-print-incident" class="btn btn-quiet" type="button" disabled>Print report</button>
-          </div>
-        </div>
-        <div id="incident"></div>
-      </section>
-      <section class="card" aria-labelledby="h-audit">
-        <div class="card-head">
-          <h2 id="h-audit" class="card-title">Audit log</h2>
-          <button id="btn-audit" class="btn btn-quiet" type="button">Refresh</button>
-        </div>
-        <div id="audit"></div>
-      </section>
     </section>
   </main>
 </body>

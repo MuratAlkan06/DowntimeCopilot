@@ -8,21 +8,103 @@ import { initChecklist, loadChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 
 const $ = (id) => document.getElementById(id);
-const PHASES = ['downtime', 'during', 'recovery'];
 
-// ---------------------------------------------------------------- phase navigation
+// ---------------------------------------------------------------- routing
 
-function setPhase(phase) {
-  if (!PHASES.includes(phase)) phase = 'downtime';
-  set('phase', phase);
-  document.body.dataset.phase = phase;
-  document.querySelectorAll('.phase-tab').forEach((t) => {
-    const active = t.dataset.phase === phase;
-    t.setAttribute('aria-current', active ? 'step' : 'false');
+function getCurrentRoute() {
+  // Determine which view should be visible based on app state
+  if (store.downtimeStartedAt && !store.restoredAt) {
+    return 'downtime';
+  }
+  return 'normal';
+}
+
+function getDowntimeRoute() {
+  // Get the current tab in downtime mode (snapshots or capture)
+  return store.downtimeRoute || 'snapshots';
+}
+
+function setRoute(route) {
+  // Navigate to the specified route (normal or downtime)
+  if (route === 'downtime') {
+    set('route', 'downtime');
+  } else {
+    set('route', 'normal');
+  }
+  render();
+}
+
+function setDowntimeRoute(route) {
+  // Navigate to a tab within downtime mode
+  if (['snapshots', 'capture'].includes(route)) {
+    set('downtimeRoute', route);
+    render();
+  }
+}
+
+function autoRoute() {
+  // Auto-navigate based on app state
+  const currentRoute = getCurrentRoute();
+  const stored = store.route;
+
+  // If in downtime and systems restored, auto-exit to normal
+  if (stored === 'downtime' && currentRoute === 'normal' && store.restoredAt) {
+    setRoute('normal');
+    return;
+  }
+
+  // If not in downtime but downtime starts, auto-enter
+  if (stored !== 'downtime' && currentRoute === 'downtime') {
+    setRoute('downtime');
+    return;
+  }
+}
+
+function render() {
+  const route = store.route || 'normal';
+  const auto = getCurrentRoute();
+
+  // Show the appropriate main view
+  document.querySelectorAll('[data-route]').forEach((v) => {
+    v.hidden = !(v.dataset.route === route);
   });
-  document.querySelectorAll('.view').forEach((v) => { v.hidden = v.dataset.view !== phase; });
-  if (phase === 'downtime') loadPatients();
-  if (phase === 'recovery') enterRecovery();
+
+  // If in downtime, show the downtime navigation and tabs
+  const downtimeNav = $('downtime-nav');
+  if (downtimeNav) {
+    downtimeNav.hidden = route !== 'downtime';
+  }
+
+  // Show/hide downtime tabs
+  if (route === 'downtime') {
+    const downtimeRoute = getDowntimeRoute();
+    document.querySelectorAll('.route-view').forEach((v) => {
+      const routeVal = v.id.replace('route-', '');
+      v.hidden = routeVal !== downtimeRoute;
+    });
+
+    document.querySelectorAll('.downtime-tab').forEach((t) => {
+      const tabRoute = t.dataset.route;
+      const active = tabRoute === downtimeRoute;
+      t.setAttribute('aria-current', active ? 'page' : 'false');
+    });
+  }
+
+  // Show/hide recovery section (only in normal view after restoration)
+  const recoverySection = $('recovery-section');
+  if (recoverySection) {
+    recoverySection.hidden = route !== 'normal' || !store.restoredAt;
+  }
+
+  // Update normal view status text
+  const normalStatus = $('normal-status');
+  if (normalStatus && route === 'normal') {
+    if (store.restoredAt) {
+      normalStatus.textContent = 'Systems restored. Review backlog and discrepancies.';
+    } else {
+      normalStatus.textContent = 'Normal patient list and system status.';
+    }
+  }
 }
 
 // ---------------------------------------------------------------- banners
@@ -91,9 +173,14 @@ function init() {
   initChecklist();
   initRecovery();
 
-  document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => setPhase(t.dataset.phase)));
+  // Downtime navigation tabs
+  document.querySelectorAll('.downtime-tab').forEach((t) => {
+    t.addEventListener('click', () => setDowntimeRoute(t.dataset.route));
+  });
+
   $('btn-go-downtime').addEventListener('click', goToDowntime);
   $('btn-print-all').addEventListener('click', printAllPackets);
+  $('btn-refresh-packets').addEventListener('click', loadPatients);
   $('btn-refresh-patients').addEventListener('click', loadPatients);
   $('sim-offline').addEventListener('click', () => setSimulatedOffline(!net.simulated));
 
@@ -101,25 +188,32 @@ function init() {
     renderOffline();
     if (!info.wentOnline) return;
     flushQueue();
-    // Redraw what was drawn from the cache while offline (cached-copy notes, offline messages).
     refreshOnReconnect();
     loadChecklist();
-    if (store.phase === 'recovery') enterRecovery();
   });
   on('snapshotTime', renderSnapshot);
-  // A newer snapshot (scheduler pull) re-evaluated the rules server-side: refresh list badges + readiness.
-  on('snapshotTime', () => { if (store.phase === 'downtime') loadPatients(); });
+  on('snapshotTime', () => { if (store.route === 'downtime') loadPatients(); });
   on('unitNow', renderSnapshot);
   on('unitNow', refreshRelativeTimes);
-  on('downtimeStartedAt', renderEhrBanner);
-  on('restoredAt', renderEhrBanner);
+  on('downtimeStartedAt', () => {
+    renderEhrBanner();
+    autoRoute();
+    render();
+  });
+  on('restoredAt', () => {
+    renderEhrBanner();
+    autoRoute();
+    render();
+    enterRecovery();
+  });
 
   renderOffline();
   renderEhrBanner();
   renderSnapshot();
   loadStatus();
-  setInterval(loadStatus, 30000); // refreshes the unit clock; the banner re-renders on 'unitNow'
-  setPhase(store.phase);
+  setInterval(loadStatus, 30000);
+  autoRoute();
+  render();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
