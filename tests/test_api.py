@@ -378,6 +378,22 @@ def test_second_restore_is_idempotent(api, monkeypatch):
     assert sum(e.action == "recovery.restore" for _, e in store.audit_log()) == 1
 
 
+def test_review_status_survives_a_second_restore(api):
+    """POST /discrepancies/{id}/status (PR #37) meets the idempotent restore: the stored set a second "Systems
+    restored" returns, and GET /discrepancies, carry the review; the planted set itself is unchanged."""
+    found = scripted_flow(api)
+    vo = next(d for d in found if d.rule_id == "R-VO-01")
+    r = api.post(f"/discrepancies/{vo.discrepancy_id}/status", json={"status": "acknowledged"},
+                 headers={"X-Role": "charge_nurse"})
+    assert r.status_code == 200 and r.json()["status"] == "acknowledged"
+    (row,) = [e for _, e in get_store().audit_log() if e.action == "discrepancy.acknowledged"]
+    assert (row.actor_role, row.target_id) == ("charge_nurse", vo.discrepancy_id)
+    for listed in (api.post("/recovery/restore").json(), api.get("/discrepancies").json()):
+        assert {d["discrepancy_id"]: d["status"] for d in listed if d["status"] != "open"} == {
+            vo.discrepancy_id: "acknowledged"}
+        assert sorted((d["rule_id"], d["patient_id"], d["severity"]) for d in listed) == PLANTED
+
+
 def test_rec04_dose_mismatch_through_restore(api):
     """A reviewer-corrected MAR dose (2500 units) against Bed 12's heparin 5000 units order."""
     simc = TestClient(sim.app)

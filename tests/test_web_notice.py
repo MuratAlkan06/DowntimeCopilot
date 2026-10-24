@@ -124,7 +124,7 @@ def test_shell_serves_the_notice_without_any_model_call(tmp_path, monkeypatch):
 
 def test_notice_view_ships_in_the_shell_and_opens_from_during():
     sw = (WEB / "sw.js").read_text()
-    assert "const VERSION = 'v25';" in sw
+    assert "const VERSION = 'v27';" in sw
     assert "'js/notice.js'" in re.search(r"const SHELL = \[(.*?)\];", sw, re.S).group(1)
     html = (WEB / "index.html").read_text()
     during = re.search(r'<section id="view-during".*?\n    </section>', html, re.S).group(0)
