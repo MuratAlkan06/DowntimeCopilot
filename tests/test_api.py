@@ -108,6 +108,22 @@ def test_capture_vitals_agreement(api):
     assert api.get(f"/blobs/{rec.image_ref}").content == PNG and audited("blob.view")
 
 
+def test_capture_typed_verbal_order(api):
+    go_to_downtime(api)
+    typed = "Insulin lispro 6 units subcut now per Dr. Hale, read back and confirmed"
+    r = api.post("/capture", data={"form_type": "verbal_order", "readback_text": typed, "patient_id": "pt-12"},
+                 headers={"X-Role": "rn"})
+    assert r.status_code == 201, r.text
+    rec = CapturedRecord.model_validate(r.json())
+    f = {x.name: x.value for x in rec.fields}
+    assert f["medication"] == "Insulin lispro" and f["dose"] == "6 units" and f["route"] == "subcut"
+    assert rec.audio_ref and api.get(f"/blobs/{rec.audio_ref}").text == typed
+    legacy = api.post("/capture", data={"form_type": "verbal_order", "transcript": "heparin 5000 units SC q12h"})
+    assert legacy.status_code == 201 and legacy.json()["fields"][0]["value"] == "heparin"
+    assert api.post("/capture", data={"form_type": "verbal_order"}).status_code == 422
+    assert api.post("/capture", data={"form_type": "vitals_flowsheet", "readback_text": typed}).status_code == 422
+
+
 def test_backload_verify_entered(api):
     go_to_downtime(api)
     rec = capture(api, "downtime_mar")

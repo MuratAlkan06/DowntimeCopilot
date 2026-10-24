@@ -22,3 +22,4 @@ Model routing note: Nova 2 Lite answered "Black." to the red test image, but eve
 - TODO: dependabot config
 - TODO: README CI badge
 - TODO: ruff lint job
+- TODO: one clock: sqlite store stamps real wall-clock while the simulator runs a sim clock (UTC); the UI shows sim/unit time only

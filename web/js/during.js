@@ -100,8 +100,9 @@ async function submitCapture(e) {
     readback_text: $('capture-readback').value.trim() || null,
   };
   const out = $('capture-result');
+  const prev = [...out.childNodes].filter((n) => !n.classList?.contains('state')); // kept on failure
   if (!file && !(meta.form_type === 'verbal_order' && meta.readback_text)) {
-    mount(out, stateBox('error', 'Choose a photo of the form (or type the read-back for a verbal order).'));
+    mount(out, stateBox('error', 'Choose a photo of the form (or type the read-back for a verbal order).'), prev);
     return;
   }
   const btn = e.submitter || $('capture-form').querySelector('button[type=submit]');
@@ -121,11 +122,11 @@ async function submitCapture(e) {
     try { queued = saveQ([...loadQ(), { ...meta, dataUrl: file ? await readDataUrl(file) : null, name: file?.name, queued_at: new Date().toISOString() }]); } catch { queued = false; }
     mount(out, stateBox('offline', queued
       ? 'Offline — form saved on this device and queued for reading when connected. Keep the paper original.'
-      : 'Offline and the image is too large to queue locally. Keep the paper original for backload.'));
+      : 'Offline and the image is too large to queue locally. Keep the paper original for backload.'), prev);
     renderPending();
     return;
   }
-  mount(out, stateBox('error', r.ok ? 'Unexpected response from /capture.' : `Couldn't read the form (${r.error}).`));
+  mount(out, stateBox('error', r.ok ? 'Unexpected response from /capture.' : `Couldn't read the form (${r.error}).`), prev);
 }
 
 function syncFormType() {
@@ -141,7 +142,7 @@ function fillPatients() {
   const current = sel.value;
   const opts = [...store.patients.values()]
     .sort((a, b) => String(a.bed).localeCompare(String(b.bed), undefined, { numeric: true }))
-    .map((p) => h('option', { value: p.patient_id }, `Bed ${p.bed} · ${p.name}`));
+    .map((p) => h('option', { value: p.patient_id }, `${p.bed} · ${p.name}`));
   mount(sel, h('option', { value: '' }, 'Read from form'), opts);
   sel.value = current;
 }

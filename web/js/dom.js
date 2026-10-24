@@ -40,17 +40,23 @@ export function chip(text, kind = 'neutral', title) {
   return h('span', { class: `chip chip-${kind}`, title }, text);
 }
 
-export function fmtTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d) ? String(iso) : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+// The unit runs on the simulated clock (UTC); show that time, never the browser's local zone.
+// Pass { unit: true } where a time stands alone (banners, packet header, digest window).
+const UNIT = ' unit time';
 
-export function fmtDateTime(iso) {
+export function fmtTime(iso, { unit = false } = {}) {
   if (!iso) return '—';
   const d = new Date(iso);
   return isNaN(d) ? String(iso)
-    : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + (unit ? UNIT : '');
+}
+
+export function fmtDateTime(iso, { unit = false } = {}) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d) ? String(iso)
+    : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+      + (unit ? UNIT : '');
 }
 
 export function fmtAgo(ms) {

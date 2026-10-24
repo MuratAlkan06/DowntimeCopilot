@@ -43,11 +43,11 @@ function renderEhrBanner() {
   if (store.downtimeStartedAt && !store.restoredAt) {
     el.hidden = false;
     el.className = 'banner banner-crit';
-    mount(el, h('strong', {}, 'EHR unreachable.'), ` Downtime procedures in effect since ${fmtTime(store.downtimeStartedAt)}. Document on paper.`);
+    mount(el, h('strong', {}, 'EHR unreachable.'), ` Downtime procedures in effect since ${fmtTime(store.downtimeStartedAt, { unit: true })}. Document on paper.`);
   } else if (store.restoredAt) {
     el.hidden = false;
     el.className = 'banner banner-ok';
-    mount(el, h('strong', {}, 'Systems restored.'), ` ${fmtTime(store.restoredAt)} — backload paper records and review discrepancies.`);
+    mount(el, h('strong', {}, 'Systems restored.'), ` ${fmtTime(store.restoredAt, { unit: true })} — backload paper records and review discrepancies.`);
   } else {
     el.hidden = true;
   }
@@ -66,7 +66,7 @@ function renderSnapshot() {
   el.className = `banner ${stale ? 'banner-warn' : 'banner-info'}`;
   mount(el,
     stale ? h('span', { class: 'rule-badge' }, 'R-STALE-01') : null,
-    h('strong', {}, `Last snapshot ${fmtTime(store.snapshotTime)}`),
+    h('strong', {}, `Last snapshot ${fmtTime(store.snapshotTime, { unit: true })}`),
     ` · ${fmtAgo(ageMs)}`,
     stale ? ` — older than ${STALE_MINUTES} min. Confirm with the patient and paper record before acting.` : '');
 }

@@ -111,7 +111,7 @@ function highAlertMatcher(patient) {
 
 function renderPacket(pk, patient, res) {
   const isHigh = highAlertMatcher(patient);
-  const title = patient ? `Bed ${patient.bed} · ${patient.name}` : `Patient ${pk.patient_id}`;
+  const title = patient ? `${patient.bed} · ${patient.name}` : `Patient ${pk.patient_id}`;
   const g = pk.guardrail || {};
   return h('div', { class: 'packet' },
     h('header', { class: 'packet-head' },
@@ -121,7 +121,7 @@ function renderPacket(pk, patient, res) {
           patient ? `MRN ${patient.mrn} · ${patient.age ?? ''} ${patient.sex ?? ''} · ${patient.code_status ?? ''}` : '',
         ),
         h('p', { class: 'packet-meta' },
-          `Snapshot ${fmtDateTime(pk.snapshot_time)} · Generated ${fmtTime(pk.generated_at)} · `,
+          `Snapshot ${fmtDateTime(pk.snapshot_time)} · Generated ${fmtTime(pk.generated_at, { unit: true })} · `,
           h('span', { class: 'mono' }, pk.model_id || 'model ?'),
         ),
         cachedNote(res),

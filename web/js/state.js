@@ -68,7 +68,7 @@ export function noteSnapshot(...times) {
 export function patientLabel(id) {
   const p = id && store.patients.get(id);
   if (!p) return id || 'Unassigned';
-  return `Bed ${p.bed} · ${p.name}`;
+  return `${p.bed} · ${p.name}`;
 }
 
 export const roleLabel = (id) => ROLES.find((r) => r.id === id)?.label || id;

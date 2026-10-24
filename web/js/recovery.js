@@ -59,6 +59,9 @@ function normalizeBackload(data) {
   if (!list.length && data?.groups && typeof data.groups === 'object') {
     list = Object.values(data.groups).flatMap((v) => (Array.isArray(v) ? v : asList(v, 'records', 'items')));
   }
+  if (!list.length && data && typeof data === 'object' && !Array.isArray(data)) {
+    list = GROUPS.flatMap((g) => (Array.isArray(data[g.id]) ? data[g.id] : [])); // GET /backload: {group_id: [...]}
+  }
   return list;
 }
 
@@ -122,7 +125,7 @@ export async function loadDigest() {
   mount(el, h('div', { class: 'digest' },
     cachedNote(r),
     h('p', { class: 'muted small' },
-      d.shift_window ? `Shift ${fmtDateTime(d.shift_window.start)} – ${fmtTime(d.shift_window.end)} · ` : '',
+      d.shift_window ? `Shift ${fmtDateTime(d.shift_window.start)} – ${fmtTime(d.shift_window.end, { unit: true })} · ` : '',
       `Written ${fmtTime(d.generated_at)} · `, h('span', { class: 'mono' }, d.model_id || '')),
     h('p', { class: 'answer-text' }, d.unit_summary || 'No unit summary.'),
     (d.open_items || []).length
