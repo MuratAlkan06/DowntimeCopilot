@@ -230,6 +230,10 @@ textarea.input { resize: vertical; }
 .state-error { background: var(--c-crit-soft); color: var(--c-crit); border-color: #f5b4ae; }
 .state-offline { background: #1d2939; color: #fff; border-color: #1d2939; }
 .state-offline .btn { background: #fff; color: #1d2939; }
+.state-warn { background: var(--c-warn-soft); color: var(--c-warn); border-color: var(--c-warn); }
+/* Verbal-order recorder (S9) */
+.recorder { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.recorder-status { color: var(--c-muted); font-size: var(--fs-sm); }
 .spinner {
   width: 18px; height: 18px; border-radius: 50%;
   border: 3px solid var(--c-border); border-top-color: var(--c-accent);

@@ -1,5 +1,5 @@
 // Fetch wrapper: same-origin relative URLs, never throws, tracks connectivity.
-// Result shape: { ok, status, data, error, offline, cachedAt }.
+// Result shape: { ok, status, data, error, offline, cachedAt, headers (2xx only) }.
 import { store } from './state.js';
 
 const listeners = new Set();
@@ -98,5 +98,5 @@ export async function api(path, { method = 'GET', json, form, headers, replay } 
 
   const data = await parse(res);
   if (!res.ok) return { ok: false, status: res.status, data, offline: swOffline, error: errorText(data, res.status) };
-  return { ok: true, status: res.status, data, cachedAt: res.headers.get('x-dc-cached-at'), offline: swFallback };
+  return { ok: true, status: res.status, data, cachedAt: res.headers.get('x-dc-cached-at'), offline: swFallback, headers: res.headers };
 }
