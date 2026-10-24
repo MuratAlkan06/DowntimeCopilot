@@ -12,14 +12,16 @@ def _same(a: str, b: str) -> bool:
     return " ".join(a.lower().split()) == " ".join(b.lower().split())
 
 
-def merge(textract: ReaderOutput | None, bedrock: ReaderOutput | None) -> list[CapturedField]:
+def merge(textract: ReaderOutput | None, bedrock: ReaderOutput | None,
+          boxes: dict[str, Crop] | None = None) -> list[CapturedField]:
+    """`boxes`: field -> crop box on the source image (app/capture/crops.py chooses model box or layout map)."""
     names: list[str] = []
     for r in (bedrock, textract):
         for n in (r.fields if r else {}):
             if n not in names:
                 names.append(n)
     out = []
-    for i, name in enumerate(names):
+    for name in names:
         reads = [(r.fields.get(name), r.confidence.get(name, 0.0)) for r in (textract, bedrock)
                  if r is not None and name in r.fields]
         usable = [(v, c) for v, c in reads if v is not None and c >= UNREADABLE_BELOW]
@@ -39,8 +41,8 @@ def merge(textract: ReaderOutput | None, bedrock: ReaderOutput | None) -> list[C
             agreement, flag = Agreement.single, FieldFlag.unreadable  # never claim agreement on nothing
         if flag is None and out_of_range(name, value):
             flag = FieldFlag.out_of_range
-        # TODO(role 4): real crops from Textract BoundingBox; placeholder row boxes for the crop viewer.
-        crop = Crop(left=0.08, top=min(0.92, 0.08 + i * 0.08), width=0.84, height=0.07)
+        if flag == FieldFlag.unreadable:
+            value = None  # never guessed: an unreadable field carries no value on any path
         out.append(CapturedField(name=name, value=value, confidence=round(conf, 3), agreement=agreement,
-                                 crop=crop, flag=flag))
+                                 crop=(boxes or {}).get(name), flag=flag))
     return out

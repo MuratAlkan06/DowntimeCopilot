@@ -64,3 +64,26 @@ def guardrail_mode() -> str:
 def textract_enabled() -> bool:
     """docs/decisions.md: Textract ALLOWED. Set TEXTRACT_ENABLED=0 for the 'single read' path."""
     return _flag("TEXTRACT_ENABLED", "1")
+
+
+# Unit parameters for the Vitals Flowsheet (policy 3.4). Inclusive normal ranges: a value exactly at a
+# bound is in range; anything beyond is flagged out_of_range on captured records and by R-REC-02.
+VITAL_RANGE_DEFAULTS: dict[str, tuple[float, float]] = {
+    "temp_c": (36.0, 38.0),
+    "heart_rate": (50, 110),
+    "resp_rate": (10, 24),
+    "bp_systolic": (90, 160),
+    "bp_diastolic": (50, 100),
+    "spo2": (92, 100),
+}
+
+
+def vital_ranges() -> dict[str, tuple[float, float]]:
+    """Defaults, each overridable as VITAL_RANGE_<FIELD>="low,high" (e.g. VITAL_RANGE_SPO2="90,100")."""
+    out = dict(VITAL_RANGE_DEFAULTS)
+    for name in out:
+        raw = os.environ.get(f"VITAL_RANGE_{name.upper()}", "").strip()
+        if raw:
+            lo, hi = (float(v) for v in raw.split(",", 1))
+            out[name] = (lo, hi)
+    return out

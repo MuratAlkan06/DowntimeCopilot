@@ -125,8 +125,9 @@ class Store:
         return [CapturedRecord.model_validate_json(_dec(r[0]))
                 for r in self._exec("SELECT body FROM captured ORDER BY seq")]
 
-    def save_blob(self, data: bytes, content_type: str) -> str:
-        ref = f"blob:{uuid.uuid4().hex}"
+    def save_blob(self, data: bytes, content_type: str, ref: str | None = None) -> str:
+        """`ref` lets a caller use a derivable name (per-field crops: app/capture/crops.crop_ref)."""
+        ref = ref or f"blob:{uuid.uuid4().hex}"
         self._exec("INSERT INTO blobs (ref, content_type, data) VALUES (?, ?, ?)", (ref, content_type, data))
         return ref
 

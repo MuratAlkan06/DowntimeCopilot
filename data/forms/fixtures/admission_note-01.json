@@ -1,0 +1,13 @@
+{
+  "form_type": "admission_note",
+  "image": "admission_note-01.jpg",
+  "seed": 20261023,
+  "synthetic": true,
+  "fields": {
+    "bed": "12",
+    "allergies": "penicillin (hives)",
+    "height_cm": "178",
+    "weight_kg": "92.4",
+    "history": "type 2 diabetes, hypertension"
+  }
+}

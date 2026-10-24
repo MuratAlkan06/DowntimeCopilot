@@ -3,7 +3,7 @@
 
 VENV    := .venv
 PY      := $(VENV)/bin/python
-DEPS    := boto3 fastapi uvicorn pydantic pytest httpx python-multipart
+DEPS    := boto3 fastapi uvicorn pydantic pytest httpx python-multipart pillow
 PROBE   := tools/bedrock_probe.py
 SIM_APP ?= simulator.main:app
 API_APP ?= app.main:app
@@ -13,7 +13,7 @@ SIM_URL ?= http://localhost:$(SIM_PORT)
 APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup probe schemas dev demo test evals guard
+.PHONY: setup probe schemas forms dev demo test evals guard
 
 setup:  ## venv + dependencies
 	python3 -m venv $(VENV)
@@ -29,6 +29,9 @@ probe:  ## what this AWS account allows; decides fallbacks (docs/decisions.md)
 
 schemas:  ## re-export contracts/schema/*.json after a contract change
 	$(PY) -m contracts.export_schemas
+
+forms:  ## regenerate printable form templates, layout maps and seeded fixtures (data/forms/)
+	$(PY) tools/form_fixtures.py
 
 dev:  ## simulator on :$(SIM_PORT) (default 8001), app on :$(APP_PORT) (default 8000); Ctrl-C stops both
 	@$(PY) -m uvicorn $(SIM_APP) --port $(SIM_PORT) --reload & sim=$$!; \

@@ -1,6 +1,6 @@
 // Service worker: cache-first app shell, stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v7';
+const VERSION = 'v9';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 

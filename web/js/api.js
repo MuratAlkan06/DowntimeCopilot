@@ -61,8 +61,8 @@ async function fromCache(path) {
   return { ok: false, status: 0, data: null, offline: true, error: 'Offline and not cached on this device yet' };
 }
 
-export async function api(path, { method = 'GET', json, form } = {}) {
-  const init = { method, headers: { Accept: 'application/json' } };
+export async function api(path, { method = 'GET', json, form, headers } = {}) {
+  const init = { method, headers: { Accept: 'application/json', ...(headers || {}) } };
   if (json !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(json); }
   if (form) init.body = form;
 

@@ -216,3 +216,15 @@ def test_seeded_stale_example_is_exactly_one(minutes):
     assert fired(hits).get("R-STALE-01") == {"pt-14"}
     (stale,) = [h for h in hits["patients"]["pt-14"] if h["rule_id"] == "R-STALE-01"]
     assert state.now - datetime.fromisoformat(stale["snapshot_time"]) == timedelta(minutes=40)
+
+
+def test_high_alert_classifier_matches_seeded_flags():
+    """Two-person verify keys off is_high_alert(); it must agree with every seeded medication's flag."""
+    import json
+    from pathlib import Path
+
+    from app.rules.drug_classes import is_high_alert
+    for path in sorted((Path(__file__).resolve().parent.parent / "data" / "patients").glob("*.json")):
+        for m in json.loads(path.read_text())["medications"]:
+            assert is_high_alert(m["name"]) is m["high_alert"], (path.name, m["name"])
+    assert is_high_alert("Heparin 5000 units") and is_high_alert("KCl 20 mEq") and not is_high_alert(None)

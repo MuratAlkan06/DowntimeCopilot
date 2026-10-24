@@ -177,10 +177,12 @@ main:focus { outline: none; }
 textarea.input { resize: vertical; }
 .field-label { font-size: var(--fs-sm); font-weight: 600; color: var(--c-muted); }
 .file-drop {
-  display: grid; gap: var(--sp-2); padding: var(--sp-4);
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); padding: var(--sp-4); min-width: 0;
   border: 2px dashed var(--c-border); border-radius: var(--radius-sm); background: var(--c-surface-2);
 }
-.file-drop input { min-height: var(--tap); }
+/* A native file input has a wide intrinsic size; let it shrink to the card at 375px. */
+.file-drop input { min-height: var(--tap); width: 100%; max-width: 100%; min-width: 0; font-size: var(--fs-sm); }
+.grid-2 > *, .stack > * { min-width: 0; }
 .capture-preview { max-width: 100%; max-height: 220px; object-fit: contain; border-radius: var(--radius-sm); border: 1px solid var(--c-border); }
 
 /* ---------------------------------------------------------------- chips, badges, states */
@@ -340,6 +342,19 @@ tbody th { font-weight: 600; text-transform: capitalize; }
 .field-flagged { background: var(--c-warn-soft); }
 .field-flagged > th { box-shadow: inset 4px 0 0 var(--c-warn-strong); }
 .field-value { font-weight: 600; }
+.field-edit { margin-left: var(--sp-2); }
+.field-edit-form { display: grid; gap: var(--sp-1); min-width: 140px; }
+.field-edit-actions { display: flex; gap: var(--sp-1); }
+.input-sm { min-height: 36px; padding: var(--sp-1) var(--sp-2); font-size: var(--fs-sm); }
+.crop-cell { width: 1%; }
+.crop-link { display: inline-block; border-radius: var(--radius-sm); cursor: zoom-in; }
+/* Aspect-preserving: natural size up to the cap (a 640x105 medication box shows at 320x53, not squeezed). */
+.field-crop {
+  display: block; width: auto; height: auto; max-width: min(320px, 60vw); max-height: 200px;
+  background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-sm);
+}
+.verify-box:empty { display: none; }
+.verify-state { flex-wrap: wrap; }
 .reader-values { font-weight: 400; font-size: var(--fs-xs); color: var(--c-warn); }
 
 .bl-group { display: grid; gap: var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--c-border); }

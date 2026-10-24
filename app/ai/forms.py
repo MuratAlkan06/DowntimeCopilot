@@ -6,7 +6,7 @@ import re
 
 from app.ai import client as ai
 from app.capture.transcribe import MOCK_TRANSCRIPT
-from contracts import FormType, ReaderOutput
+from contracts import Crop, FormType, ReaderOutput
 
 # Canned dry-run reads. Vitals: vs the Textract mock, 8 fields agree, resp_rate disagrees,
 # pain_score is unreadable (README demo step 3).
@@ -69,18 +69,62 @@ def mock_verbal_order(transcript: str) -> ReaderOutput:
     return ReaderOutput(fields=values, confidence={k: (0.85 if v else 0.2) for k, v in values.items()})
 
 
-def _to_reader(text: str) -> ReaderOutput:
+# Values a reader may write instead of null for a field it could not read. They are never kept as a
+# value: the field becomes None (flag "unreadable" downstream). "none" is NOT here: "allergies: none" is data.
+UNREADABLE_TOKENS = {"", "unreadable", "illegible", "?", "??", "???", "[unreadable]", "[illegible]", "null",
+                     "<unreadable>", "<illegible>", "n/r", "not readable", "cannot read", "crossed out"}
+UNREADABLE_CONFIDENCE = 0.2  # capped confidence for a field the reader said it could not read
+
+
+def _value(v: object) -> str | None:
+    if v is None:
+        return None
+    s = str(v).strip()
+    return None if s.lower() in UNREADABLE_TOKENS else s
+
+
+def _box(v: object) -> Crop | None:
+    """Model box -> normalized Crop. Accepts {x,y,w,h} or [x,y,w,h], as fractions or on a 0..1000 grid."""
+    try:
+        x, y, w, h = (float(v[k]) for k in ("x", "y", "w", "h")) if isinstance(v, dict) else (float(n) for n in v)
+    except (TypeError, ValueError, KeyError):
+        return None
+    if max(x, y, w, h) > 1.0:
+        x, y, w, h = x / 1000, y / 1000, w / 1000, h / 1000
+    if not (0 <= x < 1 and 0 <= y < 1 and 0.005 < w <= 1 and 0.005 < h <= 1):
+        return None
+    return Crop(left=round(x, 4), top=round(y, 4), width=round(min(w, 1 - x), 4), height=round(min(h, 1 - y), 4))
+
+
+def _parse(text: str) -> tuple[ReaderOutput, dict[str, Crop]]:
     raw = ai.extract_json(text)
-    fields = {str(k): (None if v is None else str(v)) for k, v in (raw.get("fields") or {}).items()}
+    unreadable = {str(n) for n in (raw.get("unreadable") or [])}
+    fields = {str(k): (None if str(k) in unreadable else _value(v)) for k, v in (raw.get("fields") or {}).items()}
+    for name in unreadable:
+        fields.setdefault(name, None)
     conf = {str(k): max(0.0, min(1.0, float(v))) for k, v in (raw.get("confidence") or {}).items()}
-    return ReaderOutput(fields=fields, confidence={k: conf.get(k, 0.5) for k in fields})
+    confidence = {k: (min(conf.get(k, 0.5), UNREADABLE_CONFIDENCE) if fields[k] is None else conf.get(k, 0.5))
+                  for k in fields}
+    boxes = {str(k): b for k, v in (raw.get("boxes") or {}).items() if (b := _box(v)) is not None}
+    return ReaderOutput(fields=fields, confidence=confidence), boxes
 
 
-def read_form(image: bytes, image_format: str, form_type: FormType, actor_role: str = "rn") -> ReaderOutput:
+def _to_reader(text: str) -> ReaderOutput:
+    return _parse(text)[0]
+
+
+def read_form_with_boxes(image: bytes, image_format: str, form_type: FormType,
+                         actor_role: str = "rn") -> tuple[ReaderOutput, dict[str, Crop]]:
+    """Vision read (Nova 2 Lite via the routing table) -> fields + confidences, and any per-field boxes the
+    model returned. Unreadable fields are None, never a guessed value. DRY_RUN: canned read, no boxes."""
     user = json.dumps({"form_type": form_type.value, "expected_fields": list(MOCK_READS[form_type])})
     res = ai.call("form_read", "form_read", user, image=image, image_format=image_format, actor_role=actor_role,
                   mock=lambda: mock_output(form_type).model_dump_json())
-    return _to_reader(res.text)
+    return _parse(res.text)
+
+
+def read_form(image: bytes, image_format: str, form_type: FormType, actor_role: str = "rn") -> ReaderOutput:
+    return read_form_with_boxes(image, image_format, form_type, actor_role)[0]
 
 
 def structure_transcript(transcript: str, actor_role: str = "rn") -> ReaderOutput:
