@@ -41,12 +41,13 @@ ROUTES: dict[str, str] = {
     "readiness": SONNET_4_6,
 }
 
-# USD per 1M tokens (input, output). ESTIMATES for the cost widget.
-# TODO(role 5): confirm against the Bedrock pricing page before RESULTS.md quotes cost per outage-hour.
+# USD per 1M tokens (input, output), on-demand, us-east-1 source Region. ROUTES use `us.` geographic
+# cross-Region profiles, which list 10% above the `global.` profile rates (AWS "Global cross-Region
+# inference"; Anthropic pricing, "regional endpoints ... 10 percent premium"). Verified 2026-10-24.
 PRICING: dict[str, tuple[float, float]] = {
-    NOVA_2_LITE: (0.30, 2.50),
-    SONNET_4_6: (3.00, 15.00),
-    HAIKU_4_5: (1.00, 5.00),
+    NOVA_2_LITE: (0.33, 2.75),
+    SONNET_4_6: (3.30, 16.50),
+    HAIKU_4_5: (1.10, 5.50),
 }
 
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"

@@ -606,6 +606,15 @@ def test_audit_costs_sync(api):
     assert s["mirror"] == "dry_run" and s["pushed"] > 0 and s["pending"] == 0 and audited("sync.push")
 
 
+def test_pricing_covers_every_route_at_geographic_profile_rates():
+    from app.ai import client as ai
+    assert set(ai.ROUTES.values()) | {ai.FALLBACK_MODEL} <= set(ai.PRICING)
+    assert all(m.startswith("us.") for m in ai.PRICING)  # geographic profiles: the +10% rate applies
+    assert ai.estimate_usd(ai.SONNET_4_6, 1_000_000, 1_000_000) == 19.80
+    assert ai.estimate_usd(ai.HAIKU_4_5, 1_000_000, 1_000_000) == 6.60
+    assert ai.estimate_usd(ai.NOVA_2_LITE, 1_000_000, 1_000_000) == 3.08
+
+
 # ------------------------------------------------------------------ S4: edits + two-person verify
 
 def events(action: str) -> list[AuditEvent]:
