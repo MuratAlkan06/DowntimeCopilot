@@ -1,7 +1,8 @@
 """Per-field crops of the source photo, stored as blobs beside the original image.
 
-Box choice per field: the vision model's box when it returned a usable one that lands on the printed
-field (its centre inside the template box, with slack for a tilted photo), else the template layout map
+Box choice per field: Textract's answer box (measured OCR geometry), else the vision model's box, each
+only when it lands on the printed field (its centre inside the template box, with slack for a tilted
+photo), else the template layout map
 (data/forms/<form_type>.layout.json). DRY_RUN reads return no boxes, so dry runs crop from the layout
 map through the same code. `CapturedField.crop` is the frozen contract's normalized box; the cropped
 image itself is the blob `crop_ref(record_id, field)` (GET /blobs/{ref}).
@@ -31,14 +32,17 @@ def _centre_inside(box: Crop, printed: Crop) -> bool:
             and printed.top - SLACK <= cy <= printed.top + printed.height + SLACK)
 
 
-def choose_boxes(form_type: FormType, model_boxes: dict[str, Crop] | None) -> tuple[dict[str, Crop], dict[str, str]]:
-    """-> (field -> box, field -> source "model" | "layout")."""
+def choose_boxes(form_type: FormType, model_boxes: dict[str, Crop] | None,
+                 textract_boxes: dict[str, Crop] | None = None) -> tuple[dict[str, Crop], dict[str, str]]:
+    """-> (field -> box, field -> source "textract" | "model" | "layout")."""
     printed = layout(form_type)
     boxes: dict[str, Crop] = {}
     source: dict[str, str] = {}
-    for name in set(printed) | set(model_boxes or {}):
-        m, p = (model_boxes or {}).get(name), printed.get(name)
-        if m is not None and (p is None or _centre_inside(m, p)):
+    for name in set(printed) | set(model_boxes or {}) | set(textract_boxes or {}):
+        t, m, p = (textract_boxes or {}).get(name), (model_boxes or {}).get(name), printed.get(name)
+        if t is not None and (p is None or _centre_inside(t, p)):
+            boxes[name], source[name] = t, "textract"
+        elif m is not None and (p is None or _centre_inside(m, p)):
             boxes[name], source[name] = m, "model"
         elif p is not None:
             boxes[name], source[name] = p, "layout"
