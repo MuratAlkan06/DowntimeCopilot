@@ -1,7 +1,7 @@
 // Service worker: network-first navigations (cached shell offline), cache-first shell assets,
 // stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v18';
+const VERSION = 'v19';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 
