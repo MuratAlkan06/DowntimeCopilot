@@ -40,6 +40,24 @@ def accuracy(predicted: dict, truth: dict) -> tuple[int, int]:
     return hits, len(truth)
 
 
+def score_reads(textract, bedrock, truth: dict) -> dict:
+    """Per-reader scoring hook: field accuracy of reads.textract and reads.bedrock against ground truth,
+    of the merged record (agreement.merge), and the agreement split over the merged fields.
+    A reader that did not run (None) scores None, never 0/0 counted as measured."""
+    from app.capture.agreement import merge
+
+    merged = merge(textract, bedrock)
+    split = {"agree": 0, "disagree": 0, "single": 0}
+    for f in merged:
+        split[f.agreement.value] += 1
+    return {
+        "textract": accuracy(textract.fields, truth) if textract is not None else None,
+        "bedrock": accuracy(bedrock.fields, truth) if bedrock is not None else None,
+        "combined": accuracy({f.name: f.value for f in merged}, truth),
+        "agreement": split,
+    }
+
+
 def pct(hit: int, total: int) -> str:
     return f"{100 * hit / total:.1f}% ({hit}/{total})" if total else "n/a (0 measured)"
 
@@ -58,26 +76,26 @@ def run(fixtures: Path, out: Path) -> int:
     os.environ.setdefault("STORE_PATH", str(Path(tempfile.mkdtemp()) / "evals.sqlite"))
     from app.ai import forms, packets, policy
     from app.capture import textract
-    from app.capture.agreement import merge
     from app.rules import snapshot_alerts
     from app.store import get_store
     from contracts import FormType
     from simulator.state import load_patients
 
     per = {"textract": [0, 0], "bedrock": [0, 0], "combined": [0, 0]}
+    split = {"agree": 0, "disagree": 0, "single": 0}
     for img, gt_path in pairs:
         gt = json.loads(gt_path.read_text())
         ft, truth = FormType(gt["form_type"]), gt["fields"]
         data = img.read_bytes()
         t = textract.read(data, ft)
         b = forms.read_form(data, IMAGE_EXT[img.suffix.lower()], ft, actor_role="evals")
-        combined = {f.name: f.value for f in merge(t, b)}
-        for name, fields in (("textract", t.fields if t else None), ("bedrock", b.fields), ("combined", combined)):
-            if fields is None:
-                continue
-            h, n = accuracy(fields, truth)
-            per[name][0] += h
-            per[name][1] += n
+        scores = score_reads(t, b, truth)
+        for name in per:
+            if scores[name] is not None:
+                per[name][0] += scores[name][0]
+                per[name][1] += scores[name][1]
+        for k, v in scores["agreement"].items():
+            split[k] += v
 
     kept = rejected = 0
     for p in load_patients():
@@ -113,6 +131,7 @@ def run(fixtures: Path, out: Path) -> int:
         f"| Field accuracy, Textract | {pct(*per['textract'])} |",
         f"| Field accuracy, Bedrock vision | {pct(*per['bedrock'])} |",
         f"| Field accuracy, combined (agreement) | {pct(*per['combined'])} |",
+        f"| Reader agreement (agree / disagree / single fields) | {split['agree']} / {split['disagree']} / {split['single']} |",
         f"| Packet faithfulness (lines with resolvable source_path) | {pct(kept, kept + rejected)} |",
         f"| Policy grounding rate | {pct(grounded, len(questions))} |",
         f"| Model calls | {len(calls)} |",
