@@ -3,6 +3,7 @@ import { api, isOffline, policyReplayKey } from './api.js';
 import { h, mount, stateBox, chip, usd } from './dom.js';
 import { store, on } from './state.js';
 import { renderRecord } from './records.js';
+import { idbStore, drain, migrateLegacy, newId, SYNC_TAG } from './queue.js';
 
 const $ = (id) => document.getElementById(id);
 const SUGGESTIONS = [
@@ -42,22 +43,10 @@ async function ask(question) {
 
 // ---------------------------------------------------------------- capture
 
-const QKEY = 'dc.pendingCaptures';
-const loadQ = () => { try { return JSON.parse(localStorage.getItem(QKEY)) || []; } catch { return []; } };
-const saveQ = (q) => { try { localStorage.setItem(QKEY, JSON.stringify(q)); return true; } catch { return false; } };
-
-const readDataUrl = (file) => new Promise((res, rej) => {
-  const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file);
-});
-
-function dataUrlToBlob(url) {
-  const [head, b64] = url.split(',');
-  const mime = /data:([^;]+)/.exec(head)?.[1] || 'application/octet-stream';
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
+// Offline queue: IndexedDB via queue.js (S7). Drained on Background Sync (sw.js wakes the page), the
+// online event (app.js), a slow interval and startup; queue.js lets only one drain run at a time.
+const queue = idbStore();
+const DRAIN_EVERY_MS = 60000;
 
 function buildForm(meta, file) {
   const fd = new FormData();
@@ -67,35 +56,51 @@ function buildForm(meta, file) {
   fd.append('role', meta.role);
   if (meta.patient_id) fd.append('patient_id', meta.patient_id);
   if (meta.readback_text) fd.append('readback_text', meta.readback_text);
+  if (meta.id) fd.append('client_id', meta.id); // server idempotency: a re-sent id returns its record
   return fd;
 }
 
-function renderPending() {
-  const q = loadQ();
-  mount($('capture-pending'), q.length
-    ? stateBox('offline', `${q.length} capture${q.length > 1 ? 's' : ''} queued on this device — will upload when connected.`,
+// The queued item's own role is the actor (X-Role), not whoever is signed in when it drains.
+const sendQueued = (item) => api('/capture', {
+  method: 'POST', headers: { 'X-Role': item.role },
+  form: buildForm(item, item.blob ? new File([item.blob], item.name || 'capture.jpg', { type: item.blob.type }) : null),
+});
+
+async function queuedCount() {
+  try { return (await queue.list()).length; } catch { return 0; }
+}
+
+async function renderPending() {
+  const n = await queuedCount();
+  const badge = $('queue-count'); // header, next to "Simulate offline"; counts down as the queue drains
+  badge.hidden = !n;
+  badge.textContent = `${n} queued`;
+  badge.title = `${n} capture${n === 1 ? '' : 's'} waiting to upload from this device`;
+  mount($('capture-pending'), n
+    ? stateBox('offline', `${n} capture${n > 1 ? 's' : ''} queued on this device — will upload when connected.`,
       { label: 'Upload now', onClick: flushQueue })
     : null);
 }
 
+function requestBackgroundSync() {
+  // Chromium only; elsewhere the online event and the interval drain the queue.
+  navigator.serviceWorker?.ready.then((reg) => reg.sync?.register(SYNC_TAG)).catch(() => {});
+}
+
 export async function flushQueue() {
-  const q = loadQ();
-  if (!q.length || isOffline()) { renderPending(); return; }
-  const left = [];
-  for (const item of q) {
-    const file = item.dataUrl ? new File([dataUrlToBlob(item.dataUrl)], item.name || 'capture.jpg') : null;
-    const r = await api('/capture', { method: 'POST', form: buildForm(item, file) });
-    if (r.ok && r.data?.record_id) mount($('capture-result'), renderRecord(r.data));
-    else left.push(item);
-  }
-  saveQ(left);
-  renderPending();
+  if (isOffline()) { await renderPending(); return; }
+  const result = await drain(queue, sendQueued, {
+    onSent: async (_item, r) => { mount($('capture-result'), renderRecord(r.data)); await renderPending(); },
+  });
+  await renderPending();
+  return result;
 }
 
 async function submitCapture(e) {
   e.preventDefault();
   const file = $('capture-file').files[0] || null;
   const meta = {
+    id: newId(), // sent now and on every retry, so the server keeps one record per submission
     form_type: $('capture-type').value,
     patient_id: $('capture-patient').value || null,
     role: store.role,
@@ -121,10 +126,18 @@ async function submitCapture(e) {
   }
   if (r.offline) {
     let queued = false;
-    try { queued = saveQ([...loadQ(), { ...meta, dataUrl: file ? await readDataUrl(file) : null, name: file?.name, queued_at: new Date().toISOString() }]); } catch { queued = false; }
+    try {
+      await queue.put({ ...meta, blob: file, name: file?.name, queued_at: new Date().toISOString() });
+      queued = true;
+      requestBackgroundSync();
+      // Stored safely: clear the form so the same paper is not queued twice under a new id.
+      $('capture-form').reset();
+      $('capture-preview').hidden = true;
+      syncFormType();
+    } catch { queued = false; }
     mount(out, stateBox('offline', queued
       ? 'Offline — form saved on this device and queued for reading when connected. Keep the paper original.'
-      : 'Offline and the image is too large to queue locally. Keep the paper original for backload.'), prev);
+      : 'Offline and this device could not store the form. Keep the paper original for backload.'), prev);
     renderPending();
     return;
   }
@@ -171,5 +184,8 @@ export function initDuring() {
   syncFormType();
   fillPatients();
   on('patients', fillPatients);
-  renderPending();
+  navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type === SYNC_TAG) flushQueue(); });
+  setInterval(flushQueue, DRAIN_EVERY_MS);
+  // One-time move of a pre-S7 localStorage queue, then a startup drain.
+  migrateLegacy(queue).catch(() => 0).then(flushQueue);
 }

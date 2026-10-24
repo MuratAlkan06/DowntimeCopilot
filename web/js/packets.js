@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { h, mount, stateBox, chip, fmtTime, fmtDateTime, asList, cachedNote, usd } from './dom.js';
 import { store, set, emit, noteSnapshot, STALE_MINUTES } from './state.js';
 import { dueAt, dueRelative, ageMinutes } from './rules.js';
+import { precacheChecklists } from './checklists.js';
 
 const $ = (id) => document.getElementById(id);
 let selectedId = null;
@@ -146,14 +147,18 @@ function patientRow(p) {
   );
 }
 
-export async function openPacket(id) {
+/** `quiet`: redraw in place (no spinner, no scroll) and keep the current view if the fetch fails. */
+export async function openPacket(id, { quiet = false } = {}) {
   selectedId = id;
   document.querySelectorAll('.patient-row').forEach((b) => b.toggleAttribute('aria-current', b.dataset.id === id));
   const pane = $('packet');
-  mount(pane, stateBox('loading', 'Loading packet…'));
-  if (window.matchMedia('(max-width: 760px)').matches) pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!quiet) {
+    mount(pane, stateBox('loading', 'Loading packet…'));
+    if (window.matchMedia('(max-width: 760px)').matches) pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   const r = await api(`/patients/${encodeURIComponent(id)}/packet`);
   if (selectedId !== id) return; // user moved on
+  if (!r.ok && quiet) return;
   if (!r.ok) {
     mount(pane, stateBox(r.offline ? 'offline' : 'error',
       r.offline ? 'This packet is not cached on this device. Use the printed packet or the BCA PC.' : `Couldn't load packet (${r.error}).`,
@@ -250,6 +255,13 @@ export async function loadStatus() {
   return s;
 }
 
+/** Connectivity is back: redraw the list and the open packet from a fresh fetch, so a
+ *  "Cached copy" note or offline message clears without reopening anything. */
+export function refreshOnReconnect() {
+  loadPatients();
+  if (selectedId) openPacket(selectedId, { quiet: true });
+}
+
 async function printNow() {
   await loadStatus();
   document.querySelectorAll('.print-stamp').forEach((el) => { el.textContent = printStamp(); });
@@ -305,6 +317,7 @@ export async function goToDowntime() {
   mount(status, h('span', {}, `Downtime started ${fmtTime(store.downtimeStartedAt)}${n ? ` · ${n} packets generated` : ''}. Packets are cached for offline use.`));
   await loadPatients();
   prefetchPackets();
+  precacheChecklists(); // all four roles, alongside the packets
 }
 
 /** Warm the service-worker cache so packets survive the network being cut. */

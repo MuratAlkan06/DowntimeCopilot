@@ -91,7 +91,10 @@ export async function api(path, { method = 'GET', json, form, headers, replay } 
   // The service worker marks responses it had to answer without the network.
   const swOffline = res.headers.get('x-dc-offline') === '1';
   const swFallback = res.headers.get('x-dc-fallback') === '1';
-  setFetchFailed(swOffline || swFallback);
+  // A stale-while-revalidate hit (packets) is a cached copy served without asking the network, so it says
+  // nothing about connectivity: leave the state alone, or it would flip "online" and back on every packet.
+  if (swOffline || swFallback) setFetchFailed(true);
+  else if (!res.headers.get('x-dc-cached-at')) setFetchFailed(false);
 
   const data = await parse(res);
   if (!res.ok) return { ok: false, status: res.status, data, offline: swOffline, error: errorText(data, res.status) };

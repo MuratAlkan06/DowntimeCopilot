@@ -28,6 +28,7 @@
         <span class="role-label">Role</span>
         <select id="role-select" class="select" aria-label="Your role"></select>
       </label>
+      <span id="queue-count" class="chip chip-warn" role="status" hidden></span>
       <button id="sim-offline" class="btn btn-quiet" type="button" aria-pressed="false">Simulate offline</button>
     </div>
   </header>
@@ -138,6 +139,7 @@
         </div>
         <div id="checklist-items"></div>
         <p id="checklist-foot" class="muted small">From the downtime policy, section 2 and the duties it names.</p>
+        <p id="checklist-cached" class="muted small" aria-live="polite"></p>
       </section>
     </section>
 
