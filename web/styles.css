@@ -328,6 +328,8 @@ textarea.input { resize: vertical; }
 .record-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); }
 .record-summary { font-size: var(--fs-sm); color: var(--c-muted); }
 .record-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.record-chips { align-self: flex-start; }
+.bl-group .record-group { display: none; } /* the group's section title already names it */
 
 .table-wrap { overflow-x: auto; }
 .fields-table, .data-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
@@ -343,6 +345,8 @@ tbody th { font-weight: 600; text-transform: capitalize; }
 .field-flagged > th { box-shadow: inset 4px 0 0 var(--c-warn-strong); }
 .field-corrected { background: var(--c-info-soft); }
 .field-corrected > th { box-shadow: inset 4px 0 0 var(--c-info); }
+/* Readers / Review chips may wrap so the table fits its card at 1024px (no clipped last column). */
+.fields-table .chip { white-space: normal; }
 .field-value { font-weight: 600; }
 .field-edit { margin-left: var(--sp-2); }
 .field-edit-form { display: grid; gap: var(--sp-1); min-width: 140px; }
@@ -378,6 +382,7 @@ tbody th { font-weight: 600; text-transform: capitalize; }
 /* ---------------------------------------------------------------- responsive */
 @media (max-width: 1100px) {
   .grid-2 { grid-template-columns: 1fr; }
+  .field-crop { max-width: min(260px, 60vw); } /* fields table fits a backload group box at 1024px */
 }
 @media (max-width: 760px) {
   .app-header, .phase-nav, .banners, main { padding-left: var(--sp-3); padding-right: var(--sp-3); }

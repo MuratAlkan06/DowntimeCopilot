@@ -1,7 +1,7 @@
 // CapturedRecord rendering shared by capture (During) and the backload queue (Recovery).
 import { api } from './api.js';
 import { h, chip, fmtTime, labelize, fieldLabel, stateBox, mount } from './dom.js';
-import { store, emit, patientLabel, roleLabel } from './state.js';
+import { store, emit, patientLabel, roleLabel, GROUPS } from './state.js';
 
 const FORM_LABELS = {
   vitals_flowsheet: 'Vitals flowsheet',
@@ -11,6 +11,7 @@ const FORM_LABELS = {
 };
 
 const STATUS_KIND = { needs_review: 'warn', verified: 'info', entered: 'ok', rejected: 'crit' };
+const groupLabel = (id) => GROUPS.find((g) => g.id === id)?.label || labelize(id);
 
 // A reviewer edit (PATCH .../fields/{name}) recomputes the field's flag and leaves the readers' raw values
 // in `reads`; `agreement` keeps the readers' original verdict. So a field is "corrected" when its value
@@ -134,7 +135,10 @@ export function renderRecord(rec, { onChange } = {}) {
           readers.length === 1 ? ' (single read)' : '',
           ' · ', h('span', { class: 'mono' }, rec.record_id)),
       ),
-      chip(labelize(rec.status || 'needs_review'), STATUS_KIND[rec.status] || 'neutral'),
+      h('span', { class: 'chips record-chips' },
+        // Where this record lands at backload (Recovery groups by it, so its section title shows it there).
+        rec.backload_group ? h('span', { class: 'chip chip-neutral record-group' }, `Backload: ${groupLabel(rec.backload_group)}`) : null,
+        chip(labelize(rec.status || 'needs_review'), STATUS_KIND[rec.status] || 'neutral')),
     ),
     rec.form_type === 'verbal_order'
       ? h('div', { class: 'alert alert-warn' }, h('span', { class: 'rule-badge' }, 'R-VO-01'), h('span', {}, 'Requires provider co-sign before entry.'))
