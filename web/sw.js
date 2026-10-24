@@ -1,14 +1,14 @@
 // Service worker: network-first navigations (cached shell offline), cache-first shell assets,
 // stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
-const VERSION = 'v19';
+const VERSION = 'v20';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
 const DATA_CACHE = `dc-data-${VERSION}`;
 
 const SHELL = [
   './', 'index.html', 'app.js', 'styles.css', 'print.css', 'manifest.webmanifest', 'icon.svg',
   'js/api.js', 'js/dom.js', 'js/state.js', 'js/rules.js', 'js/packets.js', 'js/records.js', 'js/during.js', 'js/checklists.js', 'js/recovery.js',
-  'js/queue.js', 'js/recorder.js',
+  'js/queue.js', 'js/recorder.js', 'js/readiness.js',
 ];
 
 const SHELL_EXT = /\.(?:html|js|css|webmanifest|svg|png|ico)$/;

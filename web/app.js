@@ -6,6 +6,7 @@ import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativ
 import { initDuring, flushQueue } from './js/during.js';
 import { initChecklist, loadChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
+import { initReadiness, loadReadiness } from './js/readiness.js';
 
 const $ = (id) => document.getElementById(id);
 const PHASES = ['downtime', 'during', 'recovery'];
@@ -90,6 +91,7 @@ function init() {
   initDuring();
   initChecklist();
   initRecovery();
+  initReadiness();
 
   document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => setPhase(t.dataset.phase)));
   $('btn-go-downtime').addEventListener('click', goToDowntime);
@@ -104,6 +106,7 @@ function init() {
     // Redraw what was drawn from the cache while offline (cached-copy notes, offline messages).
     refreshOnReconnect();
     loadChecklist();
+    loadReadiness();
     if (store.phase === 'recovery') enterRecovery();
   });
   on('snapshotTime', renderSnapshot);
