@@ -90,7 +90,7 @@ async function fetchPatients() {
   const list = $('patient-list');
   if (!store.patients.size) mount(list, stateBox('loading', 'Loading patients…'));
   if (!selectedId && !$('packet').hasChildNodes()) {
-    mount($('packet'), stateBox('empty', 'Packets appear here. Tap "Go to downtime", then choose a patient.'));
+    mount($('packet'), stateBox('empty', 'Packets appear here. Tap "Declare downtime", then choose a patient.'));
   }
   const [r, rules] = await Promise.all([api('/patients'), api('/rules/current'), loadStatus()]);
   if (rules.ok && rules.data?.patients) store.ruleHits = rules.data.patients;
@@ -119,7 +119,7 @@ async function fetchPatients() {
   mount(list, cachedNote(r), h('ul', { class: 'patient-list', role: 'list' }, [...patients].sort(bedSort).map(patientRow)));
   if (!selectedId) mount($('packet'), stateBox('empty', store.downtimeStartedAt
     ? 'Select a patient to open their downtime packet.'
-    : 'Tap "Go to downtime" to generate packets, or select a patient to view the last packet.'));
+    : 'Tap "Declare downtime" to generate packets, or select a patient to view the last packet.'));
 }
 
 function patientRow(p) {
@@ -266,7 +266,7 @@ export async function printAllPackets() {
   const list = r.ok ? asList(r.data, 'packets') : [];
   if (!list.length) {
     mount(status, stateBox(r.ok ? 'empty' : (r.offline ? 'offline' : 'error'), r.ok
-      ? 'No packets yet. Tap "Go to downtime" first.'
+      ? 'No packets yet. Tap "Declare downtime" first.'
       : `Couldn't load packets to print (${r.error}).`));
     return;
   }

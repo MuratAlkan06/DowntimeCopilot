@@ -61,13 +61,18 @@ async function fromCache(path) {
   return { ok: false, status: 0, data: null, offline: true, error: 'Offline and not cached on this device yet' };
 }
 
-export async function api(path, { method = 'GET', json, form, headers } = {}) {
+// Cache key of the last answer to a policy question; must match replayKey in sw.js, which writes it.
+const normQuestion = (q) => String(q ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+export const policyReplayKey = (q) => `/policy/ask?replay=${encodeURIComponent(normQuestion(q))}`;
+
+/** `replay`: cache key a read-only POST (policy answers) falls back to when offline. */
+export async function api(path, { method = 'GET', json, form, headers, replay } = {}) {
   const init = { method, headers: { Accept: 'application/json', ...(headers || {}) } };
   if (json !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(json); }
   if (form) init.body = form;
 
   if (net.simulated) {
-    if (method === 'GET') return fromCache(path);
+    if (method === 'GET' || replay) return fromCache(replay || path);
     return { ok: false, status: 0, data: null, offline: true, error: 'Offline — action not sent' };
   }
 
@@ -76,7 +81,7 @@ export async function api(path, { method = 'GET', json, form, headers } = {}) {
     res = await fetch(path, init);
   } catch {
     setFetchFailed(true);
-    if (method === 'GET') return fromCache(path);
+    if (method === 'GET' || replay) return fromCache(replay || path);
     return { ok: false, status: 0, data: null, offline: true, error: 'Network unreachable — action not sent' };
   }
 

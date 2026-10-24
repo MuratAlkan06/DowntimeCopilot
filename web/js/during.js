@@ -1,5 +1,5 @@
 // Phase 2: policy questions + paper-form capture (with an offline queue).
-import { api, isOffline } from './api.js';
+import { api, isOffline, policyReplayKey } from './api.js';
 import { h, mount, stateBox, chip, usd } from './dom.js';
 import { store, on } from './state.js';
 import { renderRecord } from './records.js';
@@ -16,7 +16,7 @@ const SUGGESTIONS = [
 async function ask(question) {
   const out = $('policy-answer');
   mount(out, stateBox('loading', 'Searching the downtime policy…'));
-  const r = await api('/policy/ask', { method: 'POST', json: { question, role: store.role } });
+  const r = await api('/policy/ask', { method: 'POST', json: { question, role: store.role }, replay: policyReplayKey(question) });
   if (!r.ok) {
     mount(out, stateBox(r.offline ? 'offline' : 'error', r.offline
       ? 'Offline — AI policy answers resume when connected. Use the paper downtime binder meanwhile.'
@@ -25,6 +25,7 @@ async function ask(question) {
   }
   const a = r.data || {};
   mount(out, h('div', { class: 'policy-answer' },
+    r.offline ? h('p', { class: 'cached-note' }, 'Offline — the answer recorded earlier on this device for this question.') : null,
     h('div', { class: 'chips' },
       a.grounded ? chip('Grounded in policy', 'ok') : chip('Not grounded — check the binder', 'warn'),
       a.guardrail?.status ? chip(`Guardrail: ${a.guardrail.status}`, 'neutral', (a.guardrail.reasons || []).join('; ')) : null),

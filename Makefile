@@ -39,9 +39,12 @@ dev:  ## simulator on :$(SIM_PORT) (default 8001), app on :$(APP_PORT) (default 
 	trap 'kill $$sim $$api 2>/dev/null' INT TERM EXIT; \
 	wait
 
-demo:  ## seeds 12 patients, opens the app at "Before" with a healthy EHR (needs `make dev` running)
-	$(PY) -m simulator.seed
-	@command -v open >/dev/null && open "$(APP_URL)" || xdg-open "$(APP_URL)" || echo "open $(APP_URL)"
+demo:  ## clean store + 12 patients at "Before" with a healthy EHR; prints the URL (DEMO_OPEN=1 also opens it). Needs `make dev`
+	$(PY) -m simulator.seed --fresh
+	@echo "Demo ready: $(APP_URL)"
+	@if [ "$(DEMO_OPEN)" = "1" ]; then \
+		if command -v open >/dev/null; then open "$(APP_URL)"; else xdg-open "$(APP_URL)" || true; fi; \
+	fi
 
 test:  ## unit tests
 	$(PY) -m pytest -q
