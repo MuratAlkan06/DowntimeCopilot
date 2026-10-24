@@ -69,11 +69,6 @@ function render() {
     v.hidden = !(v.dataset.route === route);
   });
 
-  // Load patients for both normal and downtime routes
-  if (route === 'normal' || route === 'downtime') {
-    loadPatients();
-  }
-
   // If in downtime, show the downtime navigation and tabs
   const downtimeNav = $('downtime-nav');
   if (downtimeNav) {
