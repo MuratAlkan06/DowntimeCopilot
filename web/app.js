@@ -43,21 +43,8 @@ function setDowntimeRoute(route) {
 }
 
 function autoRoute() {
-  // Auto-navigate based on app state
-  const currentRoute = getCurrentRoute();
-  const stored = store.route;
-
-  // If in downtime and systems restored, auto-exit to normal
-  if (stored === 'downtime' && currentRoute === 'normal' && store.restoredAt) {
-    setRoute('normal');
-    return;
-  }
-
-  // If not in downtime but downtime starts, auto-enter
-  if (stored !== 'downtime' && currentRoute === 'downtime') {
-    setRoute('downtime');
-    return;
-  }
+  const want = getCurrentRoute();
+  if (store.route !== want) setRoute(want);
 }
 
 function render() {
