@@ -38,10 +38,13 @@ async def capture(
     if not data:
         raise HTTPException(422, "verbal order needs read-back audio or readback_text"
                             if form_type == FormType.verbal_order else "empty upload")
+    info: dict = {}
     try:
-        record = run_capture(data, content_type, form_type, patient_id or None, role, text)
+        record = run_capture(data, content_type, form_type, patient_id or None, role, text, info=info)
     except NotImplementedError as exc:
         raise HTTPException(501, str(exc)) from exc
+    if "transcribe" in info:  # typed | mock | transcribed, or a fallback (web client shows typed-only messaging)
+        response.headers["X-Transcribe"] = info["transcribe"]
     store = get_store()
     store.save_record(record, client_id=client_id)
     store.audit(role, "capture.create", "captured_record", record.record_id,
