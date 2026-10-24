@@ -322,7 +322,7 @@ def test_live_audio_uses_the_typed_structuring_path(env):
     audio = pipeline.capture(WAV, "audio/wav", FormType.verbal_order, "pt-07", "rn", info=info)
     typed = pipeline.capture(HEARD.encode(), "text/plain", FormType.verbal_order, "pt-07", "rn", HEARD)
     assert seen == [HEARD, HEARD]  # same structuring call, same text
-    assert shape(audio) == shape(typed) and info == {"transcribe": "transcribed"}
+    assert shape(audio) == shape(typed) and info == {"transcribe": "transcribed", "text_source": "transcribed"}
     f = {x.name: x.value for x in audio.fields}
     assert (f["medication"], f["dose"], f["route"], f["ordering_provider"], f["read_back"]) == (
         "heparin", "5000 units", "SC", "Dr. Quill", "yes")
@@ -337,7 +337,8 @@ def test_live_denied_keeps_audio_upload_only_and_says_why(env):
     seen = live(env, FakeAWS(deny="start", code="AccessDeniedException"))
     info: dict = {}
     rec = pipeline.capture(WAV, "audio/webm", FormType.verbal_order, "pt-07", "rn", info=info)
-    assert info == {"transcribe": "denied"} and seen == []  # no transcript, so no structuring call
+    assert info == {"transcribe": "denied", "text_source": "audio_untranscribed"}
+    assert seen == []  # no transcript, so no structuring call
     assert rec.audio_ref and get_store().get_blob(rec.audio_ref)[0] == WAV
     assert all(f.value is None and f.flag == FieldFlag.unreadable for f in rec.fields)  # nothing guessed
     assert {f.name for f in rec.fields} >= {"medication", "read_back", "provider_cosign"}
@@ -351,7 +352,7 @@ def test_dry_run_audio_and_typed_parity(env):
     audio = pipeline.capture(WAV, "audio/webm;codecs=opus", FormType.verbal_order, "pt-07", "rn", info=info)
     typed_text = transcribe.MOCK_TRANSCRIPT
     typed = pipeline.capture(typed_text.encode(), "text/plain", FormType.verbal_order, "pt-07", "rn", typed_text)
-    assert info == {"transcribe": "mock"} and shape(audio) == shape(typed)
+    assert info == {"transcribe": "mock", "text_source": "transcribed"} and shape(audio) == shape(typed)
     assert audio.reads.bedrock.fields["medication"] == "ondansetron"
 
 
@@ -364,6 +365,53 @@ def test_api_reports_the_transcribe_outcome(env):
         assert r.status_code == 201 and r.headers["x-transcribe"] == "typed"
         r = c.post("/capture", files={"file": ("f.png", b"\x89PNG", "image/png")}, data={"form_type": "vitals_flowsheet"})
         assert r.status_code == 201 and "x-transcribe" not in r.headers
+
+
+def test_text_source_from_every_transcribe_outcome():
+    assert pipeline.text_source(transcribe.TYPED) == pipeline.TYPED
+    assert pipeline.text_source(transcribe.MOCK) == pipeline.text_source(transcribe.TRANSCRIBED) == pipeline.TRANSCRIBED
+    assert {pipeline.text_source(o) for o in transcribe.FALLBACKS} == {pipeline.AUDIO_UNTRANSCRIBED}
+    assert pipeline.text_source("something new") == pipeline.AUDIO_UNTRANSCRIBED  # never claims a transcript
+
+
+def source_of(c: TestClient, record_id: str) -> str | None:
+    """What a fresh client (reload, another device) learns: the stored value via the verification call."""
+    r = c.get(f"/backload/{record_id}/verification")
+    assert r.status_code == 200, r.text
+    return r.json()["text_source"]
+
+
+def test_text_source_is_stored_at_capture_and_served_after_reload(env):
+    """S9 re-check: a typed read-back over attached audio must not read as "transcribed from audio" once the
+    capturing device's memory is gone. Each capture path stores its source; later saves keep it."""
+    from app.main import app
+    with TestClient(app) as c:
+        audio = c.post("/capture", files={"file": ("rb.webm", WAV, "audio/webm")}, data={"form_type": "verbal_order"})
+        typed_over_audio = c.post("/capture", files={"file": ("rb.webm", WAV, "audio/webm")},
+                                  data={"form_type": "verbal_order", "readback_text": HEARD})
+        typed_only = c.post("/capture", data={"form_type": "verbal_order", "readback_text": HEARD})
+        photo = c.post("/capture", files={"file": ("f.png", b"\x89PNG", "image/png")},
+                       data={"form_type": "vitals_flowsheet"})
+        ids = [r.json()["record_id"] for r in (audio, typed_over_audio, typed_only, photo)]
+        assert [source_of(c, i) for i in ids] == ["transcribed", "typed", "typed", "photo"]
+        assert get_store().get_blob(typed_over_audio.json()["audio_ref"])[0] == WAV  # the audio is kept
+        # Edit / verify / entered re-save the record without a source; the stored one stays.
+        assert c.patch(f"/backload/{ids[1]}/fields/dose", json={"value": "5000 units SC"}).status_code == 200
+        assert c.post(f"/backload/{ids[3]}/verify", json={}).json()["status"] == "verified"
+        assert c.post(f"/backload/{ids[3]}/entered").json()["status"] == "entered"
+        assert (source_of(c, ids[1]), source_of(c, ids[3])) == ("typed", "photo")
+        assert "text_source" not in CapturedRecord.model_fields  # storage only: the contract is untouched
+    reset_store()  # a new process on the same store file (reload) still has it
+    assert get_store().text_source(ids[1]) == "typed" and get_store().text_source("rec-unknown") is None
+
+
+def test_fallback_capture_stores_audio_untranscribed(env):
+    seen = live(env, FakeAWS(deny="start", code="AccessDeniedException"))
+    from app.main import app
+    with TestClient(app) as c:
+        r = c.post("/capture", files={"file": ("rb.webm", WAV, "audio/webm")}, data={"form_type": "verbal_order"})
+        assert r.status_code == 201 and r.headers["x-transcribe"] == "denied" and seen == []
+        assert source_of(c, r.json()["record_id"]) == "audio_untranscribed"
 
 
 # ------------------------------------------------------------------ speech fixture (tools/speech_fixture.py)
@@ -397,7 +445,7 @@ def test_dry_run_fixture_audio_gets_its_canned_transcript_and_typed_parity(env):
     rec = pipeline.capture(audio, "audio/wav", FormType.verbal_order, truth["patient_id"], "rn", info=info)
     typed = pipeline.capture(truth["transcript"].encode(), "text/plain", FormType.verbal_order, truth["patient_id"],
                              "rn", truth["transcript"])
-    assert info == {"transcribe": "mock"} and shape(rec) == shape(typed)
+    assert info == {"transcribe": "mock", "text_source": "transcribed"} and shape(rec) == shape(typed)
     f = {x.name: x.value for x in rec.fields}
     want = truth["fields"]
     for name in ("medication", "dose", "frequency", "ordering_provider", "read_back", "provider_cosign"):

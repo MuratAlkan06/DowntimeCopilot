@@ -72,7 +72,7 @@ const REC_TEXT = {
 };
 
 // Typed-over-audio precedence (server rule): said before submit, never silently applied.
-const PRECEDENCE = 'Typed read-back will be used. The recording is saved with the order but not transcribed.';
+const PRECEDENCE = 'Typed read-back will be used. The audio is saved with the order but not transcribed.';
 let precedenceShown = false;
 
 function attachedAudio() {
@@ -84,7 +84,9 @@ function renderPrecedence() {
   const show = typedOverridesAudio(attachedAudio(), $('capture-readback').value);
   if (show === precedenceShown) return; // mount only on change, so the live region speaks once
   precedenceShown = show;
-  mount($('readback-notice'), show ? stateBox('warn', PRECEDENCE) : null);
+  const note = show ? stateBox('warn', PRECEDENCE) : null;
+  note?.removeAttribute('role'); // #readback-notice is the live region; a nested role=status would announce twice
+  mount($('readback-notice'), note);
 }
 
 function renderRecorder() {

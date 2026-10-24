@@ -92,10 +92,12 @@ function valueCell(rec, f, getCard, msg, onChange, tx, bv) {
   return td;
 }
 
-// "n of 2 verifications" for high-alert medication records (enforced server-side).
-async function loadVerification(rec, box, verifyBtn) {
+// "n of 2 verifications" for high-alert medication records (enforced server-side). The same response carries
+// the record's text source (onSource); with no box, only that is read.
+async function loadVerification(rec, box, verifyBtn, onSource) {
   const r = await api(`/backload/${encodeURIComponent(rec.record_id)}/verification`, { headers: asRole() });
-  if (!r.ok || !r.data || r.data.required < 2) return;
+  if (r.ok && r.data?.text_source) onSource?.(r.data.text_source);
+  if (!box || !r.ok || !r.data || r.data.required < 2) return;
   const done = r.data.verifications || [];
   const first = done[0];
   if (verifyBtn) verifyBtn.textContent = done.length ? 'Second verification (2 of 2)' : 'Verify (1 of 2)';
@@ -113,23 +115,32 @@ function agreementChip(f) {
   return chip('Single read', 'neutral');
 }
 
-// X-Transcribe outcome seen when this device captured the record (during.js), by record id, so a re-render
-// after verify or an edit keeps it. A typed read-back or a fallback was not transcribed from the audio.
-const heardBy = new Map();
-const TRANSCRIBED = new Set(['mock', 'transcribed']);
+// Where a verbal order's text came from. The server stores it at capture (text_source, read from
+// GET /backload/{id}/verification), so the line holds after a reload or on another device. Nothing is
+// claimed until it is known: a typed read-back over attached audio is not a transcript of that audio.
+const SOURCE_TEXT = {
+  typed: 'Read from the typed read-back (single read)',
+  transcribed: 'Transcribed from audio (single read)',
+  audio_untranscribed: 'Audio saved, not transcribed',
+};
+const SOURCE_UNKNOWN = 'Read-back source unknown';
+const isVerbal = (rec) => Boolean(rec.audio_ref && !rec.image_ref);
 
-function sourceLine(rec, readers) {
-  if (rec.audio_ref && !rec.image_ref) {
-    const heard = heardBy.get(rec.record_id);
-    if (heard === 'typed') return 'Read from the typed read-back (single read)';
-    if (heard && !TRANSCRIBED.has(heard)) return 'Audio saved, not transcribed';
-    return 'Transcribed from audio (single read)';
-  }
+// Text source by record id: the server's value once read, or this device's X-Transcribe outcome from the
+// capture (during.js) as a same-session fast path, so a re-render after verify or an edit keeps it.
+const sourceBy = new Map();
+const TRANSCRIBED = new Set(['mock', 'transcribed']);
+export const sourceFromOutcome = (o) => (o === 'typed' ? 'typed' : TRANSCRIBED.has(o) ? 'transcribed' : 'audio_untranscribed');
+
+// `source`: text_source (typed | transcribed | audio_untranscribed | photo), or null while not known.
+// Photo records keep their reader wording.
+export function sourceLine(rec, readers, source) {
+  if (isVerbal(rec)) return SOURCE_TEXT[source] || SOURCE_UNKNOWN;
   return `${readers.length ? `Read by ${readers.join(' + ')}` : 'No reader output'}${readers.length === 1 ? ' (single read)' : ''}`;
 }
 
 export function renderRecord(rec, { onChange, transcribe } = {}) {
-  if (transcribe) heardBy.set(rec.record_id, transcribe);
+  if (transcribe) sourceBy.set(rec.record_id, sourceFromOutcome(transcribe));
   const fields = rec.fields || [];
   const tx = rec.reads?.textract;
   const br = rec.reads?.bedrock;
@@ -139,6 +150,8 @@ export function renderRecord(rec, { onChange, transcribe } = {}) {
   const readers = [tx ? 'Textract' : null, br ? 'Bedrock vision' : null].filter(Boolean);
   const msg = h('div', { class: 'record-msg', 'aria-live': 'polite' });
   const verifyBox = h('div', { class: 'verify-box' });
+  const sourceEl = h('span', { class: 'record-source' }, sourceLine(rec, readers, sourceBy.get(rec.record_id)));
+  const onSource = (s) => { sourceBy.set(rec.record_id, s); sourceEl.textContent = sourceLine(rec, readers, s); };
   let card;
   const verifyBtn = rec.status === 'needs_review'
     ? h('button', { class: 'btn btn-primary', type: 'button', 'data-action': 'verify', onclick: () => act(rec, 'verify', card, msg, onChange) },
@@ -151,7 +164,7 @@ export function renderRecord(rec, { onChange, transcribe } = {}) {
         h('h3', { class: 'record-title' }, FORM_LABELS[rec.form_type] || labelize(rec.form_type), ' · ', patientLabel(rec.patient_id)),
         h('p', { class: 'record-meta' },
           `Captured ${fmtTime(rec.captured_at)} by ${roleLabel(rec.captured_by_role)} · `,
-          sourceLine(rec, readers),
+          sourceEl,
           ' · ', h('span', { class: 'mono' }, rec.record_id)),
       ),
       h('span', { class: 'chips record-chips' },
@@ -196,7 +209,10 @@ export function renderRecord(rec, { onChange, transcribe } = {}) {
     ),
     msg,
   );
-  if (rec.status === 'needs_review') loadVerification(rec, verifyBox, verifyBtn);
+  // The verify-state call also carries the text source; a verified or entered verbal order not seen on this
+  // device yet reads just the source.
+  if (rec.status === 'needs_review') loadVerification(rec, verifyBox, verifyBtn, onSource);
+  else if (isVerbal(rec) && !sourceBy.has(rec.record_id)) loadVerification(rec, null, null, onSource);
   return card;
 }
 
