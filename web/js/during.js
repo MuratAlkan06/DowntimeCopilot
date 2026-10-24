@@ -4,6 +4,7 @@ import { h, mount, stateBox, chip, usd } from './dom.js';
 import { store, on } from './state.js';
 import { renderRecord } from './records.js';
 import { idbStore, drain, migrateLegacy, newId, SYNC_TAG } from './queue.js';
+import { createRecorder } from './recorder.js';
 
 const $ = (id) => document.getElementById(id);
 const SUGGESTIONS = [
@@ -60,6 +61,47 @@ function buildForm(meta, file) {
   return fd;
 }
 
+// ---------------------------------------------------------------- verbal-order recorder (S9)
+
+let recorder = null;
+const REC_TEXT = {
+  idle: 'Or choose an audio file, or type the read-back.',
+  recording: 'Recording… press Stop when the read-back is done.',
+  denied: 'Microphone blocked. Choose an audio file or type the read-back instead.',
+  unsupported: 'Recording is not available in this browser. Choose an audio file or type the read-back.',
+};
+
+function renderRecorder() {
+  const st = recorder.state;
+  const toggle = $('rec-toggle');
+  toggle.hidden = st === 'unsupported';
+  toggle.textContent = st === 'recording' ? 'Stop recording' : st === 'attached' ? 'Record again' : 'Record read-back';
+  toggle.setAttribute('aria-pressed', String(st === 'recording'));
+  toggle.className = `btn btn-sm ${st === 'recording' ? 'btn-danger' : 'btn-secondary'}`;
+  $('rec-discard').hidden = st !== 'attached';
+  $('rec-status').textContent = st === 'attached'
+    ? `Recording attached (${recorder.seconds} s). It is sent with this order.`
+    : REC_TEXT[st];
+  if (st === 'attached') { $('capture-file').value = ''; $('capture-preview').hidden = true; } // one audio source
+}
+
+// Transcribe outcome (X-Transcribe) when the audio could not become a transcript: say so, typed read-back next.
+const TRANSCRIBE_FALLBACK = {
+  denied: 'Transcription is not allowed on this account',
+  failed: 'Transcription failed',
+  timeout: 'Transcription took too long',
+  empty: 'No speech was heard in the recording',
+  error: 'Transcription could not run',
+  unsupported: 'This file type cannot be transcribed',
+  unconfigured: 'Transcription is not set up on this server',
+};
+
+function transcribeNote(r) {
+  const why = TRANSCRIBE_FALLBACK[r.headers?.get?.('x-transcribe') || ''];
+  return why ? stateBox('warn', `${why}. The audio is saved with this order and no field was filled in. `
+    + 'Fill the fields in review from the audio, or type the read-back instead.') : null;
+}
+
 // The queued item's own role is the actor (X-Role), not whoever is signed in when it drains.
 const sendQueued = (item) => api('/capture', {
   method: 'POST', headers: { 'X-Role': item.role },
@@ -90,7 +132,7 @@ function requestBackgroundSync() {
 export async function flushQueue() {
   if (isOffline()) { await renderPending(); return; }
   const result = await drain(queue, sendQueued, {
-    onSent: async (_item, r) => { mount($('capture-result'), renderRecord(r.data)); await renderPending(); },
+    onSent: async (_item, r) => { mount($('capture-result'), transcribeNote(r), renderRecord(r.data)); await renderPending(); },
   });
   await renderPending();
   return result;
@@ -98,7 +140,8 @@ export async function flushQueue() {
 
 async function submitCapture(e) {
   e.preventDefault();
-  const file = $('capture-file').files[0] || null;
+  const verbalAudio = $('capture-type').value === 'verbal_order' ? recorder.file : null;
+  const file = verbalAudio || $('capture-file').files[0] || null; // a recorded clip takes the file's place
   const meta = {
     id: newId(), // sent now and on every retry, so the server keeps one record per submission
     form_type: $('capture-type').value,
@@ -118,7 +161,8 @@ async function submitCapture(e) {
   const r = await api('/capture', { method: 'POST', form: buildForm(meta, file) });
   btn.disabled = false;
   if (r.ok && r.data?.record_id) {
-    mount(out, renderRecord(r.data));
+    mount(out, transcribeNote(r), renderRecord(r.data));
+    recorder.discard();
     $('capture-form').reset();
     $('capture-preview').hidden = true;
     syncFormType();
@@ -131,6 +175,7 @@ async function submitCapture(e) {
       queued = true;
       requestBackgroundSync();
       // Stored safely: clear the form so the same paper is not queued twice under a new id.
+      recorder.discard();
       $('capture-form').reset();
       $('capture-preview').hidden = true;
       syncFormType();
@@ -147,9 +192,11 @@ async function submitCapture(e) {
 function syncFormType() {
   const verbal = $('capture-type').value === 'verbal_order';
   $('readback-wrap').hidden = !verbal;
+  $('recorder').hidden = !verbal;
+  if (!verbal && recorder) recorder.discard(); // leaving the verbal form releases the microphone
   const input = $('capture-file');
   input.accept = verbal ? 'audio/*,image/*' : 'image/*';
-  $('capture-file-label').textContent = verbal ? 'Record or choose read-back audio (optional)' : 'Photograph or choose the form';
+  $('capture-file-label').textContent = verbal ? 'Choose read-back audio (optional)' : 'Photograph or choose the form';
 }
 
 function fillPatients() {
@@ -173,9 +220,14 @@ export function initDuring() {
   });
   mount($('policy-answer'), h('p', { class: 'muted' }, 'Answers cite the numbered section of the hospital downtime policy.'));
 
+  recorder = createRecorder({ onChange: renderRecorder });
+  $('rec-toggle').addEventListener('click', () => (recorder.state === 'recording' ? recorder.stop() : recorder.start()));
+  $('rec-discard').addEventListener('click', () => recorder.discard());
+  renderRecorder();
   $('capture-type').addEventListener('change', syncFormType);
   $('capture-file').addEventListener('change', (e) => {
     const f = e.target.files[0];
+    if (f && recorder.state === 'attached') recorder.discard(); // a chosen file replaces the recording
     const img = $('capture-preview');
     if (f && f.type.startsWith('image/')) { img.src = URL.createObjectURL(f); img.hidden = false; } else img.hidden = true;
   });

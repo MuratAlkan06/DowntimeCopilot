@@ -118,6 +118,11 @@
               <span id="capture-file-label" class="field-label">Photograph or choose the form</span>
               <input id="capture-file" name="file" type="file" accept="image/*" capture="environment">
             </label>
+            <div id="recorder" class="recorder" hidden>
+              <button id="rec-toggle" class="btn btn-secondary btn-sm" type="button" aria-pressed="false">Record read-back</button>
+              <button id="rec-discard" class="btn btn-quiet btn-sm" type="button" hidden>Discard recording</button>
+              <span id="rec-status" class="recorder-status" role="status" aria-live="polite"></span>
+            </div>
             <img id="capture-preview" class="capture-preview" alt="Preview of the selected form" hidden>
             <label id="readback-wrap" class="stack-tight" hidden>
               <span class="field-label">Typed read-back (if no audio)</span>

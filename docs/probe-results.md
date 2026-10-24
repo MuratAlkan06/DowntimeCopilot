@@ -11,9 +11,11 @@ Resources the probe created and left in place for reuse: guardrail `sparthill-pr
 
 Correction (re-run 19:16 PDT): the current DRAFT guardrail id is `jeb5uct6gv35`. The id in the raw output below (`0wnxjjzefh0n`) is no longer listed. On the re-run, create returned `ConflictException`: the `sparthill-probe` name already exists. That is a name collision, not a permission deny. The raw output is left as recorded.
 
-Not probed: Lambda, EventBridge, Transcribe `StartTranscriptionJob`, Knowledge Base creation.
+Not probed: Lambda, EventBridge, Transcribe `StartTranscriptionJob` (since verified live in S9, see below), Knowledge Base creation.
 
 Probe delta (S8, 2026-10-24 ~01:00 PDT, us-east-1): before S8, `DetectDocumentText` was the only Textract call probed (`TEXTRACT  OK` below). `AnalyzeDocument` with `FeatureTypes` `FORMS` + `QUERIES` was first called in the S8 live pass and was **GRANTED**: 3 of 3 calls succeeded, with no AccessDenied. This was not a `make probe` re-run; the evidence is in `docs/decisions.md` (S8).
+
+Probe delta (S9, 2026-10-24 ~01:30 PDT, us-east-1): before S9, Transcribe was probed list-only (`TRANSCRIBE OK (list allowed)` below). `StartTranscriptionJob` (en-US, wav from an SSE-S3 bucket owned by this account), `GetTranscriptionJob` and `DeleteTranscriptionJob` were first called in the S9 live pass and were **ALLOWED**: 2 of 2 jobs COMPLETED, with no AccessDenied. S3 `CreateBucket`, `PutBucketEncryption`, `PutPublicAccessBlock`, `PutBucketLifecycleConfiguration`, `PutObject` and `DeleteObject` on the audio bucket were also allowed. This was not a `make probe` re-run; the evidence is in `docs/decisions.md` (S9).
 
 ## Raw output (redacted)
 

@@ -1,0 +1,20 @@
+{
+  "form_type": "verbal_order",
+  "audio": "verbal_order-01.wav",
+  "synthetic": true,
+  "bed": "7",
+  "patient_id": "pt-07",
+  "script": "Verbal order for bed 7: heparin five thousand units subcutaneous now. Ordering provider Doctor Quill. Read-back confirmed.",
+  "transcript": "Verbal order for bed 7: heparin 5000 units subcutaneous now. Ordering provider Doctor Quill. Read-back confirmed.",
+  "fields": {
+    "medication": "heparin",
+    "dose": "5000 units",
+    "route": "SC",
+    "frequency": "now",
+    "ordering_provider": "Dr. Quill",
+    "read_back": "yes",
+    "provider_cosign": "no"
+  },
+  "voice": "Samantha",
+  "rate_wpm": 165
+}

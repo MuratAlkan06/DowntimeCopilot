@@ -33,16 +33,23 @@ def _resolve_patient(patient_id: str | None, bed: str | None) -> str | None:
 
 
 def capture(data: bytes, content_type: str, form_type: FormType, patient_id: str | None, role: str,
-            transcript: str | None = None) -> CapturedRecord:
+            transcript: str | None = None, info: dict | None = None) -> CapturedRecord:
     """Store the original, read it (Textract + Nova 2 Lite vision; canned under DRY_RUN), merge, and store
-    one crop blob per field (crops.crop_ref). Unreadable fields carry no value (agreement.merge)."""
+    one crop blob per field (crops.crop_ref). Unreadable fields carry no value (agreement.merge).
+    Verbal order: typed read-back, else the audio through Transcribe; either text takes the same structuring
+    call. No transcript (fallback) keeps the audio with every field unread. `info["transcribe"]` gets the
+    outcome (app.capture.transcribe) for the caller."""
     store = get_store()
     record_id = f"rec-{uuid.uuid4().hex[:12]}"
     ref = store.save_blob(data, content_type)
     boxes: dict = {}
     if form_type == FormType.verbal_order:
-        text = transcribe.transcribe(data, media_format=content_type.split("/")[-1], typed=transcript)
-        reads = Reads(textract=None, bedrock=forms.structure_transcript(text, actor_role=role))
+        heard = transcribe.transcribe(data, content_type, typed=transcript)
+        store.audit(role, "capture.transcribe", "captured_record", record_id, heard.audit())
+        if info is not None:
+            info["transcribe"] = heard.outcome
+        reads = Reads(textract=None, bedrock=forms.structure_transcript(heard.text, actor_role=role)
+                      if heard.text else forms.unread_verbal_order())
         image_ref, audio_ref = None, ref
     else:
         fmt = IMAGE_FORMATS.get(content_type.lower(), "jpeg")

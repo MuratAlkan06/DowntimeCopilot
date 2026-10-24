@@ -128,6 +128,13 @@ def read_form(image: bytes, image_format: str, form_type: FormType, actor_role: 
     return read_form_with_boxes(image, image_format, form_type, actor_role)[0]
 
 
+def unread_verbal_order() -> ReaderOutput:
+    """No transcript (Transcribe fallback, upload-only): every order field unread, nothing guessed. The
+    reviewer fills them from the stored audio; R-VO-01 still fires until read-back and co-sign are set."""
+    names = list(MOCK_READS[FormType.verbal_order])
+    return ReaderOutput(fields={n: None for n in names}, confidence={n: 0.0 for n in names})
+
+
 def structure_transcript(transcript: str, actor_role: str = "rn") -> ReaderOutput:
     """Verbal-order read-back transcript -> structured order fields (cheap structured task)."""
     user = json.dumps({"form_type": "verbal_order", "transcript": transcript,

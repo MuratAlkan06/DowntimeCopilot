@@ -61,6 +61,13 @@ def guardrail_mode() -> str:
     return "bedrock" if guardrail_published() else "checker"
 
 
+def audio_bucket() -> str | None:
+    """S3 bucket for verbal-order audio sent to Transcribe (docs/decisions.md S9). `tools/audio_bucket.py setup`
+    generates `downtime-copilot-audio-<random suffix>` once and appends AUDIO_BUCKET to the local .env.
+    Unset: audio is kept locally only and the read-back falls back to typed."""
+    return os.environ.get("AUDIO_BUCKET", "").strip() or None
+
+
 def textract_enabled() -> bool:
     """docs/decisions.md: Textract ALLOWED. Set TEXTRACT_ENABLED=0 for the 'single read' path."""
     return _flag("TEXTRACT_ENABLED", "1")
