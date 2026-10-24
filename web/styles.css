@@ -302,6 +302,17 @@ textarea.input { resize: vertical; }
 }
 #policy-answer > .muted, #capture-pending:not(:empty) { margin-top: var(--sp-3); }
 
+/* ---------------------------------------------------------------- role checklist */
+.checklist { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-1); }
+.checklist-item {
+  display: flex; align-items: flex-start; gap: var(--sp-3); min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3); border: 1px solid var(--c-border); border-radius: var(--radius-sm);
+}
+.checklist-item input { flex: none; width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--c-ok); }
+.checklist-item label { flex: 1; min-width: 0; cursor: pointer; overflow-wrap: anywhere; }
+.checklist-item:has(input:checked) { background: var(--c-ok-soft); border-color: var(--c-ok); }
+.checklist-item:has(input:checked) label { color: var(--c-muted); text-decoration: line-through; }
+
 /* ---------------------------------------------------------------- records + backload */
 .record {
   display: grid; gap: var(--sp-3); padding: var(--sp-4);

@@ -4,6 +4,7 @@ import { mount, h, fmtTime, fmtAgo } from './js/dom.js';
 import { store, set, on, ROLES, STALE_MINUTES } from './js/state.js';
 import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativeTimes } from './js/packets.js';
 import { initDuring, flushQueue } from './js/during.js';
+import { initChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 
 const $ = (id) => document.getElementById(id);
@@ -87,6 +88,7 @@ function initRoles() {
 function init() {
   initRoles();
   initDuring();
+  initChecklist();
   initRecovery();
 
   document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => setPhase(t.dataset.phase)));
