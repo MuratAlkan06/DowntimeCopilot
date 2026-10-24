@@ -64,3 +64,14 @@ def allergy_matches(substance: str, med_name: str) -> bool:
 def same_medication(a: str, b: str) -> bool:
     x, y = norm(a), norm(b)
     return bool(x and y) and (x == y or x in y or y in x or x.split()[0] == y.split()[0])
+
+
+# High-alert medications (ISMP-style) for the demo formulary: the classes and named drugs the seeded
+# patients carry with `high_alert: true`. A captured medication field naming one needs two verifiers.
+HIGH_ALERT_CLASSES = ("anticoagulant", "opioid", "insulin")
+HIGH_ALERT_NAMES = ("potassium chloride", "kcl")
+
+
+def is_high_alert(med_name: str | None) -> bool:
+    n = norm(med_name or "")
+    return bool(n) and (drug_class(n) in HIGH_ALERT_CLASSES or any(m in n for m in HIGH_ALERT_NAMES))

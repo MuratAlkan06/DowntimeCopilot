@@ -256,3 +256,105 @@ def test_audit_costs_sync(api):
     assert set(c["models"]) == {call["model_id"] for call in c["calls"]}
     s = api.post("/sync").json()
     assert s["mirror"] == "local" and s["pushed"] > 0 and audited("sync.push")
+
+
+# ------------------------------------------------------------------ S4: edits + two-person verify
+
+def events(action: str) -> list[AuditEvent]:
+    return [e for e in reversed(get_store().list_audit(1000)) if e.action == action]
+
+
+def heparin_order(c: TestClient) -> CapturedRecord:
+    r = c.post("/capture", data={"form_type": "verbal_order", "readback_text": "heparin 5000 units SC q12h, read back",
+                                 "patient_id": "pt-12"}, headers={"X-Role": "rn"})
+    assert r.status_code == 201, r.text
+    return CapturedRecord.model_validate(r.json())
+
+
+def test_high_alert_needs_two_different_verifiers(api):
+    go_to_downtime(api)
+    rec = heparin_order(api)
+    v = api.get(f"/backload/{rec.record_id}/verification").json()
+    assert v["high_alert_medication"] == "heparin" and v["required"] == 2 and v["verifications"] == []
+    first = api.post(f"/backload/{rec.record_id}/verify", json={}, headers={"X-Role": "rn"})
+    assert first.status_code == 200 and first.json()["status"] == "needs_review"
+    assert first.headers["X-Verifications"] == "1/2"
+    assert api.post(f"/backload/{rec.record_id}/entered").status_code == 409  # 1 of 2 is not verified
+    same = api.post(f"/backload/{rec.record_id}/verify", json={}, headers={"X-Role": "rn"})
+    assert same.status_code == 409 and "different person" in same.json()["detail"]
+    assert events("backload.verify_rejected")[-1].details["attempt"]["role"] == "rn"
+    assert len(api.get(f"/backload/{rec.record_id}/verification").json()["verifications"]) == 1
+    second = api.post(f"/backload/{rec.record_id}/verify", json={}, headers={"X-Role": "pharmacy"})
+    assert second.status_code == 200 and second.headers["X-Verifications"] == "2/2"
+    done = CapturedRecord.model_validate(second.json())
+    assert done.status.value == "verified" and done.verified_by == "rn + pharmacy"
+    steps = [(e.actor_role, e.details["step"], e.details["required"]) for e in events("backload.verify")]
+    assert steps == [("rn", 1, 2), ("pharmacy", 2, 2)]
+    assert events("backload.verify")[-1].details["first_verifier"]["role"] == "rn"
+    assert api.post(f"/backload/{rec.record_id}/verify", headers={"X-Role": "unit_clerk"}).status_code == 409
+    assert api.post(f"/backload/{rec.record_id}/entered").status_code == 200
+
+
+def test_same_named_verifier_rejected_across_roles_and_two_named_rns_accepted(api):
+    go_to_downtime(api)
+    rec = heparin_order(api)
+    api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "Priya N"}, headers={"X-Role": "rn"})
+    again = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "priya n"}, headers={"X-Role": "pharmacy"})
+    assert again.status_code == 409
+    ok = api.post(f"/backload/{rec.record_id}/verify", json={"verified_by": "Sam K"}, headers={"X-Role": "rn"})
+    assert ok.status_code == 200 and ok.json()["verified_by"] == "Priya N + Sam K"
+
+
+def test_non_high_alert_single_verify(api):
+    go_to_downtime(api)
+    rec = capture(api, "vitals_flowsheet")
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 1
+    v = api.post(f"/backload/{rec.record_id}/verify", headers={"X-Role": "rn"})
+    assert v.status_code == 200 and v.json()["status"] == "verified" and v.json()["verified_by"] == "rn"
+
+
+def test_edit_records_before_after_and_can_make_record_high_alert(api):
+    go_to_downtime(api)
+    rec = capture(api, "downtime_mar")  # DRY_RUN mock reads ondansetron: one verify would do
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 1
+    r = api.patch(f"/backload/{rec.record_id}/fields/medication", json={"value": " heparin "}, headers={"X-Role": "rn"})
+    assert r.status_code == 200
+    f = {x["name"]: x for x in r.json()["fields"]}
+    assert f["medication"]["value"] == "heparin" and f["medication"]["confidence"] == 1.0
+    assert r.json()["reads"]["bedrock"]["fields"]["medication"] == "ondansetron"  # original read kept
+    ev = events("backload.edit")[-1]
+    assert ev.actor_role == "rn" and ev.details["before"] == "ondansetron" and ev.details["after"] == "heparin"
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["required"] == 2
+    # an edit after the first of two verifications resets it
+    api.post(f"/backload/{rec.record_id}/verify", headers={"X-Role": "rn"})
+    api.patch(f"/backload/{rec.record_id}/fields/dose", json={"value": "5000 units"}, headers={"X-Role": "rn"})
+    assert events("backload.edit")[-1].details["verification_reset"] is True
+    assert api.get(f"/backload/{rec.record_id}/verification").json()["verifications"] == []
+    assert api.patch(f"/backload/{rec.record_id}/fields/nope", json={"value": "x"}).status_code == 404
+
+
+def test_edit_flags_and_locks_after_verify(api):
+    go_to_downtime(api)
+    rec = capture(api, "vitals_flowsheet")
+    r = api.patch(f"/backload/{rec.record_id}/fields/pain_score", json={"value": "3"}).json()
+    assert {x["name"]: x for x in r["fields"]}["pain_score"]["flag"] is None  # human read it: no longer unreadable
+    r = api.patch(f"/backload/{rec.record_id}/fields/spo2", json={"value": "85"}).json()
+    assert {x["name"]: x for x in r["fields"]}["spo2"]["flag"] == "out_of_range"
+    r = api.patch(f"/backload/{rec.record_id}/fields/heart_rate", json={"value": ""}).json()
+    hr = {x["name"]: x for x in r["fields"]}["heart_rate"]
+    assert hr["value"] is None and hr["flag"] == "unreadable"
+    assert api.post(f"/backload/{rec.record_id}/verify").status_code == 200
+    locked = api.patch(f"/backload/{rec.record_id}/fields/spo2", json={"value": "95"})
+    assert locked.status_code == 409
+
+
+def test_capture_serves_crop_blobs(api):
+    from app.capture.crops import crop_ref
+    from pathlib import Path
+    go_to_downtime(api)
+    jpg = (Path(__file__).resolve().parent.parent / "data/forms/fixtures/downtime_mar-01.jpg").read_bytes()
+    r = api.post("/capture", files={"file": ("mar.jpg", jpg, "image/jpeg")}, data={"form_type": "downtime_mar"},
+                 headers={"X-Role": "rn"})
+    rec = CapturedRecord.model_validate(r.json())
+    crop = api.get(f"/blobs/{crop_ref(rec.record_id, 'medication')}")
+    assert crop.status_code == 200 and crop.headers["content-type"] == "image/jpeg" and crop.content[:2] == b"\xff\xd8"
