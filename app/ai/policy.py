@@ -4,6 +4,7 @@ docs/decisions.md: full policy in context (KB retrieval is P2). Citations are ch
 parsed section headers: an answer is `grounded` only if every citation names a real section (or a
 numbered paragraph inside one, e.g. 4.2.1) and its quote appears in that section's text.
 An ungrounded reply is never shown: the answer becomes a refusal plus the nearest sections (refusal()).
+A guardrail intervention gets the same treatment with the BLOCKED lead; guardrail.reasons says why.
 """
 from __future__ import annotations
 
@@ -94,6 +95,8 @@ def grounded(citations: list[Citation]) -> bool:
 
 
 REFUSAL = "I can't find this in the downtime policy."
+BLOCKED = ("The safety check blocked this answer. I can't give dosing or treatment advice: follow the provider's "
+           "order and the patient's medication record.")
 
 
 def _paragraphs(s: Section) -> list[str]:
@@ -136,7 +139,10 @@ def ask(question: str, actor_role: str = "system") -> PolicyAnswer:
         answer, citations = res.text.strip(), []
     g = get_guardrail().check(answer, grounding=policy, query=question)
     ok = grounded(citations)
-    if not ok:  # no citation resolves + quote-matches: never show the ungrounded text
+    if g.status == "intervened":  # the guardrail blocked the model text: show a safe refusal instead
+        ok = False
+        answer, citations = refusal(question, lead=BLOCKED)
+    elif not ok:  # no citation resolves + quote-matches: never show the ungrounded text
         answer, citations = refusal(question)
     return PolicyAnswer(question=question, answer=answer, citations=citations, model_id=res.model_id,
                         grounded=ok, guardrail=g,

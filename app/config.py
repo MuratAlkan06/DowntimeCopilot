@@ -44,16 +44,21 @@ def packet_concurrency() -> int:
     return max(1, int(os.environ.get("PACKET_CONCURRENCY", "4")))
 
 
-def guardrail_mode() -> str:
-    """'bedrock' (ApplyGuardrail, needs GUARDRAIL_ID) or 'checker' (second model call).
+def guardrail_published() -> tuple[str, str] | None:
+    """(GUARDRAIL_ID, GUARDRAIL_VERSION) of the published guardrail, or None unless both are set."""
+    gid, ver = os.environ.get("GUARDRAIL_ID", "").strip(), os.environ.get("GUARDRAIL_VERSION", "").strip()
+    return (gid, ver) if gid and ver else None
 
-    docs/decisions.md: Guardrails ALLOWED, so 'bedrock' is preferred once Role 3 publishes the real
-    guardrail and sets GUARDRAIL_ID; until then the checker fallback runs behind the same interface.
+
+def guardrail_mode() -> str:
+    """'bedrock' (ApplyGuardrail on the published version) or 'checker' (second model call).
+
+    docs/decisions.md (S3): 'bedrock' whenever GUARDRAIL_ID and GUARDRAIL_VERSION are both set;
+    otherwise the checker fallback runs behind the same interface. GUARDRAIL_MODE=checker forces it.
     """
-    mode = os.environ.get("GUARDRAIL_MODE", "").strip().lower()
-    if mode in ("bedrock", "checker"):
-        return mode
-    return "bedrock" if os.environ.get("GUARDRAIL_ID") else "checker"
+    if os.environ.get("GUARDRAIL_MODE", "").strip().lower() == "checker":
+        return "checker"
+    return "bedrock" if guardrail_published() else "checker"
 
 
 def textract_enabled() -> bool:
