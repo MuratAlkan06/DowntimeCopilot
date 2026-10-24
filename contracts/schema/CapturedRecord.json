@@ -1,0 +1,325 @@
+{
+  "$defs": {
+    "Agreement": {
+      "enum": [
+        "agree",
+        "disagree",
+        "single"
+      ],
+      "title": "Agreement",
+      "type": "string"
+    },
+    "BackloadGroup": {
+      "enum": [
+        "nursing_med_admin",
+        "nursing_vitals",
+        "nursing_io",
+        "pharmacy_orders",
+        "unit_registration"
+      ],
+      "title": "BackloadGroup",
+      "type": "string"
+    },
+    "CapturedField": {
+      "additionalProperties": false,
+      "properties": {
+        "agreement": {
+          "$ref": "#/$defs/Agreement"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "crop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Crop"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "flag": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FieldFlag"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "name",
+        "confidence",
+        "agreement"
+      ],
+      "title": "CapturedField",
+      "type": "object"
+    },
+    "Crop": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "left": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Left",
+          "type": "number"
+        },
+        "top": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Top",
+          "type": "number"
+        },
+        "width": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "width",
+        "height"
+      ],
+      "title": "Crop",
+      "type": "object"
+    },
+    "FieldFlag": {
+      "enum": [
+        "unreadable",
+        "disagreement",
+        "out_of_range"
+      ],
+      "title": "FieldFlag",
+      "type": "string"
+    },
+    "FormType": {
+      "enum": [
+        "vitals_flowsheet",
+        "downtime_mar",
+        "admission_note",
+        "verbal_order"
+      ],
+      "title": "FormType",
+      "type": "string"
+    },
+    "ReaderOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Confidence",
+          "type": "object"
+        },
+        "fields": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Fields",
+          "type": "object"
+        }
+      },
+      "title": "ReaderOutput",
+      "type": "object"
+    },
+    "Reads": {
+      "additionalProperties": false,
+      "properties": {
+        "bedrock": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReaderOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "textract": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReaderOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Reads",
+      "type": "object"
+    },
+    "RecordStatus": {
+      "enum": [
+        "needs_review",
+        "verified",
+        "entered",
+        "rejected"
+      ],
+      "title": "RecordStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "audio_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Audio Ref"
+    },
+    "backload_group": {
+      "$ref": "#/$defs/BackloadGroup"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "captured_by_role": {
+      "title": "Captured By Role",
+      "type": "string"
+    },
+    "entered_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Entered At"
+    },
+    "fields": {
+      "items": {
+        "$ref": "#/$defs/CapturedField"
+      },
+      "title": "Fields",
+      "type": "array"
+    },
+    "form_type": {
+      "$ref": "#/$defs/FormType"
+    },
+    "image_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Ref"
+    },
+    "patient_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Patient Id"
+    },
+    "reads": {
+      "$ref": "#/$defs/Reads"
+    },
+    "record_id": {
+      "title": "Record Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RecordStatus",
+      "default": "needs_review"
+    },
+    "verified_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verified At"
+    },
+    "verified_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verified By"
+    }
+  },
+  "required": [
+    "record_id",
+    "form_type",
+    "captured_at",
+    "captured_by_role",
+    "backload_group"
+  ],
+  "title": "CapturedRecord",
+  "type": "object"
+}

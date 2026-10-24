@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "Alert": {
+      "additionalProperties": false,
+      "properties": {
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "text"
+      ],
+      "title": "Alert",
+      "type": "object"
+    },
+    "Cost": {
+      "additionalProperties": false,
+      "properties": {
+        "tokens_in": {
+          "minimum": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "minimum": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        },
+        "usd": {
+          "minimum": 0,
+          "title": "Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "tokens_in",
+        "tokens_out",
+        "usd"
+      ],
+      "title": "Cost",
+      "type": "object"
+    },
+    "Guardrail": {
+      "additionalProperties": false,
+      "properties": {
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "Guardrail",
+      "type": "object"
+    },
+    "Sbar": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Assessment",
+          "type": "array"
+        },
+        "background": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Background",
+          "type": "array"
+        },
+        "recommendation": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Recommendation",
+          "type": "array"
+        },
+        "situation": {
+          "items": {
+            "$ref": "#/$defs/SbarItem"
+          },
+          "title": "Situation",
+          "type": "array"
+        }
+      },
+      "title": "Sbar",
+      "type": "object"
+    },
+    "SbarItem": {
+      "additionalProperties": false,
+      "properties": {
+        "source_path": {
+          "title": "Source Path",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "source_path"
+      ],
+      "title": "SbarItem",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "alerts": {
+      "items": {
+        "$ref": "#/$defs/Alert"
+      },
+      "title": "Alerts",
+      "type": "array"
+    },
+    "cost": {
+      "$ref": "#/$defs/Cost"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "guardrail": {
+      "$ref": "#/$defs/Guardrail"
+    },
+    "model_id": {
+      "title": "Model Id",
+      "type": "string"
+    },
+    "patient_id": {
+      "title": "Patient Id",
+      "type": "string"
+    },
+    "sbar": {
+      "$ref": "#/$defs/Sbar"
+    },
+    "snapshot_time": {
+      "format": "date-time",
+      "title": "Snapshot Time",
+      "type": "string"
+    }
+  },
+  "required": [
+    "patient_id",
+    "generated_at",
+    "snapshot_time",
+    "model_id",
+    "sbar",
+    "guardrail",
+    "cost"
+  ],
+  "title": "DowntimePacket",
+  "type": "object"
+}

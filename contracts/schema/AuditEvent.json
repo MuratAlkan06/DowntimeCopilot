@@ -1,0 +1,57 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "title": "Action",
+      "type": "string"
+    },
+    "actor_role": {
+      "title": "Actor Role",
+      "type": "string"
+    },
+    "details": {
+      "additionalProperties": true,
+      "title": "Details",
+      "type": "object"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "synced": {
+      "default": false,
+      "title": "Synced",
+      "type": "boolean"
+    },
+    "target_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Id"
+    },
+    "target_type": {
+      "title": "Target Type",
+      "type": "string"
+    },
+    "ts": {
+      "format": "date-time",
+      "title": "Ts",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "ts",
+    "actor_role",
+    "action",
+    "target_type"
+  ],
+  "title": "AuditEvent",
+  "type": "object"
+}
