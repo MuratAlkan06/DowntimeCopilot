@@ -96,6 +96,26 @@ def test_downtime_start_packets_have_provenance(api):
     assert len(api.get("/packets").json()) == 12 and audited("packet.list")
 
 
+def test_status_outage_id_null_before_downtime(api):
+    api.post("/snapshot/pull")
+    s = api.get("/status").json()
+    assert s["phase"] == "before" and "outage_id" in s and s["outage_id"] is None
+
+
+def test_outage_id_is_fresh_per_reseeded_outage(api):
+    """Each reseed restarts the unit clock at 02:45, so outage_started_at repeats across rehearsals;
+    outage_id must not (the web checklist keys its saved check marks by it)."""
+    go_to_downtime(api)
+    first = api.get("/status").json()
+    get_store().clear()  # `simulator.seed --fresh`
+    sim.state.reset(7)
+    assert api.get("/status").json()["outage_id"] is None
+    go_to_downtime(api)
+    second = api.get("/status").json()
+    assert first["outage_started_at"] == second["outage_started_at"]  # the collision the id exists to avoid
+    assert first["outage_id"] and second["outage_id"] and first["outage_id"] != second["outage_id"]
+
+
 def test_downtime_start_bounded_concurrency(api, monkeypatch):
     import threading
     import time

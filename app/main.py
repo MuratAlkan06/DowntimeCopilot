@@ -9,8 +9,9 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from app import checklists as role_checklists
 from app import config, sim_client
-from app.api import audit, backload, capture, digest, downtime, snapshot
+from app.api import audit, backload, capture, checklists, digest, downtime, snapshot
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ async def _snapshot_loop(tick: int) -> None:
 
 @contextlib.asynccontextmanager
 async def lifespan(_: FastAPI):
+    role_checklists.load()  # parse the policy's role checklists once, at startup
     interval = config.snapshot_interval_seconds()
     task = asyncio.create_task(_snapshot_loop(interval)) if interval > 0 else None
     yield
@@ -39,7 +41,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Downtime Copilot", lifespan=lifespan)
-for module in (snapshot, downtime, capture, backload, digest, audit):
+for module in (snapshot, downtime, checklists, capture, backload, digest, audit):
     app.include_router(module.router)
 
 # Static PWA, mounted AFTER every API route so it never shadows them.

@@ -29,6 +29,7 @@ async function ask(question) {
       a.grounded ? chip('Grounded in policy', 'ok') : chip('Not grounded — check the binder', 'warn'),
       a.guardrail?.status ? chip(`Guardrail: ${a.guardrail.status}`, 'neutral', (a.guardrail.reasons || []).join('; ')) : null),
     h('p', { class: 'answer-text' }, a.answer || 'No answer returned.'),
+    (a.citations || []).length && !a.grounded ? h('p', { class: 'sub-title' }, 'Nearest sections in the binder') : null,
     (a.citations || []).length
       ? h('ol', { class: 'citations' }, a.citations.map((c) => h('li', {},
         h('span', { class: 'section-badge' }, `§ ${c.section_id}`), ' ', h('strong', {}, c.title),

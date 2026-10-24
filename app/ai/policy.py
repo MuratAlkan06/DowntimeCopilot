@@ -3,6 +3,8 @@
 docs/decisions.md: full policy in context (KB retrieval is P2). Citations are checked against the
 parsed section headers: an answer is `grounded` only if every citation names a real section (or a
 numbered paragraph inside one, e.g. 4.2.1) and its quote appears in that section's text.
+An ungrounded reply is never shown: the answer becomes a refusal plus the nearest sections (refusal()).
+A guardrail intervention gets the same treatment with the BLOCKED lead; guardrail.reasons says why.
 """
 from __future__ import annotations
 
@@ -92,6 +94,38 @@ def grounded(citations: list[Citation]) -> bool:
     )
 
 
+REFUSAL = "I can't find this in the downtime policy."
+BLOCKED = ("The safety check blocked this answer. I can't give dosing or treatment advice: follow the provider's "
+           "order and the patient's medication record.")
+
+
+def _paragraphs(s: Section) -> list[str]:
+    """Body paragraphs with their leading paragraph number stripped (still verbatim section text)."""
+    return [re.sub(r"^\d+(\.\d+)*\s+", "", p.strip()) for p in s.text.split("\n\n") if p.strip()]
+
+
+def nearest(question: str, k: int = 3) -> list[Section]:
+    """Top-k sections by keyword overlap with the question (title terms weigh 3x, like retrieve()).
+    Deterministic, no model call: only sections with body text and a nonzero score, ties in document order."""
+    q = _terms(question)
+    scored = [(3 * len(q & _terms(s.title)) + len(q & _terms(s.text)), i, s)
+              for i, s in enumerate(sections().values()) if s.text.strip()]
+    return [s for score, _, s in sorted(scored, key=lambda t: (-t[0], t[1])) if score > 0][:k]
+
+
+def refusal(question: str, lead: str = REFUSAL) -> tuple[str, list[Citation]]:
+    """Grounding-failure answer: the refusal plus the nearest sections, each cited with its best-matching
+    paragraph (verbatim) so the nurse knows where to look in the paper binder."""
+    q = _terms(question)
+    near = nearest(question)
+    cites = [Citation(section_id=s.section_id, title=s.title,
+                      quote=max(_paragraphs(s), key=lambda p: len(q & _terms(p)), default=""))
+             for s in near]
+    if not near:
+        return f"{lead} Check the paper downtime binder.", cites
+    return f"{lead} Nearest sections: " + "; ".join(f"{s.section_id} {s.title}" for s in near) + ".", cites
+
+
 def ask(question: str, actor_role: str = "system") -> PolicyAnswer:
     policy = policy_text()
     user = json.dumps({"question": question, "policy": policy})
@@ -104,6 +138,12 @@ def ask(question: str, actor_role: str = "system") -> PolicyAnswer:
     except ValueError:
         answer, citations = res.text.strip(), []
     g = get_guardrail().check(answer, grounding=policy, query=question)
+    ok = grounded(citations)
+    if g.status == "intervened":  # the guardrail blocked the model text: show a safe refusal instead
+        ok = False
+        answer, citations = refusal(question, lead=BLOCKED)
+    elif not ok:  # no citation resolves + quote-matches: never show the ungrounded text
+        answer, citations = refusal(question)
     return PolicyAnswer(question=question, answer=answer, citations=citations, model_id=res.model_id,
-                        grounded=grounded(citations), guardrail=g,
+                        grounded=ok, guardrail=g,
                         cost=Cost(tokens_in=res.tokens_in, tokens_out=res.tokens_out, usd=res.usd))
