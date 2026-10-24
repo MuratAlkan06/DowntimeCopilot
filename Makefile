@@ -3,7 +3,7 @@
 
 VENV    := .venv
 PY      := $(VENV)/bin/python
-DEPS    := boto3 fastapi uvicorn pydantic pytest httpx
+DEPS    := boto3 fastapi uvicorn pydantic pytest httpx python-multipart
 PROBE   := tools/bedrock_probe.py
 SIM_APP ?= simulator.main:app
 API_APP ?= app.main:app
