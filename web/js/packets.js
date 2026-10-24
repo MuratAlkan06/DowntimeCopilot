@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { h, mount, stateBox, chip, fmtTime, fmtDateTime, asList, cachedNote, usd } from './dom.js';
 import { store, set, emit, noteSnapshot, STALE_MINUTES } from './state.js';
 import { dueAt, dueRelative, ageMinutes } from './rules.js';
+import { precacheChecklists } from './checklists.js';
 
 const $ = (id) => document.getElementById(id);
 let selectedId = null;
@@ -305,6 +306,7 @@ export async function goToDowntime() {
   mount(status, h('span', {}, `Downtime started ${fmtTime(store.downtimeStartedAt)}${n ? ` · ${n} packets generated` : ''}. Packets are cached for offline use.`));
   await loadPatients();
   prefetchPackets();
+  precacheChecklists(); // all four roles, alongside the packets
 }
 
 /** Warm the service-worker cache so packets survive the network being cut. */

@@ -4,7 +4,7 @@
 // unit clock at 02:45, so start times repeat across rehearsals. With no outage yet, marks stay in memory.
 import { api } from './api.js';
 import { h, mount, stateBox, fmtTime } from './dom.js';
-import { store, on, roleLabel } from './state.js';
+import { store, on, roleLabel, ROLES } from './state.js';
 
 const $ = (id) => document.getElementById(id);
 const key = () => `dc.checklist.${store.role}.${store.outageId}`;
@@ -53,10 +53,33 @@ function render() {
   renderHeader();
 }
 
+const checklistUrl = (role) => `/checklists?role=${encodeURIComponent(role)}`;
+
+/** Declare-time warm-up (S7): every role's checklist into the service-worker data cache, so a teammate
+ *  who switches role offline still gets theirs. One role failing never stops the others. */
+export async function precacheChecklists() {
+  await Promise.allSettled(ROLES.map((r) => api(checklistUrl(r.id))));
+  await renderCached();
+}
+
+/** Which roles' checklists this device holds, read from the Cache API (true after a reload too). */
+async function renderCached() {
+  const el = $('checklist-cached');
+  if (!el || !('caches' in window)) return;
+  const hit = await Promise.all(ROLES.map((r) => caches.match(new URL(checklistUrl(r.id), location.href).href, { ignoreVary: true })
+    .then(Boolean, () => false)));
+  const cached = ROLES.filter((_, i) => hit[i]).map((r) => r.label);
+  const missing = ROLES.filter((_, i) => !hit[i]).map((r) => r.label);
+  el.textContent = !cached.length ? 'No checklist cached on this device yet. Declaring downtime caches every role.'
+    : !missing.length ? `Cached for offline: all ${ROLES.length} roles.`
+      : `Cached for offline: ${cached.join(', ')}. Not cached: ${missing.join(', ')}.`;
+}
+
 export async function loadChecklist() {
   const role = store.role;
   mount($('checklist-items'), stateBox('loading', 'Loading your checklist…'));
-  const r = await api(`/checklists?role=${encodeURIComponent(role)}`);
+  const r = await api(checklistUrl(role));
+  renderCached();
   if (role !== store.role) return; // the role changed while this was loading
   if (!r.ok) {
     items = [];

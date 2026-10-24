@@ -1,4 +1,5 @@
-// Service worker: cache-first app shell, stale-while-revalidate packets, network-first other API GETs.
+// Service worker: network-first navigations (cached shell offline), cache-first shell assets,
+// stale-while-revalidate packets, network-first other API GETs.
 // Bump VERSION whenever shell files change.
 const VERSION = 'v13';
 const SHELL_CACHE = `dc-shell-${VERSION}`;
@@ -68,9 +69,27 @@ async function cacheFirst(event) {
     if (res.ok) (await caches.open(SHELL_CACHE)).put(req, res.clone());
     return res;
   } catch {
-    if (req.mode === 'navigate') return (await caches.match('index.html')) || offlineResponse();
     return offlineResponse();
   }
+}
+
+// Navigations: network first, so an online reload always gets the current shell. Offline (or a server
+// error) falls back to the cached shell with the query ignored, so /?phase=during reloads with no network.
+async function navigate(event) {
+  const req = event.request;
+  const scope = self.registration.scope;
+  const url = new URL(req.url);
+  const isShell = url.pathname === new URL(scope).pathname || url.pathname === new URL('index.html', scope).pathname;
+  let res = null;
+  try {
+    res = await fetch(req);
+    if (res.ok) {
+      if (isShell) event.waitUntil(caches.open(SHELL_CACHE).then((c) => c.put(url.origin + url.pathname, res.clone())).catch(() => {}));
+      return res;
+    }
+  } catch { /* offline: cached shell below */ }
+  const cached = (await caches.match(req, { ignoreSearch: true })) || (await caches.match(new URL('index.html', scope).href));
+  return cached || res || offlineResponse();
 }
 
 async function staleWhileRevalidate(event) {
@@ -130,7 +149,9 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return; // Other POSTs go straight to the network; the page queues on failure.
   const scopePath = new URL(self.registration.scope).pathname;
 
-  if (req.mode === 'navigate' || url.pathname === scopePath || SHELL_EXT.test(url.pathname)) {
+  if (req.mode === 'navigate') {
+    event.respondWith(navigate(event));
+  } else if (url.pathname === scopePath || SHELL_EXT.test(url.pathname)) {
     event.respondWith(cacheFirst(event));
   } else if (PACKET.test(url.pathname)) {
     event.respondWith(staleWhileRevalidate(event));
