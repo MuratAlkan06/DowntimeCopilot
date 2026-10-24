@@ -247,7 +247,23 @@ def test_store_upgrades_a_pre_s7_captured_table(tmp_path):
         "CREATE TABLE captured (record_id TEXT PRIMARY KEY, seq INTEGER, body TEXT);").close()
     Store(path)
     Store(path)  # idempotent on reopen
-    assert "client_id" in {r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(captured)")}
+    assert {"client_id", "text_source"} <= {r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(captured)")}
+
+
+def test_store_adds_text_source_to_an_s7_store_and_keeps_old_rows(tmp_path):
+    """A store from S7 (client_id, no text_source) gains the column; its old rows read as unknown (None)."""
+    import sqlite3
+
+    from app.store.sqlite import Store
+    path = str(tmp_path / "s7.sqlite")
+    db = sqlite3.connect(path)
+    db.executescript("CREATE TABLE captured (record_id TEXT PRIMARY KEY, seq INTEGER, body TEXT, client_id TEXT);"
+                     "INSERT INTO captured VALUES ('rec-old', 1, '{}', 'c-1');")
+    db.commit()
+    db.close()
+    store = Store(path)
+    assert "text_source" in {r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(captured)")}
+    assert store.text_source("rec-old") is None
 
 
 def test_capture_typed_verbal_order(api):

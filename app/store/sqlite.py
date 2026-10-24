@@ -52,10 +52,13 @@ class Store:
         self._lock = threading.Lock()
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._db.executescript(SCHEMA)
-        # Offline-queue idempotency key (S7): storage only, not part of CapturedRecord. Added in place so
-        # stores created before S7 keep working; NULLs never collide in a SQLite unique index.
-        if "client_id" not in {r[1] for r in self._db.execute("PRAGMA table_info(captured)")}:
-            self._db.execute("ALTER TABLE captured ADD COLUMN client_id TEXT")
+        # Storage only, not part of CapturedRecord; added in place so older stores keep working.
+        # client_id: offline-queue idempotency key (S7); NULLs never collide in a SQLite unique index.
+        # text_source: where a record's read text came from (app.capture.pipeline.TEXT_SOURCES), set at capture.
+        have = {r[1] for r in self._db.execute("PRAGMA table_info(captured)")}
+        for col in ("client_id", "text_source"):
+            if col not in have:
+                self._db.execute(f"ALTER TABLE captured ADD COLUMN {col} TEXT")  # fixed names, not user input
         self._db.execute("CREATE UNIQUE INDEX IF NOT EXISTS captured_client_id ON captured (client_id)")
         self._db.commit()
 
@@ -116,21 +119,28 @@ class Store:
         return [DowntimePacket.model_validate_json(_dec(r[0])) for r in self._exec("SELECT body FROM packets")]
 
     # ------------------------------------------------------------ captured records + blobs
-    def save_record(self, record: CapturedRecord, client_id: str | None = None) -> None:
-        """`client_id`: the device's id for this submission (offline queue). Later saves keep it."""
+    def save_record(self, record: CapturedRecord, client_id: str | None = None, text_source: str | None = None) -> None:
+        """`client_id`: the device's id for this submission (offline queue). `text_source`: where the read
+        text came from, known at capture only. Later saves (verify, edit, entered) keep both."""
         with self._lock:
             row = self._db.execute("SELECT seq FROM captured WHERE record_id = ?", (record.record_id,)).fetchone()
             seq = row[0] if row else (self._db.execute("SELECT COALESCE(MAX(seq), 0) + 1 FROM captured").fetchone()[0])
             self._db.execute(
-                "INSERT INTO captured (record_id, seq, body, client_id) VALUES (?, ?, ?, ?) "
+                "INSERT INTO captured (record_id, seq, body, client_id, text_source) VALUES (?, ?, ?, ?, ?) "
                 "ON CONFLICT (record_id) DO UPDATE SET body = excluded.body, "
-                "client_id = COALESCE(excluded.client_id, captured.client_id)",
-                (record.record_id, seq, _enc(record.model_dump_json()), client_id))
+                "client_id = COALESCE(excluded.client_id, captured.client_id), "
+                "text_source = COALESCE(excluded.text_source, captured.text_source)",
+                (record.record_id, seq, _enc(record.model_dump_json()), client_id, text_source))
             self._db.commit()
 
     def get_record(self, record_id: str) -> CapturedRecord | None:
         rows = self._exec("SELECT body FROM captured WHERE record_id = ?", (record_id,))
         return CapturedRecord.model_validate_json(_dec(rows[0][0])) if rows else None
+
+    def text_source(self, record_id: str) -> str | None:
+        """None for an unknown record or one captured before the column existed."""
+        rows = self._exec("SELECT text_source FROM captured WHERE record_id = ?", (record_id,))
+        return rows[0][0] if rows else None
 
     def record_by_client_id(self, client_id: str) -> CapturedRecord | None:
         rows = self._exec("SELECT body FROM captured WHERE client_id = ?", (client_id,))

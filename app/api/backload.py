@@ -63,6 +63,8 @@ class Verification(BaseModel):
     high_alert_medication: str | None
     required: int
     verifications: list[dict]
+    # Where the read text came from (app.capture.pipeline.TEXT_SOURCES); None for records stored before it.
+    text_source: str | None = None
 
 
 @router.get("/backload", response_model=dict[BackloadGroup, list[CapturedRecord]])
@@ -84,7 +86,8 @@ def _record(record_id: str) -> CapturedRecord:
 
 @router.get("/backload/{record_id}/verification", response_model=Verification)
 def verification(record_id: str, role: str = Depends(actor_role)) -> Verification:
-    """How many verifications this record needs and which are recorded (high-alert meds need two)."""
+    """How many verifications this record needs and which are recorded (high-alert meds need two), and where
+    its read text came from (the record card's source line)."""
     record = _record(record_id)
     med = high_alert_medication(record)
     done: list[dict] = []
@@ -92,8 +95,10 @@ def verification(record_id: str, role: str = Depends(actor_role)) -> Verificatio
         done = [{"verified_by": record.verified_by, "at": record.verified_at.isoformat() if record.verified_at else None}]
     elif (first := _pending(record_id)) is not None:
         done = [first]
-    get_store().audit(role, "backload.verification_view", "captured_record", record_id)
-    return Verification(record_id=record_id, high_alert_medication=med, required=2 if med else 1, verifications=done)
+    store = get_store()
+    store.audit(role, "backload.verification_view", "captured_record", record_id)
+    return Verification(record_id=record_id, high_alert_medication=med, required=2 if med else 1, verifications=done,
+                        text_source=store.text_source(record_id))
 
 
 @router.post("/backload/{record_id}/verify", response_model=CapturedRecord)

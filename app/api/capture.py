@@ -46,7 +46,9 @@ async def capture(
     if "transcribe" in info:  # typed | mock | transcribed, or a fallback (web client shows typed-only messaging)
         response.headers["X-Transcribe"] = info["transcribe"]
     store = get_store()
-    store.save_record(record, client_id=client_id)
+    # text_source (typed | transcribed | audio_untranscribed | photo) is storage only, like client_id: the
+    # record's provenance line survives a reload or another device (GET /backload/{id}/verification).
+    store.save_record(record, client_id=client_id, text_source=info.get("text_source"))
     store.audit(role, "capture.create", "captured_record", record.record_id,
                 {"form_type": form_type.value, "patient_id": record.patient_id,
                  "flags": [f.name for f in record.fields if f.flag]}

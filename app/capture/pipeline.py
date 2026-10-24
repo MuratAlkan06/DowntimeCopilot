@@ -19,6 +19,18 @@ BACKLOAD_GROUP: dict[FormType, BackloadGroup] = {
 
 IMAGE_FORMATS = {"image/jpeg": "jpeg", "image/jpg": "jpeg", "image/png": "png", "image/webp": "webp", "image/gif": "gif"}
 
+# Where a record's read text came from (store column captured.text_source; GET /backload/{id}/verification).
+TYPED, TRANSCRIBED, AUDIO_UNTRANSCRIBED, PHOTO = "typed", "transcribed", "audio_untranscribed", "photo"
+TEXT_SOURCES = frozenset({TYPED, TRANSCRIBED, AUDIO_UNTRANSCRIBED, PHOTO})
+
+
+def text_source(outcome: str) -> str:
+    """Transcribe outcome (app.capture.transcribe) -> text source. A typed read-back wins over any attached
+    audio; a mock (DRY_RUN) or live transcript is transcribed; anything else (a fallback) kept the audio unread."""
+    if outcome == transcribe.TYPED:
+        return TYPED
+    return TRANSCRIBED if outcome in (transcribe.MOCK, transcribe.TRANSCRIBED) else AUDIO_UNTRANSCRIBED
+
 
 def _resolve_patient(patient_id: str | None, bed: str | None) -> str | None:
     if patient_id:
@@ -38,7 +50,7 @@ def capture(data: bytes, content_type: str, form_type: FormType, patient_id: str
     one crop blob per field (crops.crop_ref). Unreadable fields carry no value (agreement.merge).
     Verbal order: typed read-back, else the audio through Transcribe; either text takes the same structuring
     call. No transcript (fallback) keeps the audio with every field unread. `info["transcribe"]` gets the
-    outcome (app.capture.transcribe) for the caller."""
+    outcome (app.capture.transcribe) for the caller, `info["text_source"]` where the read text came from."""
     store = get_store()
     record_id = f"rec-{uuid.uuid4().hex[:12]}"
     ref = store.save_blob(data, content_type)
@@ -47,7 +59,7 @@ def capture(data: bytes, content_type: str, form_type: FormType, patient_id: str
         heard = transcribe.transcribe(data, content_type, typed=transcript)
         store.audit(role, "capture.transcribe", "captured_record", record_id, heard.audit())
         if info is not None:
-            info["transcribe"] = heard.outcome
+            info["transcribe"], info["text_source"] = heard.outcome, text_source(heard.outcome)
         reads = Reads(textract=None, bedrock=forms.structure_transcript(heard.text, actor_role=role)
                       if heard.text else forms.unread_verbal_order())
         image_ref, audio_ref = None, ref
@@ -63,6 +75,8 @@ def capture(data: bytes, content_type: str, form_type: FormType, patient_id: str
             store.save_blob(jpeg, "image/jpeg", ref=crops.crop_ref(record_id, name))
         store.audit(role, "capture.crops", "captured_record", record_id,
                     {"stored": sorted(rendered), "box_source": source})
+        if info is not None:
+            info["text_source"] = PHOTO
     fields = merge(reads.textract, reads.bedrock, boxes)
     bed = next((f.value for f in fields if f.name == "bed"), None)
     return CapturedRecord(
