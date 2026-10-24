@@ -218,3 +218,15 @@ def test_command_center_after_the_scripted_flow(api):
     assert [(i["patient_id"], i["lab"]) for i in u["critical_labs_awaiting"]["items"]] == CRITICAL_LABS
     ev = next(e for e in get_store().list_audit() if e.action == "command_center.view")
     assert ev.target_id == "med-surg-3" and ev.details["open_discrepancies"] == 6
+
+
+# ------------------------------------------------------------------ web shell
+
+def test_command_view_ships_in_the_offline_shell_and_its_tab_starts_hidden():
+    web = Path(__file__).resolve().parent.parent / "web"
+    shell = re.search(r"const SHELL = \[(.*?)\];", (web / "sw.js").read_text(), re.S).group(1)
+    assert "'js/command.js'" in shell
+    assert {f"'js/{p.name}'" for p in (web / "js").glob("*.js")} <= set(re.findall(r"'js/[^']+'", shell))
+    html = (web / "index.html").read_text()
+    assert re.search(r'<button id="tab-command"[^>]*data-phase="command"[^>]* hidden>', html)
+    assert 'data-view="command"' in html and 'id="command-units"' in html

@@ -7,23 +7,32 @@ import { initDuring, flushQueue } from './js/during.js';
 import { initChecklist, loadChecklist, openChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 import { initReadiness, loadReadiness } from './js/readiness.js';
+import { COMMAND_ROLES, initCommand, enterCommand, leaveCommand } from './js/command.js';
 
 const $ = (id) => document.getElementById(id);
-const PHASES = ['downtime', 'during', 'recovery'];
+// 'command' is the supervisor view (S14), not a phase step: its tab exists for COMMAND_ROLES only.
+const PHASES = ['downtime', 'during', 'recovery', 'command'];
+const canCommand = () => COMMAND_ROLES.includes(store.role);
 
 // ---------------------------------------------------------------- phase navigation
 
 function setPhase(phase) {
-  if (!PHASES.includes(phase)) phase = 'downtime';
+  if (!PHASES.includes(phase) || (phase === 'command' && !canCommand())) phase = 'downtime';
   set('phase', phase);
   document.body.dataset.phase = phase;
   document.querySelectorAll('.phase-tab').forEach((t) => {
     const active = t.dataset.phase === phase;
-    t.setAttribute('aria-current', active ? 'step' : 'false');
+    t.setAttribute('aria-current', active ? (t.dataset.phase === 'command' ? 'page' : 'step') : 'false');
   });
   document.querySelectorAll('.view').forEach((v) => { v.hidden = v.dataset.view !== phase; });
   if (phase === 'downtime') loadPatients();
   if (phase === 'recovery') enterRecovery();
+  if (phase === 'command') enterCommand(); else leaveCommand();
+}
+
+function renderCommandTab() {
+  $('tab-command').hidden = !canCommand();
+  if (store.phase === 'command' && !canCommand()) setPhase('downtime');
 }
 
 // ---------------------------------------------------------------- banners
@@ -92,6 +101,7 @@ function init() {
   initChecklist();
   initRecovery();
   initReadiness();
+  initCommand();
 
   document.querySelectorAll('.phase-tab').forEach((t) => t.addEventListener('click', () => {
     setPhase(t.dataset.phase);
@@ -113,6 +123,7 @@ function init() {
     loadChecklist({ auto: true }); // reconnect redraw: background, not an open
     loadReadiness();
     if (store.phase === 'recovery') enterRecovery();
+    if (store.phase === 'command') enterCommand();
   });
   on('snapshotTime', renderSnapshot);
   // A newer snapshot (scheduler pull) re-evaluated the rules server-side: refresh list badges + readiness.
@@ -121,7 +132,9 @@ function init() {
   on('unitNow', refreshRelativeTimes);
   on('downtimeStartedAt', renderEhrBanner);
   on('restoredAt', renderEhrBanner);
+  on('role', renderCommandTab);
 
+  renderCommandTab();
   renderOffline();
   renderEhrBanner();
   renderSnapshot();

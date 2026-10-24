@@ -37,6 +37,8 @@
     <button class="phase-tab" type="button" data-phase="downtime"><span class="phase-num" aria-hidden="true">1</span><span>Go to downtime</span></button>
     <button class="phase-tab" type="button" data-phase="during"><span class="phase-num" aria-hidden="true">2</span><span>During</span></button>
     <button class="phase-tab" type="button" data-phase="recovery"><span class="phase-num" aria-hidden="true">3</span><span>Recovery</span></button>
+    <!-- Supervisor view, not a phase step: shown for COMMAND_ROLES only (web/js/command.js). -->
+    <button id="tab-command" class="phase-tab" type="button" data-phase="command" hidden><span class="phase-num" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9z" fill="currentColor"/></svg></span><span>Command center</span></button>
   </nav>
 
   <div class="banners" aria-live="polite">
@@ -216,6 +218,20 @@
         </div>
         <div id="audit"></div>
       </section>
+    </section>
+
+    <!-- Supervisor command center (S14): GET /command-center, one block per unit, four panels, 30 s refresh. -->
+    <section id="view-command" class="view" data-view="command" aria-labelledby="h-command" hidden>
+      <div class="action-bar">
+        <div>
+          <h1 id="h-command" class="view-title">Command center</h1>
+          <p id="command-status" class="muted" role="status">Overdue high-alert doses, open discrepancies, backload and critical labs for each unit.</p>
+        </div>
+        <div class="action-buttons">
+          <button id="btn-refresh-command" class="btn btn-secondary" type="button">Refresh</button>
+        </div>
+      </div>
+      <div id="command-units" class="cc-units"></div>
     </section>
   </main>
 </body>
