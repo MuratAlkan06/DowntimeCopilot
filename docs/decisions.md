@@ -32,3 +32,6 @@ Model routing note: Nova 2 Lite answered "Black." to the red test image, but eve
 - TODO: README CI badge
 - TODO: ruff lint job
 - TODO: one clock: sqlite store stamps real wall-clock while the simulator runs a sim clock (UTC); the UI shows sim/unit time only (packets + UI done in S1; digest/store/recovery remain, see above)
+
+## S2 acceptance time (2026-10-23, orchestrator per working-rules autonomy)
+The build contract's S2 acceptance specified rule fire-counts "at 03:30 simulated time" with R-DUE-01 = {pt-08, pt-11, pt-12}. At 03:30 the seeded doses have rolled past: pt-08 hydromorphone (03:15) and pt-11 insulin (03:00) are overdue-and-rolled, the simulator advances pt-12's heparin to its next dose, and R-DUE-01 would be {pt-09, pt-12}. The contract's expected sets hold at 02:45-03:00, and DEMO.md advances the clock to exactly 03:00 before packet generation. Decision: acceptance and tests are pinned at 03:00; seed data and the demo script are unchanged. The 03:30 figure in the contract is treated as an internal inconsistency, not a requirement.
