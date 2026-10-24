@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from typing import Callable
 
 from app.rules.drug_classes import allergy_matches, drug_class, frequency_hours, same_medication
-from contracts import Alert, CapturedRecord, Discrepancy, FormType, PatientSnapshot, Severity
+from contracts import Alert, CapturedRecord, Discrepancy, FormType, Medication, PatientSnapshot, Severity
 
 DUE_WINDOW = timedelta(minutes=60)
 STALE_AFTER = timedelta(minutes=30)
@@ -133,24 +133,29 @@ def r_dup_01(p: PatientSnapshot, now: datetime) -> list[Alert]:
             for cls, names in by_class.items() if len(names) > 1]
 
 
+# Alert text carries ABSOLUTE unit times only ("due 03:30", "taken 02:05"). Alerts are stored in packets
+# and served from the rules endpoint long after evaluation, so a relative phrase ("in 43 min") would
+# freeze and go wrong. The UI computes the relative part at render time from the unit clock (/status).
+
+def due_high_alert(p: PatientSnapshot, now: datetime) -> list[Medication]:
+    """High-alert medications whose next dose falls in [now, now + 60 min]."""
+    return [m for m in p.medications
+            if m.high_alert and m.next_due is not None and now <= m.next_due <= now + DUE_WINDOW]
+
+
 @rule("R-DUE-01", "downtime", "High-alert medication due within 60 minutes")
 def r_due_01(p: PatientSnapshot, now: datetime) -> list[Alert]:
-    out = []
-    for m in p.medications:
-        if m.high_alert and m.next_due is not None and now <= m.next_due <= now + DUE_WINDOW:
-            mins = int((m.next_due - now).total_seconds() // 60)
-            out.append(Alert(rule_id="R-DUE-01",
-                             text=f"High-alert {m.name} {m.dose} {m.route} due {m.next_due:%H:%M} (in {mins} min); "
-                                  "independent double-check required"))
-    return out
+    return [Alert(rule_id="R-DUE-01",
+                  text=f"High-alert {m.name} {m.dose} {m.route} due {m.next_due:%H:%M}; "
+                       "independent double-check required")
+            for m in due_high_alert(p, now)]
 
 
 @rule("R-STALE-01", "downtime", "Snapshot older than 30 minutes")
 def r_stale_01(p: PatientSnapshot, now: datetime) -> list[Alert]:
-    age = now - p.snapshot_time
-    if age > STALE_AFTER:
+    if now - p.snapshot_time > STALE_AFTER:
         return [Alert(rule_id="R-STALE-01",
-                      text=f"Snapshot is {int(age.total_seconds() // 60)} min old (taken {p.snapshot_time:%H:%M}); "
+                      text=f"Snapshot taken {p.snapshot_time:%H:%M} is older than 30 min; "
                            "reconcile with the patient and paper chart")]
     return []
 
@@ -243,6 +248,26 @@ def r_vo_01(ctx: RecoveryContext) -> list[Discrepancy]:
 def snapshot_alerts(p: PatientSnapshot, now: datetime, phase: str = "downtime") -> list[Alert]:
     phases = {"any", phase}
     return [a for r in RULES.values() if r.phase in phases and r.phase != "recovery" for a in r.fn(p, now)]
+
+
+def rule_hits(patients: list[PatientSnapshot], now: datetime) -> dict:
+    """Every snapshot rule (R-ALG-01, R-DUP-01, R-DUE-01, R-STALE-01) for every patient, as served by the
+    non-contract GET /rules/current. Each hit is the contract Alert ({rule_id, text}) plus structured
+    times the UI needs to render relative phrases live: `due_at` (R-DUE-01) and `snapshot_time`
+    (R-STALE-01). Kept out of contracts/models.py on purpose: the Alert contract stays {rule_id, text}."""
+    out: dict[str, list[dict]] = {}
+    for p in patients:
+        due = iter(due_high_alert(p, now))  # same order r_due_01 emits its alerts in
+        hits = []
+        for a in snapshot_alerts(p, now):
+            hit = a.model_dump(mode="json")
+            if a.rule_id == "R-DUE-01":
+                hit["due_at"] = next(due).next_due.isoformat()
+            elif a.rule_id == "R-STALE-01":
+                hit["snapshot_time"] = p.snapshot_time.isoformat()
+            hits.append(hit)
+        out[p.patient_id] = hits
+    return {"evaluated_at": now.isoformat(), "patients": out}
 
 
 def recovery_discrepancies(ctx: RecoveryContext) -> list[Discrepancy]:

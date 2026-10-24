@@ -66,6 +66,25 @@ def test_patients_list(api):
     assert all(p.name and p.bed for p in patients)
 
 
+def test_rules_current_on_pull_and_downtime_start(api):
+    assert api.get("/rules/current").json() == {"evaluated_at": None, "patients": {}}
+    TestClient(sim.app).post("/clock/advance", json={"minutes": 15})  # DEMO.md: unit clock 03:00
+    api.post("/snapshot/pull")
+    r = api.get("/rules/current").json()
+    assert r["evaluated_at"] == api.get("/status").json()["now"] and audited("rules.view")
+    fired: dict[str, set[str]] = {}
+    for pid, hits in r["patients"].items():
+        for h in hits:
+            fired.setdefault(h["rule_id"], set()).add(pid)
+    assert {k: fired.get(k, set()) for k in ("R-ALG-01", "R-DUP-01", "R-DUE-01")} == {
+        "R-ALG-01": {"pt-03", "pt-05"}, "R-DUP-01": {"pt-07"}, "R-DUE-01": {"pt-08", "pt-11", "pt-12"}}
+    due = [h for h in r["patients"]["pt-12"] if h["rule_id"] == "R-DUE-01"]
+    assert due and all(h["due_at"] and " min" not in h["text"] for h in due)
+    go_to_downtime(api)
+    triggers = [e.details.get("trigger") for e in get_store().list_audit(1000) if e.action == "rules.evaluate"]
+    assert sorted(triggers) == ["downtime.start", "snapshot.pull", "snapshot.pull"]
+
+
 def test_downtime_start_packets_have_provenance(api):
     packets = go_to_downtime(api)
     assert len(packets) == 12 and audited("downtime.start") and audited("ai.call")
