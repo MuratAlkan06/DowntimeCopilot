@@ -97,6 +97,10 @@ def textract_enabled() -> bool:
 
 # Unit parameters for the Vitals Flowsheet (policy 3.4). Inclusive normal ranges: a value exactly at a
 # bound is in range; anything beyond is flagged out_of_range on captured records and by R-REC-02.
+# The one unit this deployment serves (S14 command center: GET /command-center lists it as its single unit).
+UNIT_ID = "med-surg-3"
+UNIT_NAME = "Med-Surg 3"
+
 VITAL_RANGE_DEFAULTS: dict[str, tuple[float, float]] = {
     "temp_c": (36.0, 38.0),
     "heart_rate": (50, 110),
