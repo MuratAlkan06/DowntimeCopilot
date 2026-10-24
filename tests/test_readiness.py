@@ -158,10 +158,10 @@ def live_state() -> tuple[str, list, int]:
 
 
 def prime_live(c: TestClient) -> None:
-    """A live store with real rows: a pull, a declared downtime, and one role acknowledgment."""
+    """A live store with real rows: a pull, background checklist fetches, and one role acknowledgment."""
     assert c.post("/snapshot/pull").status_code == 200
-    assert c.get("/checklists", headers={"X-Role": "rn"}).status_code == 200
-    assert c.get("/checklists?role=pharmacy", headers={"X-Role": "charge_nurse"}).status_code == 200  # not own role
+    assert c.get("/checklists", headers={"X-Role": "rn"}).status_code == 200  # deliberate: acknowledges rn
+    assert c.get("/checklists?role=pharmacy&auto=1").status_code == 200  # background: never counts
 
 
 def test_readiness_is_empty_before_the_first_drill(api):
@@ -185,6 +185,38 @@ def test_drill_scores_seeded_data_in_dry_run(api):
     assert [s["name"] for s in d["steps"]] == ["snapshot", "packets", "restore"] and all(s["ok"] for s in d["steps"])
     assert d["summary_source"] == "dry_run" and d["summary_model_id"].startswith("dry-run:") and d["summary_usd"] == 0
     assert api.get("/readiness").json() == body
+
+
+def test_only_deliberate_checklist_opens_count_as_acknowledgment(api):
+    """Background fetches (page load, role prefetch, the S7 declare-time pre-cache) send ?auto=1 and never count,
+    whatever the actor. A GET without auto acknowledges the requested role; GETs carry no X-Role (web/js/api.js),
+    so the actor is the default charge_nurse while the requested role is what counts."""
+    def ack() -> tuple[int, int, str]:
+        body = api.post("/readiness/drill").json()
+        c = body["components"]["checklist_ack"]
+        return c["score"], body["score"], c["detail"]
+
+    assert api.get("/checklists", params={"role": "charge_nurse", "auto": 1}).status_code == 200  # page load
+    for role in ALL_ROLES:  # declare-time pre-cache
+        assert api.get("/checklists", params={"role": role, "auto": 1}).status_code == 200
+    assert ack() == (0, 82, "0 of 4 roles have opened their checklist")
+
+    assert api.get("/checklists", params={"role": "rn"}).status_code == 200
+    assert api.get("/checklists", params={"role": "rn"}).status_code == 200  # distinct roles: a re-open adds nothing
+    assert ack() == (25, 86, "1 of 4 roles have opened their checklist")
+    assert round(35 * 11 / 12 + 30 + 15 / 4 + 20) == 86  # 85.83: the 82 run plus 15 x 1/4
+
+    for role in ALL_ROLES:
+        assert api.get("/checklists", params={"role": role}).status_code == 200
+    assert api.get("/checklists", params={"role": "janitor"}).status_code == 404  # not found: never counts
+    assert ack() == (100, 97, "4 of 4 roles have opened their checklist")
+    assert round(35 * 11 / 12 + 30 + 15 + 20) == 97
+
+    rows = [e for _, e in get_store().audit_log() if e.target_type == "checklist"]
+    assert [e.action for e in rows].count("checklist.view") == 5 and all(e.actor_role == "charge_nurse" for e in rows)
+    assert sorted(e.details["ack_role"] for e in rows if e.action == "checklist.ack") == sorted(
+        ["rn", "rn", *ALL_ROLES, "janitor"])
+    assert drill.acknowledged_roles(get_store()) == frozenset(ALL_ROLES)
 
 
 def test_drill_writes_nothing_live_and_mirrors_nothing(api, monkeypatch):

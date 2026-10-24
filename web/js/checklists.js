@@ -53,12 +53,16 @@ function render() {
   renderHeader();
 }
 
-const checklistUrl = (role) => `/checklists?role=${encodeURIComponent(role)}`;
+// `auto: true` marks a background fetch: the server audits it as checklist.view, which readiness never counts.
+// Without it the fetch is a deliberate open, audited as checklist.ack for `role` (the drill's acknowledgment).
+// The cache key drops `auto` (sw.js dataKey, api.js fromCache), so both kinds share one cached copy.
+const checklistUrl = (role, { auto = false } = {}) => `/checklists?role=${encodeURIComponent(role)}${auto ? '&auto=1' : ''}`;
 
 /** Declare-time warm-up (S7): every role's checklist into the service-worker data cache, so a teammate
  *  who switches role offline still gets theirs. One role failing never stops the others. */
 export async function precacheChecklists() {
-  await Promise.allSettled(ROLES.map((r) => api(checklistUrl(r.id))));
+  // Background (auto=1): warming the cache is not anyone opening a checklist.
+  await Promise.allSettled(ROLES.map((r) => api(checklistUrl(r.id, { auto: true }))));
   await renderCached();
 }
 
@@ -75,10 +79,12 @@ async function renderCached() {
       : `Cached for offline: ${cached.join(', ')}. Not cached: ${missing.join(', ')}.`;
 }
 
-export async function loadChecklist() {
+/** Fetch and render the current role's checklist. Background by default (auto=1); only a deliberate open
+ *  passes `{ auto: false }` (see openChecklist and the role listener in initChecklist). */
+export async function loadChecklist({ auto = true } = {}) {
   const role = store.role;
   mount($('checklist-items'), stateBox('loading', 'Loading your checklist…'));
-  const r = await api(checklistUrl(role));
+  const r = await api(checklistUrl(role, { auto }));
   renderCached();
   if (role !== store.role) return; // the role changed while this was loading
   if (!r.ok) {
@@ -93,9 +99,14 @@ export async function loadChecklist() {
   render();
 }
 
+/** Deliberate open (no auto): the user navigated to the During view, where this checklist is on screen. */
+export const openChecklist = () => loadChecklist({ auto: false });
+
 export function initChecklist() {
-  on('role', loadChecklist);
+  // Role switch: on the During view the new role's checklist is what the user is now looking at (deliberate);
+  // anywhere else it only prefetches it behind a hidden view (background, auto=1).
+  on('role', () => loadChecklist({ auto: store.phase !== 'during' }));
   on('unitNow', renderHeader);
   on('outageId', () => { ephemeral.clear(); render(); }); // a new outage starts a fresh set of check marks
-  loadChecklist();
+  loadChecklist({ auto: true }); // page load: background, even when the page reopens on the During view
 }

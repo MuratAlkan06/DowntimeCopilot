@@ -53,10 +53,17 @@ async function parse(res) {
   try { return ct.includes('json') ? await res.json() : await res.text(); } catch { return null; }
 }
 
+// Same key as dataKey in sw.js: `auto` (a background-fetch audit hint) is not part of a cached copy's key.
+function cacheKey(path) {
+  const u = new URL(path, location.href);
+  if (u.searchParams.has('auto')) u.searchParams.delete('auto');
+  return u.href;
+}
+
 async function fromCache(path) {
   try {
     if (!('caches' in window)) throw new Error('no cache api');
-    const hit = await caches.match(new URL(path, location.href).href, { ignoreVary: true });
+    const hit = await caches.match(cacheKey(path), { ignoreVary: true });
     if (hit) return { ok: true, status: hit.status, data: await parse(hit), cachedAt: hit.headers.get('x-dc-cached-at') || 'unknown', offline: true };
   } catch { /* fall through */ }
   return { ok: false, status: 0, data: null, offline: true, error: 'Offline and not cached on this device yet' };

@@ -24,11 +24,20 @@ class Checklist(BaseModel):
 
 
 @router.get("/checklists", response_model=Checklist)
-def get_checklist(role: str | None = None, actor: str = Depends(actor_role)) -> Checklist:
-    """`?role=` (charge_nurse, rn, pharmacy, unit_clerk, provider); defaults to the caller's X-Role."""
+def get_checklist(role: str | None = None, auto: bool = False, actor: str = Depends(actor_role)) -> Checklist:
+    """`?role=` (charge_nurse, rn, pharmacy, unit_clerk, provider); defaults to the caller's X-Role.
+
+    `?auto=1` marks a background fetch (page load, role prefetch, the declare-time pre-cache): audited as
+    `checklist.view`. Without it the fetch is a deliberate open of that checklist: audited as `checklist.ack`
+    with the requested role in `details.ack_role` (the subject; the actor stays the caller's X-Role). The
+    readiness drill counts only these (app/drill.py acknowledged_roles)."""
     wanted = (role or actor).strip()
     all_lists = checklists.load()
-    get_store().audit(actor, "checklist.view", "checklist", wanted, {"found": wanted in all_lists})
-    if wanted not in all_lists:
+    found = wanted in all_lists
+    if auto:
+        get_store().audit(actor, "checklist.view", "checklist", wanted, {"found": found})
+    else:
+        get_store().audit(actor, "checklist.ack", "checklist", wanted, {"found": found, "ack_role": wanted})
+    if not found:
         raise HTTPException(404, f"no checklist for role {wanted!r}; one of {sorted(all_lists)}")
     return Checklist(role=wanted, items=[ChecklistItem(**vars(i)) for i in all_lists[wanted]])

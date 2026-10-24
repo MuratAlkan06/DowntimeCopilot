@@ -8,8 +8,8 @@ Components and weights (the weights sum to 100):
   packet_coverage      30  share of snapshot patients with a usable drill packet: guardrail passed and at least
                            one verified (non-omitted) SBAR line.
   checklist_ack        15  share of unit roles with a policy checklist (charge nurse, RN, pharmacy, unit clerk)
-                           whose checklist someone in that role has opened. The weakest-measured signal, so the
-                           lowest weight.
+                           whose checklist was deliberately opened (not a background fetch). The weakest-measured
+                           signal, so the lowest weight.
   forms_templates      20  share of printable paper forms (vitals flowsheet, downtime MAR, admission note) whose
                            template and layout map are present and readable.
 

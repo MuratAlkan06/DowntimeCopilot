@@ -53,10 +53,11 @@ def last() -> dict:
 
 
 def acknowledged_roles(live: Store) -> frozenset[str]:
-    """Roles whose own checklist someone in that role opened (audit checklist.view, actor == role, found).
-    Read-only on the live store."""
-    return frozenset(e.target_id for _, e in live.audit_log()
-                     if e.action == "checklist.view" and e.details.get("found") and e.actor_role == e.target_id)
+    """Distinct roles whose checklist was deliberately opened: audit checklist.ack (GET /checklists without
+    ?auto=1), found, counted by the requested role in details.ack_role. Background fetches (page load, role
+    prefetch, declare-time pre-cache) are checklist.view and never count. Read-only on the live store."""
+    return frozenset(e.details["ack_role"] for _, e in live.audit_log()
+                     if e.action == "checklist.ack" and e.details.get("found") and e.details.get("ack_role"))
 
 
 def template_ready(form_type: str) -> bool:
