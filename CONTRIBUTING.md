@@ -5,7 +5,7 @@ This project was built as a gated, single-developer overnight build for SpartHil
 ## Workflow
 - Branch per slice of work (`feat/<topic>`, `fix/<topic>`, `docs/<topic>`), opened from a freshly pulled `main`.
 - Every change lands through a pull request into `main`, squash-merged with `--delete-branch`. `main` must always run `make demo`.
-- Non-admin merges to `main` require one approving review (repository ruleset). CI — the secret/probe guard and the test suite — must be green on the exact head before any merge.
+- Merges to `main` require a pull request with CI — the secret/probe guard and the test suite — green on the exact head. No approving review is required (the one-review ruleset was lifted on 2026-10-24; see `docs/decisions.md`).
 - Commits are Conventional Commits: lowercase, imperative, ≤72-character subject, no trailing period. No AI-attribution trailers of any kind (owner ruling, 2026-10-09).
 
 ## Credentials and honesty
