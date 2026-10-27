@@ -346,3 +346,7 @@ Asked three questions, the owner answered "go for what you reccomend"; the recom
 - **Known windows are not violations.** Three cases are reported as known windows: unacked in-flight submits, F2 resubmits with a new id, and F5 records without a `capture.create` audit. The F6-rollback case is `expected_fail`, tagged for a future S5 issue. It is SIMULATED: the shim rolls back and swallows the error, standing in for SQLITE_FULL/IOERR. Poison items (422) count as stalls and are excluded from I3.
 - **Ground truth.** For mirror accounting, the reconciliation's missing set is authoritative. The S1 `not_mirrored` counter is only a cross-check.
 - **Dependencies.** No new dependency. The harness uses the stdlib, plus the app's already-pinned `boto3` to create and scan DynamoDB Local tables. The DynamoDB Local jar is downloaded by the operator (checksum-verified, `DDB_LOCAL_DIR`) and is not vendored.
+
+## Durability harness in CI (2026-10-27, #51 S3)
+
+A "Durability harness" CI job now runs on every push and PR: 25 server cycles against an `amazon/dynamodb-local:3.3.2` service container, then 25 node cycles, seeded from `github.run_id`, and it fails on any violation in `report.json`. It stays out of the required checks during burn-in, because seeded fault cycles with timing windows need a run history on hosted runners before they can gate merges; each run directory is uploaded as `durability-report-<run_id>` with 14-day retention, so any failing seed can be replayed.
