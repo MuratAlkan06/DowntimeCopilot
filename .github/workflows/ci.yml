@@ -34,3 +34,22 @@ jobs:
         run: make setup
       - name: Run tests (mock mode)
         run: DRY_RUN=1 make test
+
+  terraform:
+    name: Terraform validate
+    runs-on: ubuntu-latest
+    # Static checks only: no backend, no AWS credentials, no plan or apply (`make infra-validate` locally).
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.17.0"
+          terraform_wrapper: false
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive infra
+      - name: Validate infra/bootstrap
+        working-directory: infra/bootstrap
+        run: terraform init -backend=false -input=false && terraform validate
+      - name: Validate infra
+        working-directory: infra
+        run: terraform init -backend=false -input=false && terraform validate
