@@ -117,6 +117,8 @@ In us-east-1 and us-west-2 these models are only served through `us.` or `global
 
 ### Permission-aware fallbacks
 
+This section and its table are the event record (Oct 23 to 24). The workshop account is gone, and the app's resources now live in the owner's own account; see [AWS resources in the owner's account](#aws-resources-in-the-owners-account-after-the-hackathon) below.
+
 The AWS account is an AWS Workshop Studio account with an explicit-deny policy on many management APIs. **Step zero is `make probe`** (`tools/bedrock_probe.py --extras`). Every service has a fallback that keeps its feature alive; `RESULTS.md` records which path ran. The outcome column is what this account actually allowed (`docs/decisions.md`).
 
 | Service | Outcome in this account | Path that runs | If denied |
@@ -129,6 +131,26 @@ The AWS account is an AWS Workshop Studio account with an explicit-deny policy o
 | DynamoDB | ALLOWED | Action-log mirror and sync status; SQLite stays the source of truth | Local SQLite only, JSON export |
 | Lambda + EventBridge | AVAILABLE, DEFERRED (read-only probes OK; `CreateFunction` never called) | In-app scheduler | In-app scheduler |
 | S3 | ALLOWED | Verbal-order audio, snapshot mirror, audit exports (SSE-S3) | Local filesystem store |
+
+### AWS resources in the owner's account (after the hackathon)
+
+Every resource the app uses is defined in Terraform under `infra/`, in us-east-1 (the app's default Region, so no app code changed). Three identities, each used for one job (`docs/decisions.md`, "Own AWS account in Terraform"):
+
+| Identity (profile) | Used for | What it can do |
+|---|---|---|
+| Root login session (`bootstrap`), once | `infra/bootstrap`, local state | Creates the Terraform state bucket (versioned, SSE-S3, private) and the `downtime-copilot-admin` role |
+| Deploy user → `downtime-copilot-admin` (`downtime-admin`) | `infra/`, state in that bucket | Creates and changes the app's resources: the sync table, the app bucket (SSE-S3, public access blocked, the app's three lifecycle rules), the published guardrail `downtime-copilot-v1`, the cost budget and the runtime role |
+| Deploy user → `downtime-copilot-runtime` (`downtime-runtime`) | Running the app | Only the calls the app makes: `InvokeModel` on the three routed models, `ApplyGuardrail`, `AnalyzeDocument`, the Transcribe job calls, objects under `audio/`, `snapshots/` and `exports/`, `DescribeTable` and `PutItem`. No create, no IAM |
+
+```bash
+terraform -chdir=infra/bootstrap init && terraform -chdir=infra/bootstrap apply   # once, from a root login session
+cp infra/backend.hcl.example infra/backend.hcl             # bucket = the bootstrap state_bucket output
+cp infra/terraform.tfvars.example infra/terraform.tfvars   # budget_email
+terraform -chdir=infra init -backend-config=backend.hcl && terraform -chdir=infra apply   # profile downtime-admin
+make infra-env              # outputs -> .env, with AWS_PROFILE=downtime-runtime; removes static key lines
+```
+
+Both role profiles in `~/.aws/config` use the deploy user as `source_profile`, with `role_arn` from the `admin_role_arn` and `runtime_role_arn` outputs. `.env` holds no long-lived keys: `make infra-env` writes `AWS_PROFILE`, `AWS_DEFAULT_REGION`, `GUARDRAIL_ID`, `GUARDRAIL_VERSION`, `AUDIO_BUCKET` and `SYNC_TABLE`, and prints names, never values. **Budget guard:** a monthly cost budget (default $10, `budget_limit_usd`) emails `budget_email` at 50, 80 and 100% of actual spend. It alerts and does not stop spend. The fallbacks above still apply. If a resource is missing, the runtime role is denied the app's create-if-missing calls, and the app uses its local fallback. `make infra-validate` runs the CI "Terraform validate" job locally (fmt, `init -backend=false`, validate; no AWS calls).
 
 ## Data contracts
 
@@ -217,6 +239,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - `sparthill-final` tag and [release](https://github.com/MuratAlkan06/DowntimeCopilot/releases/tag/sparthill-final) at `fac20b0`: the SpartHill Hacks 2026 event state.
 - Dependencies pinned in `requirements.lock` (Python 3.12, regenerate with `make lock`); `make setup` and CI install from it (#39).
 - `CONTRIBUTING.md` corrected: merges to `main` need a PR with green CI only — dropped the stale one-approving-review line (ruleset lifted Oct 24) (#41).
+- Own AWS account in Terraform (`infra/`, us-east-1): bootstrap state bucket and admin role, the app's resources, a least-privilege runtime role, a monthly budget guard; `make infra-env` fills `.env`; guard check 5 and a CI "Terraform validate" job. Validated, not applied (#43).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
@@ -237,7 +260,8 @@ Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded
 ├── simulator/        # synthetic EHR / BCA feed, outage + restore controls, restored-state diff
 ├── data/             # patients/*.json, policy/downtime_policy.md, forms/*.pdf
 ├── evals/            # harness, fixtures/ (photographed forms + ground truth), report generator
-├── tools/            # bedrock_probe.py
+├── infra/            # Terraform: bootstrap/ (state bucket, admin role) and the app's resources + runtime role
+├── tools/            # bedrock_probe.py, env_sync.py (make infra-env), guard.sh
 └── tests/
 ```
 
@@ -254,6 +278,8 @@ make test
 make evals                  # one live run -> new bundle + RESULTS.md (scratch STORE_PATH, TEXTRACT_ENABLED=1)
 make results                # regenerate RESULTS.md from the newest committed bundle, no network
 ```
+
+In the owner's account, `make infra-env` fills `.env` from Terraform in place of pasted keys (see [AWS resources in the owner's account](#aws-resources-in-the-owners-account-after-the-hackathon)).
 
 Mock mode for anyone without credentials or network: `DRY_RUN=1 make dev` returns canned Bedrock, Textract, and Transcribe responses with the same shapes.
 
