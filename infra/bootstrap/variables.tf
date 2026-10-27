@@ -15,3 +15,9 @@ variable "deploy_user_name" {
   type        = string
   default     = "mlobs-deploy"
 }
+
+variable "require_admin_mfa" {
+  description = "Require MFA on the session assuming the admin role. Disable only if the deploy user has no MFA device, and record why in docs/decisions.md."
+  type        = bool
+  default     = true
+}

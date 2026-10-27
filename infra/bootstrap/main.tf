@@ -68,13 +68,23 @@ data "aws_iam_policy_document" "trust_deploy_user" {
       type        = "AWS"
       identifiers = [local.deploy_user_arn]
     }
+
+    dynamic "condition" {
+      for_each = var.require_admin_mfa ? [1] : []
+      content {
+        test     = "Bool"
+        variable = "aws:MultiFactorAuthPresent"
+        values   = ["true"]
+      }
+    }
   }
 }
 
 resource "aws_iam_role" "admin" {
-  name               = "downtime-copilot-admin"
-  description        = "Terraform operator role for the downtime-copilot main stack (infra/). Assumed by the deploy user."
-  assume_role_policy = data.aws_iam_policy_document.trust_deploy_user.json
+  name                 = "downtime-copilot-admin"
+  max_session_duration = 3600
+  description          = "Terraform operator role for the downtime-copilot main stack (infra/). Assumed by the deploy user."
+  assume_role_policy   = data.aws_iam_policy_document.trust_deploy_user.json
 }
 
 resource "aws_iam_role_policy_attachment" "admin" {
