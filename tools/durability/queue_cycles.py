@@ -90,13 +90,14 @@ async function flushQueue(Q) {
   return Q.drain(fileStore, sendQueued, { onSent, locks: null }); // locks passed explicitly, always
 }
 // REPLICA of web/js/during.js submitCapture's branches (DRIFT RISK: if they change, this lies): ok / offline or
-// a real 5xx -> queue.put under the SAME id (#55) / else (4xx) an error, and the nurse taps submit again,
-// which mints a NEW id. Before #55 a 5xx took that last branch: the F2 duplicate.
+// RETRYABLE (5xx, 408, 429; keep in step with during.js) -> queue.put under the SAME id (#55) / else (other 4xx)
+// an error, and the nurse taps submit again, which mints a NEW id. Before #55 a 5xx took that last branch:
+// the F2 duplicate.
 async function submit(paper, attempt = 0) {
   const meta = { id: attempt ? `${paper}-r${attempt}` : paper, form_type: 'verbal_order', patient_id: 'pt-07', role: 'rn', readback_text: cfg.readback };
   const r = await A.api('/capture', { method: 'POST', form: buildForm(meta) });
   if (r.ok && r.data?.record_id) { log({ ev: 'ack', cid: meta.id, paper, status: r.status, via: 'submit' }); return; }
-  if (r.offline || r.status >= 500) { await fileStore.put({ ...meta, blob: null, queued_at: new Date().toISOString() }); log({ ev: 'queued', cid: meta.id, paper }); return; }
+  if (r.offline || r.status >= 500 || r.status === 408 || r.status === 429) { await fileStore.put({ ...meta, blob: null, queued_at: new Date().toISOString() }); log({ ev: 'queued', cid: meta.id, paper }); return; }
   log({ ev: 'error', cid: meta.id, paper, status: r.status });
   if (attempt < 1) await submit(paper, attempt + 1);
 }

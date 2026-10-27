@@ -238,35 +238,39 @@ def run_during(tmp_path, body: str):
 
 
 @pytest.mark.skipif(NODE is None, reason="node not installed")
-def test_first_submit_5xx_queues_the_same_client_id(tmp_path):
+@pytest.mark.parametrize("status", [500, 503, 408, 429])
+def test_first_submit_retryable_queues_the_same_client_id(tmp_path, status):
     """#55: the server may have committed before the 5xx, so the retry must carry the SAME id (dedupe returns
-    that record). A resubmit would mint a new id: the duplicate this closes."""
-    got = run_during(tmp_path, """
-await submit(500);
+    that record). A resubmit would mint a new id: the duplicate this closes. 408 and 429 are 4xx but transient
+    (timeout, throttle), so they take the same path."""
+    got = run_during(tmp_path, f"""
+await submit({status});
 const queued = view();
 answer = 201;
 await D.flushQueue();
 const drained = view();
-console.log(JSON.stringify({ queued, drained, posts }));
+console.log(JSON.stringify({{ queued, drained, posts }}));
 """)
     assert got["queued"]["queued"] == "1 queued" and got["queued"]["failed"] is None
-    assert "Server error (500)" in got["queued"]["result"] and "will be retried automatically" in got["queued"]["result"]
+    assert f"Server error ({status})" in got["queued"]["result"]
+    assert "will be retried automatically" in got["queued"]["result"]
     (first, s1), (retry, s2) = got["posts"]
-    assert (s1, s2) == (500, 201) and first == retry and first  # one id, sent twice
+    assert (s1, s2) == (status, 201) and first == retry and first  # one id, sent twice
     assert got["drained"]["queued"] is None and got["drained"]["pending"] == ""
 
 
 @pytest.mark.skipif(NODE is None, reason="node not installed")
-def test_first_submit_4xx_is_not_queued(tmp_path):
-    """Negative control: a 4xx is the request's own fault; nothing is queued, the error shows, no retry."""
-    got = run_during(tmp_path, """
-await submit(422);
+@pytest.mark.parametrize("status", [400, 422])
+def test_first_submit_4xx_is_not_queued(tmp_path, status):
+    """Negative control: any other 4xx is the request's own fault; nothing is queued, the error shows, no retry."""
+    got = run_during(tmp_path, f"""
+await submit({status});
 const after = view();
 await D.flushQueue();
-console.log(JSON.stringify({ after, posts }));
+console.log(JSON.stringify({{ after, posts }}));
 """)
-    assert got["after"]["queued"] is None and "Couldn't read the form (harness 422)" in got["after"]["result"]
-    assert [s for _, s in got["posts"]] == [422]  # the drain had nothing to send
+    assert got["after"]["queued"] is None and f"Couldn't read the form (harness {status})" in got["after"]["result"]
+    assert [s for _, s in got["posts"]] == [status]  # the drain had nothing to send
 
 
 @pytest.mark.skipif(NODE is None, reason="node not installed")

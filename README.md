@@ -247,7 +247,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - Fault-injection durability harness for both capture paths (`tools/durability/`, `make durability`, frozen design in [`docs/durability.md`](docs/durability.md)): server cycles against DynamoDB Local behind a fault proxy, browser-queue cycles in node; calibration and the first fault run are in the PR (#51).
 - CI "Durability harness" job: 25 server cycles against a DynamoDB Local service container plus 25 node cycles per push, seeded from the run id, run directory kept as an artifact for 14 days; not a required check during burn-in (#51).
 - An outbox enqueue failure that rolls back the whole SQLite transaction no longer loses the save under a 201: the record or audit row is redone in a fresh transaction, counted in `not_mirrored`; the harness F6-rollback cycle is now a passing check (#54).
-- A capture whose first upload gets a real 5xx is queued under the same client id instead of dropped (no duplicate on resubmit); a queued item the server refuses 8 times is dead-lettered, kept on the device, shown as "N failed" with a "Retry failed" action; the harness F2 and poison cycles are now passing checks (#55).
+- A capture whose first upload gets a real 5xx (or a transient 408/429) is queued under the same client id instead of dropped (no duplicate on resubmit); a queued item the server refuses 8 times is dead-lettered, kept on the device, shown as "N failed" with a "Retry failed" action; the harness F2 and poison cycles are now passing checks (#55).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 

@@ -176,6 +176,10 @@ export async function flushQueue() {
   return result;
 }
 
+// Queue a first submit under the same id on these: 5xx, or a transient 408 (timeout) / 429 (throttle). Retrying
+// the same client_id is safe, the server dedupes it. Keep tools/durability/queue_cycles.py submit() in step.
+const RETRYABLE = (s) => s >= 500 || s === 408 || s === 429;
+
 async function submitCapture(e) {
   e.preventDefault();
   const verbalAudio = $('capture-type').value === 'verbal_order' ? recorder.file : null;
@@ -211,9 +215,9 @@ async function submitCapture(e) {
     return;
   }
   // A real 5xx may come after the server committed the record (#55): queue it under the SAME id, so the retry
-  // returns that record instead of a resubmit minting a new id and a duplicate. A 4xx is the request's own
-  // fault and is not queued: fixing the form and submitting again under a new id is right there.
-  const serverError = !r.offline && r.status >= 500;
+  // returns that record instead of a resubmit minting a new id and a duplicate. Any other 4xx is the request's
+  // own fault and is not queued: fixing the form and submitting again under a new id is right there.
+  const serverError = !r.offline && RETRYABLE(r.status);
   if (r.offline || serverError) {
     let queued = false;
     try {

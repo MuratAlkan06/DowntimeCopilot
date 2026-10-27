@@ -75,7 +75,9 @@ export const isDead = (item) => item?.status === DEAD;
 
 /** Send every live queued item, oldest first. `send(item)` resolves to { ok, offline } (api.js shape).
  *  2xx -> deleted; an answered failure -> attempts + 1 and kept (dead at MAX_ATTEMPTS); offline or a thrown
- *  send -> stop without counting (the rest would fail too). `left` counts live items only. */
+ *  send -> stop without counting (the rest would fail too). `left` counts live items only.
+ *  Deliberately wider than during.js RETRYABLE: every answered non-2xx counts here, 5xx/408/429 included, so a
+ *  server that keeps erroring or throttling still dead-letters the item instead of retrying it forever. */
 export function drain(store, send, { onSent, locks = globalThis.navigator?.locks } = {}) {
   return withDrainLock(async () => {
     let sent = 0;
