@@ -59,10 +59,9 @@ Notes (evals/NOTES.md, `faithfulness`):
 
 One run of 12 packets. Every first-pass line resolved, so the regenerate-once path and the omission path did not
 run in this bundle; their behaviour is covered by unit tests only, not by this measurement. The line count differs
-from the previous baseline (`20261024T102817Z-a020e81`, kept under `evals/baseline/` as history) for two reasons.
-The seeded snapshot changed in exactly two strings: pt-09's INR and pt-21's H&H pending labs now carry the
-`(critical)` marker added after that run, and both packets gained the lines that mention it. The other per-packet
-differences (pt-02, pt-07, pt-11, pt-16) come from identical inputs, so they are run-to-run model variance.
+from the previous baseline (`20261024T120050Z-90d316a`, kept under `evals/baseline/` as history) on identical
+inputs: per-packet totals move by a line or two between runs, which is run-to-run model variance, not a seed or
+harness change.
 
 ## 2. Policy grounding
 
@@ -141,9 +140,8 @@ Notes (evals/NOTES.md, `latency_cost`):
 `checker` is the packet guardrail. Packets send grounding without a query, so `BedrockGuardrail` routes them to
 the Nova 2 Lite checker, which is metered here. ApplyGuardrail runs only for policy answers (one per answer). USD
 comes from the app's `PRICING` table at the `us.` geographic-profile rates, which list 10% above the `global.`
-rates. The table was corrected to those rates before this run, so this bundle's spend is about 10% higher than the
-previous baseline's for the same tokens. The rest of the difference is token-count variance. The previous
-baseline's `unmetered.guardrail_apply` over-count (a harness bug fixed before this run) does not appear here.
+rates — the same rates as the previous baseline (`90d316a`), so this bundle's spend matches it almost exactly;
+the residual difference is token-count variance.
 Latency comes from `/costs` and covers the model call only (no HTTP, no Textract or Transcribe time); medians move
 run to run.
 
