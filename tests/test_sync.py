@@ -2,6 +2,7 @@
 GET /sync/status. No network: every AWS client here is a stub."""
 from __future__ import annotations
 
+import sqlite3
 import threading
 import time
 from datetime import datetime, timezone
@@ -128,6 +129,72 @@ def test_failed_enqueue_keeps_the_save_and_counts_it(store):
     store._db.execute("DROP TABLE kv")  # the count is best effort: a failing increment never raises out either
     store.save_record(rec.model_copy(update={"record_id": "rec-3"}))
     assert store.get_record("rec-3") is not None
+
+
+class _RollbackOnOutbox:
+    """Connection stand-in: the next outbox INSERT rolls the whole transaction back, then raises, the way SQLite
+    auto-rolls back on some FULL/IOERR errors (#54). With `fail_redo` the next `fail_redo` insert also fails."""
+
+    def __init__(self, db, fail_redo: str | None = None):
+        self._db, self.armed, self.fail_redo = db, True, fail_redo
+
+    def execute(self, sql, *args):
+        if self.armed and sql.lstrip().upper().startswith("INSERT INTO SYNC_OUTBOX"):
+            self.armed = False
+            self._db.rollback()
+            raise sqlite3.OperationalError("database or disk is full")
+        if not self.armed and self.fail_redo and sql.lstrip().upper().startswith(self.fail_redo):
+            raise sqlite3.OperationalError("database or disk is full")
+        return self._db.execute(sql, *args)
+
+    def __getattr__(self, name):
+        return getattr(self._db, name)
+
+
+def _rec(record_id: str, **update):
+    from contracts import BackloadGroup, CapturedRecord, FormType
+    return CapturedRecord(record_id=record_id, form_type=FormType.vitals_flowsheet, image_ref="blob:x",
+                          captured_at=datetime(2026, 10, 24, 9, 0, tzinfo=timezone.utc), captured_by_role="rn",
+                          backload_group=BackloadGroup.nursing_vitals).model_copy(update=update)
+
+
+def test_enqueue_rollback_keeps_the_record_save_and_counts_it(store):
+    """#54: an enqueue failure that rolls back the whole transaction no longer takes the save with it."""
+    store.save_record(_rec("rec-0"))
+    real = store._db
+    store._db = _RollbackOnOutbox(real)
+    store.save_record(_rec("rec-1"), client_id="cid-1", text_source="typed")  # no exception to the caller
+    store._db = _RollbackOnOutbox(real)
+    store.save_record(_rec("rec-0", verified_by="charge_nurse"))  # an update rolled back is redone too
+    store._db = real
+    assert not real.in_transaction  # committed, nothing left open
+    assert store.record_by_client_id("cid-1").record_id == "rec-1" and store.text_source("rec-1") == "typed"
+    assert store.get_record("rec-0").verified_by == "charge_nurse"
+    st = worker.status(store)
+    assert st["not_mirrored"] == 2 and st["pending"] == 1  # rec-0's first save only: no outbox row for either fault
+    assert [r[0] for r in real.execute("SELECT record_id FROM captured ORDER BY seq")] == ["rec-0", "rec-1"]
+
+
+def test_enqueue_rollback_keeps_the_audit_event_and_counts_it(store):
+    real = store._db
+    store._db = _RollbackOnOutbox(real)
+    ev = store.audit("rn", "capture.create", "captured_record", "rec-1", {"client_id": "cid-1"})
+    store._db = real
+    assert [e.event_id for e in store.list_audit()] == [ev.event_id]
+    st = worker.status(store)
+    assert st["not_mirrored"] == 1 and st["pending"] == 0
+
+
+def test_enqueue_rollback_with_a_failing_redo_raises_instead_of_a_false_save(store):
+    """When the redo cannot land either, the caller sees the error (a 5xx), never a save that is not there."""
+    real = store._db
+    store._db = _RollbackOnOutbox(real, fail_redo="INSERT INTO CAPTURED")
+    with pytest.raises(sqlite3.OperationalError):
+        store.save_record(_rec("rec-1"))
+    store._db = real
+    assert not real.in_transaction and store.get_record("rec-1") is None
+    store.save_record(_rec("rec-2"))  # the connection is still usable
+    assert store.get_record("rec-2") is not None
 
 
 def test_ensure_table_creates_on_demand_with_waiter():

@@ -42,6 +42,10 @@ CREATE TABLE IF NOT EXISTS sync_outbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, p
 SYNC_AUDIT, SYNC_RECORD = "AuditEvent", "CapturedRecord"
 
 
+class _TxLost(Exception):
+    """Internal to Store: an outbox enqueue failure rolled back the caller's whole transaction (#54)."""
+
+
 def sync_key(ts: datetime, item_id: str) -> str:
     """DynamoDB sort key "<iso-ts>#<id>": one item per event / record, whatever the number of puts."""
     return f"{ts.isoformat()}#{item_id}"
@@ -85,17 +89,42 @@ class Store:
     def _enqueue(self, pk: str, sk: str, body: str) -> None:
         """Caller holds the lock and commits. A local SQLite insert only: a failure is logged, never raised,
         so the audit row or record save it rides with still lands (the handler never sees a sync problem).
-        Each such failure adds one to kv `sync.not_mirrored` (GET /sync/status), best effort."""
+        Each such failure adds one to kv `sync.not_mirrored` (GET /sync/status), best effort.
+        One exception: when the failure rolled back the caller's whole transaction (SQLite does that on some
+        FULL/IOERR/BUSY errors), _TxLost is raised; only _write_with_outbox calls this, and it redoes the write."""
         try:
             self._db.execute("INSERT INTO sync_outbox (pk, sk, body) VALUES (?, ?, ?)", (pk, sk, body))
         except sqlite3.Error as exc:
             log.warning("sync outbox enqueue failed (%s); item not mirrored", type(exc).__name__)
-            # If the whole transaction rolls back (FULL/IOERR), this count rolls back with the save: #51 F6, harness.
+            if not self._db.in_transaction:
+                raise _TxLost from exc  # the save went with the transaction (#54)
+            self._count_not_mirrored()
+
+    def _count_not_mirrored(self) -> None:
+        try:
+            self._db.execute("INSERT INTO kv (key, value) VALUES ('sync.not_mirrored', '1') ON CONFLICT (key) "
+                             "DO UPDATE SET value = CAST(value AS INTEGER) + 1")
+        except sqlite3.Error:
+            pass  # a dying DB never raises out of the trade-off path; the enqueue warning is the record
+
+    def _write_with_outbox(self, write: Callable[[], None], pk: str, sk: str, body: str) -> None:
+        """Caller holds the lock. `write` plus its outbox row in one transaction, so a kill commits both or
+        neither. If the enqueue failure rolled the whole transaction back (#54), `write` runs again in a fresh
+        transaction with the not_mirrored count and no outbox row: saved and counted, never lost under a 2xx.
+        Committing `write` first instead would open a kill window that leaves a committed save with no outbox
+        row and no count. If the redo fails too, it raises: the handler answers 5xx, not a false 201."""
+        write()
+        try:
+            self._enqueue(pk, sk, body)
+        except _TxLost:
             try:
-                self._db.execute("INSERT INTO kv (key, value) VALUES ('sync.not_mirrored', '1') ON CONFLICT (key) "
-                                 "DO UPDATE SET value = CAST(value AS INTEGER) + 1")
+                write()
+                self._count_not_mirrored()
             except sqlite3.Error:
-                pass  # a dying DB never raises out of the trade-off path; the warning above is the record
+                if self._db.in_transaction:
+                    self._db.rollback()
+                raise
+        self._db.commit()
 
     def _exec(self, sql: str, args: tuple = ()) -> list[tuple]:
         with self._lock:
@@ -169,14 +198,13 @@ class Store:
         with self._lock:
             row = self._db.execute("SELECT seq FROM captured WHERE record_id = ?", (record.record_id,)).fetchone()
             seq = row[0] if row else (self._db.execute("SELECT COALESCE(MAX(seq), 0) + 1 FROM captured").fetchone()[0])
-            self._db.execute(
+            self._write_with_outbox(lambda: self._db.execute(
                 "INSERT INTO captured (record_id, seq, body, client_id, text_source) VALUES (?, ?, ?, ?, ?) "
                 "ON CONFLICT (record_id) DO UPDATE SET body = excluded.body, "
                 "client_id = COALESCE(excluded.client_id, captured.client_id), "
                 "text_source = COALESCE(excluded.text_source, captured.text_source)",
-                (record.record_id, seq, _enc(record.model_dump_json()), client_id, text_source))
-            self._enqueue(SYNC_RECORD, sync_key(record.captured_at, record.record_id), record.model_dump_json())
-            self._db.commit()
+                (record.record_id, seq, _enc(record.model_dump_json()), client_id, text_source)),
+                SYNC_RECORD, sync_key(record.captured_at, record.record_id), record.model_dump_json())
 
     def get_record(self, record_id: str) -> CapturedRecord | None:
         rows = self._exec("SELECT body FROM captured WHERE record_id = ?", (record_id,))
@@ -223,10 +251,9 @@ class Store:
         with self._lock:  # stamp under the insert lock, so ts order matches seq order under parallel writers
             ev = AuditEvent(event_id=f"ev-{uuid.uuid4().hex[:16]}", ts=self.now(), actor_role=actor_role,
                             action=action, target_type=target_type, target_id=target_id, details=details or {})
-            self._db.execute("INSERT INTO audit (event_id, body, synced) VALUES (?, ?, 0)",
-                             (ev.event_id, _enc(ev.model_dump_json())))
-            self._enqueue(SYNC_AUDIT, sync_key(ev.ts, ev.event_id), ev.model_dump_json())
-            self._db.commit()
+            self._write_with_outbox(lambda: self._db.execute("INSERT INTO audit (event_id, body, synced) VALUES (?, ?, 0)",
+                                                             (ev.event_id, _enc(ev.model_dump_json()))),
+                                    SYNC_AUDIT, sync_key(ev.ts, ev.event_id), ev.model_dump_json())
         return ev
 
     def list_audit(self, limit: int = 500) -> list[AuditEvent]:
