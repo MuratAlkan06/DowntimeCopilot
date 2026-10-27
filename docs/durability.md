@@ -121,7 +121,35 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
 - The report lists violations, known windows, expected failures, `not_mirrored`, drain p50/max and stall
   counts for each side separately.
 
+## Live mode (S4, `--live`)
+
+`python -m tools.durability.harness --run-dir DIR --live --table T --write-profile W --read-profile R
+[--region REGION]` runs server cycles against the existing table `T`. Table and both profiles are required,
+with no defaults, and the two profiles must differ. The harness prints them with the region and run id before
+it acts.
+
+- No DynamoDB Local, no proxy, no CreateTable. Every cycle uses its own fresh `STORE_PATH` against the one
+  table.
+- Faults: `LIVE_FAULTS` only (`none`, `F1`, `F1die`, `F2`, `F4k`, `F7r`, `poison`). Any other name is refused.
+  F1, F1die, F2 and poison are client-side patterns sent from the harness against the server: a cut upload
+  retried under the same id, a cut upload never retried, a resubmit of a committed id, and a 422 vitals form
+  with no upload. `F4k` is a proxyless SIGKILL after the submits. `F7r` starts the app with
+  `SYNC_ENDPOINT_URL` at a dead local port, SIGKILLs it, then restarts it without the override.
+- Credentials are split. The uvicorn subprocesses get `AWS_PROFILE=W` and the region only. The preflight and
+  the reconciler use a separate boto3 session on profile `R` and only read (DescribeTable, Scan).
+- Preflight: the table must exist and hold no item with a `dur-` client_id (an earlier run not cleaned up).
+  The pre-existing item count goes into `meta.json` under `live`.
+- Reconciliation is scoped. An item counts only if its trailing `sk` id is one of the cycle store's record or
+  audit ids, or it is a `capture.create` whose client_id is one of the store's. Foreign items are ignored and
+  only counted (`ddb_items_foreign`).
+- `DIR/cleanup-keys.jsonl` lists the `(pk, sk)` of every item the run's stores mirror, derived with
+  `app.store.sqlite.sync_key`. The harness writes it at reconcile time, in every mode.
+- Nothing on disk names an account. ARNs and bare 12-digit account ids are masked in cycle JSONs, `meta.json`
+  and live `app.log` files before the report generator reads them.
+- `--endpoint-override` is hidden and TEST-ONLY. `tests/test_durability_live.py` uses it to point both
+  sessions and the app at DynamoDB Local.
+
 ## Out of scope
 
-Real IndexedDB semantics, multi-worker uvicorn, simulated-clock eras, fake timers, and live F3/F6 (the S4
-live run uses fault-free cycles against the real table).
+Real IndexedDB semantics, multi-worker uvicorn, simulated-clock eras, fake timers, and live proxy or shim faults (F3 to F7b; the S4
+live run uses `LIVE_FAULTS` only).
