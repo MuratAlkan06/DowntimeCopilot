@@ -251,6 +251,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - Durability harness `--live` mode for the S4 run against the real table: explicit table and write/read profiles (no defaults), proxyless live-safe faults only, a read-only preflight and reconciler on a separate profile, reconciliation scoped to the run's own items, a cleanup key list, ARNs masked on disk; a DynamoDB Local smoke proves the mechanics (#51).
 - THE confirming live run (S4): 8 cycles against the real sync table from `33b0081`, all 7 live faults, verdict PASS — 0 violations, 140 items mirrored and reconciled; report generator-written under [`docs/durability/live-s4/`](docs/durability/live-s4/report.md), cleanup pending from its key list (#51).
 - Durability record restated after the release-gate sweep: zero violations (not "zero lost/duplicated" — pre-fix runs recorded the two found defects by design), the aborted S4 first attempt and the excluded calibration run named (#51).
+- Pre-fix defect attribution corrected from the retained CI artifacts: 10 recorded #54 loss events and 24+ #55 duplicates across the pre-fix runs, all pre-registered by the taxonomy (#51).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
