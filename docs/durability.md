@@ -95,15 +95,15 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
 | Fault | Side | Expected outcome |
 |---|---|---|
 | F1 cut mid-upload | node | Pre-ack and never queued: `known_windows.unacked_inflight`. Otherwise retried and deduped, 0 violations |
-| F2 5xx after commit, user resubmits | node | `known_windows.f2_resubmit_duplicates` (I2 scoped to exclude it); the queued-item 5xx retries the same id, so no dup |
+| F2 5xx after commit, user resubmits | node | `known_windows.f2_resubmit_duplicates` (I2 scoped to exclude it); the queued-item 5xx retries the same id, so no dup. Fix: [#55](https://github.com/MuratAlkan06/DowntimeCopilot/issues/55) |
 | F3 proxy cut mid-drain | server | `violations` if anything is lost or duplicated |
 | F4 hold + SIGKILL mid-batch | server | `violations` if lost or dup (`F4fd`: fwd_drop re-put = overwrite, excluded) |
 | F5 SIGKILL after commit, before `capture.create` | server | `known_windows.record_without_create_audit`, including the 200-replay case |
 | F6 outbox statement fault | server | `not_mirrored` accounting. The reconciliation-derived missing set is ground truth; the S1 counter is a cross-check |
-| F6-rollback (SIMULATED) | server | `expected_fail`, tagged to its future S5 issue |
+| F6-rollback (SIMULATED) | server | `expected_fail`, tagged S5: [#54](https://github.com/MuratAlkan06/DowntimeCopilot/issues/54) |
 | F7a endpoint down across a restart | server | Backoff, then drain. `violations` if lost |
 | F7b AccessDenied | server | Denied latch, then the JSONL fallback. Lines are deduped by (pk, sk) and never count as violations. A restart drops the latch |
-| poison (422: legacy vitals item, blob null) | node | `known_windows.stall`, excluded from I3 |
+| poison (422: legacy vitals item, blob null) | node | `known_windows.stall`, excluded from I3. Fix: [#55](https://github.com/MuratAlkan06/DowntimeCopilot/issues/55) |
 | two tabs (two module instances, shared store) | node | Server dedupe holds |
 
 ## Metrics and report

@@ -245,6 +245,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - `v1.1.0` released at `08b9850` (own-account migration boundary); "Terraform validate" added to the required checks; superseded PR #37 closed with its work already credited in #38.
 - `/sync/status` now counts unmirrored saves: `not_mirrored`, one per failed outbox enqueue, from kv `sync.not_mirrored` (#51).
 - Fault-injection durability harness for both capture paths (`tools/durability/`, `make durability`, frozen design in [`docs/durability.md`](docs/durability.md)): server cycles against DynamoDB Local behind a fault proxy, browser-queue cycles in node; calibration and the first fault run are in the PR (#51).
+- CI "Durability harness" job: 25 server cycles against a DynamoDB Local service container plus 25 node cycles per push, seeded from the run id, run directory kept as an artifact for 14 days; not a required check during burn-in (#51).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
