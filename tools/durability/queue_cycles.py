@@ -89,13 +89,14 @@ async function flushQueue(Q) {
   if (A.isOffline()) { log({ ev: 'skipped' }); return { skipped: true }; }
   return Q.drain(fileStore, sendQueued, { onSent, locks: null }); // locks passed explicitly, always
 }
-// REPLICA of web/js/during.js submitCapture's branches: ok / offline -> queue.put / else an error, and the
-// nurse taps submit again, which mints a NEW id (the F2 duplicate window).
+// REPLICA of web/js/during.js submitCapture's branches (DRIFT RISK: if they change, this lies): ok / offline or
+// a real 5xx -> queue.put under the SAME id (#55) / else (4xx) an error, and the nurse taps submit again,
+// which mints a NEW id. Before #55 a 5xx took that last branch: the F2 duplicate.
 async function submit(paper, attempt = 0) {
   const meta = { id: attempt ? `${paper}-r${attempt}` : paper, form_type: 'verbal_order', patient_id: 'pt-07', role: 'rn', readback_text: cfg.readback };
   const r = await A.api('/capture', { method: 'POST', form: buildForm(meta) });
   if (r.ok && r.data?.record_id) { log({ ev: 'ack', cid: meta.id, paper, status: r.status, via: 'submit' }); return; }
-  if (r.offline) { await fileStore.put({ ...meta, blob: null, queued_at: new Date().toISOString() }); log({ ev: 'queued', cid: meta.id, paper }); return; }
+  if (r.offline || r.status >= 500) { await fileStore.put({ ...meta, blob: null, queued_at: new Date().toISOString() }); log({ ev: 'queued', cid: meta.id, paper }); return; }
   log({ ev: 'error', cid: meta.id, paper, status: r.status });
   if (attempt < 1) await submit(paper, attempt + 1);
 }
@@ -106,15 +107,16 @@ for (const op of cfg.ops) {
   else if (op.op === 'poll') await A.api('/sync/status'); // the page's own GET: a non-cached 2xx clears the latch
   else if (op.op === 'poison') { await fileStore.put({ id: op.cid, form_type: 'vitals_flowsheet', role: 'rn', blob: null, poison: true, queued_at: '2000-01-01T00:00:00Z' }); log({ ev: 'queued', cid: op.cid, poison: true }); }
   else if (op.op === 'twotab') await Promise.all([flushQueue(Q1), flushQueue(Q2)]);
-  else if (op.op === 'heal') {
+  else if (op.op === 'heal') { // enough drains for a poison item to reach Q.MAX_ATTEMPTS and dead-letter
     for (let i = 0; i < 40; i++) {
       await A.api('/sync/status');
       await flushQueue(Q1);
-      if ((await fileStore.list()).every((x) => x.poison)) break;
+      if ((await Q1.counts(fileStore)).active === 0) break;
     }
   }
 }
-log({ ev: 'left', ids: (await fileStore.list()).map((x) => x.id) });
+const rest = await fileStore.list();
+log({ ev: 'left', ids: rest.filter((x) => !Q1.isDead(x)).map((x) => x.id), dead: rest.filter(Q1.isDead).map((x) => x.id) });
 """
 
 
@@ -177,28 +179,30 @@ def reconcile(fault: str, prefix: str, events: list[dict], rows: list[tuple[str,
     queued = {e["cid"] for e in events if e["ev"] == "queued" and not e.get("poison")}
     poison = {e["cid"] for e in events if e["ev"] == "queued" and e.get("poison")}
     attempted = {e["cid"] for e in events if e["ev"] == "attempt"}
-    left = next((e["ids"] for e in reversed(events) if e["ev"] == "left"), [])
+    last = next((e for e in reversed(events) if e["ev"] == "left"), {})
+    left, dead = last.get("ids", []), last.get("dead", [])
     violations: dict[str, list] = {}
     known: dict[str, list] = {}
     if lost := sorted(c for c in acked if c not in cids):
         violations["lost_acked"] = lost
     if lost := sorted(c for c in queued if c not in cids):
         violations["lost_queued"] = lost
-    if stuck := sorted(c for c in left if c not in poison):
+    if stuck := sorted(left):  # a poison item still live after the heal never reached the dead-letter cap
         violations["queue_not_drained"] = stuck
+    if bad := sorted(c for c in dead if c not in poison):  # only a deterministic refusal may dead-letter
+        violations["dead_letter_unexpected"] = bad
     if dup := sorted(c for c, n in cids.items() if n > 1):
         violations["dup_sqlite_client_id"] = dup
     per_paper = Counter(re.sub(r"-r\d+$", "", c) for c in cids)
-    for paper, n in per_paper.items():
-        if n > 1:
-            (known.setdefault("f2_resubmit_duplicates", []) if paper in f2
-             else violations.setdefault("dup_paper", [])).append(paper)
+    if dup := sorted(p for p, n in per_paper.items() if n > 1):  # F2 included since #55: no known window left
+        violations["dup_paper"] = dup
+    if not_once := sorted(p for p in f2 if per_paper[p] != 1 or cids[p] != 1):  # the same id, landed once
+        violations["f2_not_exactly_once"] = not_once
     if un := sorted(c for c in attempted - acked - queued - poison if c not in cids):
         known["unacked_inflight"] = un
-    if poison:
-        known["stall"] = sorted(poison)
     skipped = sum(1 for e in events if e["ev"] == "skipped")
     return {"violations": violations, "known_windows": known, "expected_fail": {}, "stall": skipped,
+            "dead_letter": sorted(c for c in dead if c in poison),
             "reconcile": {"acked": len(acked), "queued": len(queued), "sqlite_records": sum(cids.values()),
                           "left_in_queue": left}}
 
@@ -258,7 +262,8 @@ def main(argv: list[str] | None = None) -> int:
         r = {"cycle": n, "fault": fault, "seed": seed} | reconcile(fault, prefix, events, rows, f2)
         (ndir / f"c{n:03d}.json").write_text(json.dumps(r, indent=2))
         print(f"  node cycle {n:3d} {fault:8s} seed {seed:10d}: violations={sum(map(len, r['violations'].values()))} "
-              f"known={sorted(r['known_windows'])} skipped={r['stall']}", flush=True)
+              f"known={sorted(r['known_windows'])} dead_letter={len(r['dead_letter'])} skipped={r['stall']}",
+              flush=True)
     return 0
 
 

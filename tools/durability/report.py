@@ -47,7 +47,7 @@ def build(run_dir: Path) -> dict:
                 failing.append({"cycle": c["cycle"], "fault": c["fault"], "seed": c["seed"],
                                 "violations": c["violations"]})
             d = (c.get("drain") or {}).get("drain_s")
-            if d is not None and c["fault"] != "poison":  # poison stalls are excluded from I3
+            if d is not None and c["fault"] != "poison":  # poison items dead-letter, never drain: excluded from I3
                 drains[c["fault"]].append(d)
         lost = sum(viol[k] for k in ("lost_acked", "lost_mirror", "lost_queued"))
         dup = sum(n for k, n in viol.items() if k.startswith("dup_"))
@@ -57,6 +57,8 @@ def build(run_dir: Path) -> dict:
             "violations": dict(sorted(viol.items())), "known_windows": dict(sorted(known.items())),
             "expected_fail": dict(sorted(expected.items())),
             "not_mirrored": sum(c.get("reconcile", {}).get("not_mirrored_kv", 0) for c in cycles),
+            # Poison items set aside after queue.js MAX_ATTEMPTS (#55): kept on the device, retryable, not a loss.
+            "dead_letter": sum(len(c.get("dead_letter", [])) for c in cycles),
             "drain_s": {f: {"n": len(v), "p50": _pct(v, 0.5), "max": max(v)} for f, v in sorted(drains.items())},
             "stall_skipped_attempts": [c["stall"] for c in cycles if c.get("stall")],
             "failing_cycles": failing,
@@ -81,7 +83,10 @@ def markdown(r: dict) -> str:
                   f"| Violations | {json.dumps(s['violations']) if s['violations'] else 'none'} |",
                   f"| Known windows (not violations) | {json.dumps(s['known_windows']) if s['known_windows'] else 'none'} |",
                   f"| Expected failures | {json.dumps(s['expected_fail']) if s['expected_fail'] else 'none'} |",
-                  f"| not_mirrored (/sync/status kv) | {s['not_mirrored']} |", ""]
+                  f"| not_mirrored (/sync/status kv) | {s['not_mirrored']} |"]
+        if side == "node":
+            lines.append(f"| Dead-lettered poison items (kept, retryable) | {s['dead_letter']} |")
+        lines.append("")
         if s["drain_s"]:
             lines += ["| Fault | Drain cycles | p50 s | max s |", "|---|---|---|---|"]
             lines += [f"| {f} | {d['n']} | {d['p50']} | {d['max']} |" for f, d in s["drain_s"].items()]
