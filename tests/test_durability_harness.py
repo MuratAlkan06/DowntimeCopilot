@@ -8,14 +8,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-from tools.durability import harness, proxy, report
+from tools.durability import harness, proxy, queue_cycles, report
 
 ROOT = Path(__file__).resolve().parent.parent
 SHIM = ROOT / "tools" / "durability" / "shim"
 
 
 def test_modules_import_without_side_effects():
-    assert "F6rb" in harness.EXPECTED_FAIL
+    assert "F6rb" in harness.EXPECTED_FAIL and "poison" in queue_cycles.NODE_FAULTS
     plan = harness.schedule(42, 12, list(harness.SERVER_FAULTS))
     assert plan == harness.schedule(42, 12, list(harness.SERVER_FAULTS))  # seeded, replayable
     assert {f for f, _ in plan[:len(harness.SERVER_FAULTS)]} == set(harness.SERVER_FAULTS)  # stratified
