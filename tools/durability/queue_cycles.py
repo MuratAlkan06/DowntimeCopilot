@@ -210,6 +210,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", default="auto")
     ap.add_argument("--faults", default="all")
     args = ap.parse_args(argv)
+    args.run_dir = args.run_dir.resolve()  # `make durability` passes a relative dir; js_dir.as_uri() needs absolute
     if NODE is None:
         print("durability: SKIP node cycles: node not installed")
         return 0

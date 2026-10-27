@@ -15,7 +15,7 @@ SHIM = ROOT / "tools" / "durability" / "shim"
 
 
 def test_modules_import_without_side_effects():
-    assert "F6rb" in harness.EXPECTED_FAIL and "poison" in queue_cycles.NODE_FAULTS
+    assert "F6rb" in harness.SERVER_FAULTS and "poison" in queue_cycles.NODE_FAULTS
     plan = harness.schedule(42, 12, list(harness.SERVER_FAULTS))
     assert plan == harness.schedule(42, 12, list(harness.SERVER_FAULTS))  # seeded, replayable
     assert {f for f, _ in plan[:len(harness.SERVER_FAULTS)]} == set(harness.SERVER_FAULTS)  # stratified
@@ -33,8 +33,8 @@ def _canned_run(d: Path) -> None:
         base | {"cycle": 1, "fault": "none", "seed": 11, "drain": {"drain_s": 0.5}},
         base | {"cycle": 2, "fault": "F6", "seed": 12, "drain": {"drain_s": 1.5},
                 "known_windows": {"not_mirrored": ["rec-1"]}, "reconcile": {"not_mirrored_kv": 1}},
-        base | {"cycle": 3, "fault": "F6rb", "seed": 13, "drain": {"drain_s": 0.25},
-                "expected_fail": {"S5": ["dur-x-3-1"]}},
+        base | {"cycle": 3, "fault": "F7a", "seed": 13, "drain": {"drain_s": 0.25},
+                "expected_fail": {"S5": ["dur-x-3-1"]}},  # the mechanism stays for future tracked failures
     ]
     for c in cycles:
         (d / "server" / f"c{c['cycle']:03d}.json").write_text(json.dumps(c))
@@ -64,6 +64,21 @@ def test_report_fails_on_a_violation(tmp_path):
     r = report.build(tmp_path)
     assert r["verdict"] == "FAIL" and r["sides"]["server"]["records_lost"] == 1
     assert r["sides"]["server"]["failing_cycles"][0]["seed"] == 11
+
+
+def _rec(**kw) -> dict:
+    return {"lost_acked": [], "unacked_not_in_sqlite": [], "missing_mirror_records": [], "missing_mirror_audits": [],
+            "not_mirrored_kv": 0, "dup_sqlite_client_id": [], "dup_ddb_item_id": [], "dup_ddb_client_id": [],
+            "record_without_create_audit": []} | kw
+
+
+def test_f6_rollback_is_a_normal_invariant_since_54():
+    """F6rb left expected_fail when #54 was fixed: the save surviving unmirrored is a known window, a loss fails."""
+    drained = {"drained": True}
+    ok = harness.classify("F6rb", _rec(missing_mirror_records=["rec-1"], not_mirrored_kv=1), drained)
+    assert ok == {"violations": {}, "known_windows": {"not_mirrored": ["rec-1"]}, "expected_fail": {}}
+    lost = harness.classify("F6rb", _rec(lost_acked=["dur-x-1-2"]), drained)
+    assert lost["violations"] == {"lost_acked": ["dur-x-1-2"]} and lost["expected_fail"] == {}
 
 
 def _probe(env_extra: dict) -> dict:

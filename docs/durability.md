@@ -70,8 +70,9 @@ The shim is a no-op unless `DURABILITY_SHIM=1` (pytest proves it). It always cha
 - F5: `Store.save_record` writes a signal file after the save COMMITS for one `client_id`, then blocks. The
   harness SIGKILLs it there, between the save and the `capture.create` audit.
 - F6: the Nth `CapturedRecord` enqueue fails. With `statement`, the outbox INSERT raises inside the real
-  `_enqueue`, so the app's own failure path runs. With `rollback` (labeled SIMULATED), the shim rolls the
-  transaction back and swallows, standing in for SQLITE_FULL/IOERR/BUSY under a 201.
+  `_enqueue`, so the app's own failure path runs. With `rollback` (labeled SIMULATED), the outbox INSERT
+  first rolls the whole transaction back and then raises, standing in for SQLITE_FULL/IOERR/BUSY
+  auto-rollback; the app's real `_enqueue` failure path runs here too.
 
 ## Node cycles (`python -m tools.durability.queue_cycles`)
 
@@ -100,7 +101,7 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
 | F4 hold + SIGKILL mid-batch | server | `violations` if lost or dup (`F4fd`: fwd_drop re-put = overwrite, excluded) |
 | F5 SIGKILL after commit, before `capture.create` | server | `known_windows.record_without_create_audit`, including the 200-replay case |
 | F6 outbox statement fault | server | `not_mirrored` accounting. The reconciliation-derived missing set is ground truth; the S1 counter is a cross-check |
-| F6-rollback (SIMULATED) | server | `expected_fail`, tagged S5: [#54](https://github.com/MuratAlkan06/DowntimeCopilot/issues/54) |
+| F6-rollback (SIMULATED) | server | Save survives (fixed, [#54](https://github.com/MuratAlkan06/DowntimeCopilot/issues/54)): `known_windows.not_mirrored`; a lost save is a `violations.lost_acked` |
 | F7a endpoint down across a restart | server | Backoff, then drain. `violations` if lost |
 | F7b AccessDenied | server | Denied latch, then the JSONL fallback. Lines are deduped by (pk, sk) and never count as violations. A restart drops the latch |
 | poison (422: legacy vitals item, blob null) | node | `known_windows.stall`, excluded from I3. Fix: [#55](https://github.com/MuratAlkan06/DowntimeCopilot/issues/55) |
