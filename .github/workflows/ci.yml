@@ -72,7 +72,8 @@ jobs:
       AWS_REGION: us-east-1
       AWS_DEFAULT_REGION: us-east-1
       DDB_LOCAL_ENDPOINT: http://localhost:8000
-      DURABILITY_DIR: durability-runs/ci-${{ github.run_id }}
+      # Absolute: queue_cycles hands node a file:// URI for the copied web/js, which a relative path cannot be.
+      DURABILITY_DIR: ${{ github.workspace }}/durability-runs/ci-${{ github.run_id }}
       DURABILITY_SEED: ${{ github.run_id }}
       DURABILITY_CYCLES: "25"
     steps:
