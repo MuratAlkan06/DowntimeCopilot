@@ -19,8 +19,9 @@ SKIP, the same idea as the node `skipif` in `tests/test_web_queue.py`.
 - **I2 zero duplicated.** At most one SQLite record per `client_id`; at most one DynamoDB item per id; at most
   one `capture.create` audit per `client_id` in DynamoDB (`CapturedRecord` has no `client_id`, so the
   logical-record key in DynamoDB is the `client_id` in that audit's details). Same-key re-puts from the crash
-  window between `put_item` and `outbox_done` are overwrites, not duplicates. I2 excludes the F2 window.
-- **I3 bounded drain.** `pending` reaches 0 within 90 s after the faults stop. Poison stalls are excluded.
+  window between `put_item` and `outbox_done` are overwrites, not duplicates. Since #55, I2 covers F2 too.
+- **I3 bounded drain.** `pending` reaches 0 within 90 s after the faults stop. Poison items are excluded: they
+  dead-letter (#55) instead of draining.
 - Unacked in-flight submits (killed before any response and before a queue put) are reported as the known
   unacked window, not as I1 violations.
 
@@ -87,7 +88,8 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
   `cut_pre` (drop before send), `cut_post` (drop the response after the commit), `real_5xx` (commit, then
   answer 500), `offline_result` (a service-worker `x-dc-offline` answer), and `die_pre`/`die_post`.
 - "Tab death" is a fresh subprocess over the persisted store file.
-- Every life ends with a fault-free heal life that polls and drains.
+- Every cycle ends with a fault-free heal life that polls and drains until no live item is left, which is
+  enough drains for a poison item to reach the `queue.js` dead-letter cap (`MAX_ATTEMPTS`, 8).
 - `locks` is always passed explicitly (`null`).
 - Stall is counted as skipped `flushQueue` attempts (the `fetchFailed` latch) until a non-cached 2xx clears it.
 
@@ -96,7 +98,7 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
 | Fault | Side | Expected outcome |
 |---|---|---|
 | F1 cut mid-upload | node | Pre-ack and never queued: `known_windows.unacked_inflight`. Otherwise retried and deduped, 0 violations |
-| F2 5xx after commit, user resubmits | node | `known_windows.f2_resubmit_duplicates` (I2 scoped to exclude it); the queued-item 5xx retries the same id, so no dup. Fix: [#55](https://github.com/MuratAlkan06/DowntimeCopilot/issues/55) |
+| F2 5xx after commit | node | (#55 fixed) The first-submit 5xx is queued under the same id and lands exactly once; the queued-item 5xx retries the same id too. A second record for the paper is `violations.dup_paper` plus `violations.f2_not_exactly_once` |
 | F3 proxy cut mid-drain | server | `violations` if anything is lost or duplicated |
 | F4 hold + SIGKILL mid-batch | server | `violations` if lost or dup (`F4fd`: fwd_drop re-put = overwrite, excluded) |
 | F5 SIGKILL after commit, before `capture.create` | server | `known_windows.record_without_create_audit`, including the 200-replay case |
@@ -104,7 +106,7 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
 | F6-rollback (SIMULATED) | server | Save survives (fixed, [#54](https://github.com/MuratAlkan06/DowntimeCopilot/issues/54)): `known_windows.not_mirrored`; a lost save is a `violations.lost_acked` |
 | F7a endpoint down across a restart | server | Backoff, then drain. `violations` if lost |
 | F7b AccessDenied | server | Denied latch, then the JSONL fallback. Lines are deduped by (pk, sk) and never count as violations. A restart drops the latch |
-| poison (422: legacy vitals item, blob null) | node | `known_windows.stall`, excluded from I3. Fix: [#55](https://github.com/MuratAlkan06/DowntimeCopilot/issues/55) |
+| poison (422: legacy vitals item, blob null) | node | (#55 fixed) Dead-lettered after 8 answered failures: the active queue reaches 0, the item stays in the store, counted as `dead_letter` (report: "Dead-lettered poison items"). Still live after the heal: `violations.queue_not_drained`; any other item dead-lettered: `violations.dead_letter_unexpected`. Excluded from I3 |
 | two tabs (two module instances, shared store) | node | Server dedupe holds |
 
 ## Metrics and report

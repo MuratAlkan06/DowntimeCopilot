@@ -39,7 +39,7 @@ def _canned_run(d: Path) -> None:
     for c in cycles:
         (d / "server" / f"c{c['cycle']:03d}.json").write_text(json.dumps(c))
     (d / "node" / "c001.json").write_text(json.dumps(
-        base | {"cycle": 1, "fault": "poison", "seed": 21, "stall": 2, "known_windows": {"stall": ["p"]}}))
+        base | {"cycle": 1, "fault": "poison", "seed": 21, "stall": 2, "dead_letter": ["p"]}))
     (d / "node" / "c001.queue.json").write_text("{}")  # the persisted queue store file: not a cycle result
 
 
@@ -54,7 +54,10 @@ def test_report_is_a_pure_function_of_the_run_dir(tmp_path):
     assert s["not_mirrored"] == 1 and s["known_windows"] == {"not_mirrored": 1}
     assert s["expected_fail"] == {"S5": 1}
     assert s["drain_s"]["F6"] == {"n": 1, "p50": 1.5, "max": 1.5}
-    assert first["sides"]["node"]["stall_skipped_attempts"] == [2]
+    node = first["sides"]["node"]
+    assert node["stall_skipped_attempts"] == [2]
+    assert node["dead_letter"] == 1 and node["known_windows"] == {} and s["dead_letter"] == 0  # #55: not a window
+    assert "| Dead-lettered poison items (kept, retryable) | 1 |" in md
 
 
 def test_report_fails_on_a_violation(tmp_path):
@@ -99,3 +102,25 @@ def test_shim_is_inert_without_the_flag():
 
 def test_shim_patches_only_with_the_flag():
     assert set(_probe({"DURABILITY_SHIM": "1"}).values()) == {"sitecustomize"}
+
+
+def _ev(**kw) -> dict:
+    return {"life": 1} | kw
+
+
+def test_node_reconcile_f2_and_poison_since_55():
+    """F2 and poison are passing checks since #55: the 5xx'd paper lands once under its own id, a resubmit duplicate
+    is a violation (no known window), the poison item dead-letters, and one still live after the heal fails."""
+    rows = [("r1", "q-p1"), ("r2", "q-p2")]
+    ok_events = [_ev(ev="attempt", cid="q-p1", n=1, fault="real_5xx"), _ev(ev="queued", cid="q-p1", paper="q-p1"),
+                 _ev(ev="ack", cid="q-p1", status=200, via="drain"), _ev(ev="ack", cid="q-p2", status=201, via="submit"),
+                 _ev(ev="queued", cid="q-poison", poison=True), _ev(ev="left", ids=[], dead=["q-poison"])]
+    ok = queue_cycles.reconcile("F2", "q", ok_events, rows, {"q-p1"})
+    assert ok["violations"] == {} and ok["known_windows"] == {} and ok["dead_letter"] == ["q-poison"]
+    dup = queue_cycles.reconcile("F2", "q", ok_events, rows + [("r3", "q-p1-r1")], {"q-p1"})
+    assert dup["violations"] == {"dup_paper": ["q-p1"], "f2_not_exactly_once": ["q-p1"]}
+    assert "f2_resubmit_duplicates" not in dup["known_windows"]
+    stuck = ok_events[:-1] + [_ev(ev="left", ids=["q-poison"], dead=[])]
+    assert queue_cycles.reconcile("poison", "q", stuck, rows, set())["violations"] == {"queue_not_drained": ["q-poison"]}
+    wrong = ok_events[:-1] + [_ev(ev="left", ids=[], dead=["q-p2", "q-poison"])]
+    assert queue_cycles.reconcile("poison", "q", wrong, rows, set())["violations"] == {"dead_letter_unexpected": ["q-p2"]}
