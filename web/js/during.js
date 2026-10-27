@@ -3,7 +3,7 @@ import { api, isOffline, policyReplayKey } from './api.js';
 import { h, mount, stateBox, chip, usd } from './dom.js';
 import { store, on } from './state.js';
 import { renderRecord } from './records.js';
-import { idbStore, drain, migrateLegacy, newId, SYNC_TAG } from './queue.js';
+import { idbStore, drain, counts, retryDead, migrateLegacy, newId, MAX_ATTEMPTS, SYNC_TAG } from './queue.js';
 import { createRecorder, typedOverridesAudio } from './recorder.js';
 
 const $ = (id) => document.getElementById(id);
@@ -132,20 +132,34 @@ const sendQueued = (item) => api('/capture', {
   form: buildForm(item, item.blob ? new File([item.blob], item.name || 'capture.jpg', { type: item.blob.type }) : null),
 });
 
-async function queuedCount() {
-  try { return (await queue.list()).length; } catch { return 0; }
+async function queueCounts() {
+  try { return await counts(queue); } catch { return { active: 0, dead: 0 }; }
 }
 
+const captures = (n) => `${n} capture${n === 1 ? '' : 's'}`;
+
 async function renderPending() {
-  const n = await queuedCount();
+  const { active: n, dead } = await queueCounts();
   const badge = $('queue-count'); // header, next to "Simulate offline"; counts down as the queue drains
   badge.hidden = !n;
   badge.textContent = `${n} queued`;
-  badge.title = `${n} capture${n === 1 ? '' : 's'} waiting to upload from this device`;
+  badge.title = `${captures(n)} waiting to upload from this device`;
+  const failed = $('queue-failed'); // dead-lettered (#55): kept on this device, retried only on request
+  failed.hidden = !dead;
+  failed.textContent = `${dead} failed`;
+  failed.title = `${captures(dead)} stopped retrying after ${MAX_ATTEMPTS} failed uploads — kept on this device`;
+  const deadBox = dead ? stateBox('error', `${captures(dead)} could not upload after ${MAX_ATTEMPTS} tries and stopped `
+    + 'retrying. Kept on this device; keep the paper original.', { label: 'Retry failed', onClick: retryFailed }) : null;
+  deadBox?.removeAttribute('role'); // #capture-pending is the live region; role=alert here would re-announce on every redraw
   mount($('capture-pending'), n
     ? stateBox('offline', `${n} capture${n > 1 ? 's' : ''} queued on this device — will upload when connected.`,
       { label: 'Upload now', onClick: flushQueue })
-    : null);
+    : null, deadBox);
+}
+
+async function retryFailed() {
+  try { await retryDead(queue); } catch { /* store unavailable: the next render shows the same count */ }
+  await flushQueue();
 }
 
 function requestBackgroundSync() {
@@ -196,7 +210,11 @@ async function submitCapture(e) {
     syncFormType();
     return;
   }
-  if (r.offline) {
+  // A real 5xx may come after the server committed the record (#55): queue it under the SAME id, so the retry
+  // returns that record instead of a resubmit minting a new id and a duplicate. A 4xx is the request's own
+  // fault and is not queued: fixing the form and submitting again under a new id is right there.
+  const serverError = !r.offline && r.status >= 500;
+  if (r.offline || serverError) {
     let queued = false;
     try {
       await queue.put({ ...meta, blob: file, name: file?.name, queued_at: new Date().toISOString() });
@@ -208,9 +226,12 @@ async function submitCapture(e) {
       $('capture-preview').hidden = true;
       syncFormType();
     } catch { queued = false; }
-    mount(out, stateBox('offline', queued
-      ? 'Offline — form saved on this device and queued for reading when connected. Keep the paper original.'
-      : 'Offline and this device could not store the form. Keep the paper original for backload.'), prev);
+    const why = serverError ? `Server error (${r.status})` : 'Offline';
+    mount(out, stateBox(serverError ? 'warn' : 'offline', queued
+      ? (serverError
+        ? `${why} — form saved on this device and will be retried automatically. Keep the paper original.`
+        : `${why} — form saved on this device and queued for reading when connected. Keep the paper original.`)
+      : `${why} and this device could not store the form. Keep the paper original for backload.`), prev);
     renderPending();
     return;
   }

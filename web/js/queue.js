@@ -66,12 +66,21 @@ export async function withDrainLock(fn, locks = globalThis.navigator?.locks) {
   }
 }
 
-/** Send every queued item, oldest first. `send(item)` resolves to { ok, offline } (api.js shape).
- *  2xx -> deleted; failure -> kept for the next drain; offline -> stop (the rest would fail too). */
+// Dead letter (#55): an item the server keeps refusing (a deterministic 4xx, say) would otherwise be retried
+// on every drain forever. After MAX_ATTEMPTS answered failures it is marked status 'dead': kept in the store
+// (never deleted silently), skipped by drain, counted apart, and sent again only by retryDead.
+export const MAX_ATTEMPTS = 8;
+export const DEAD = 'dead';
+export const isDead = (item) => item?.status === DEAD;
+
+/** Send every live queued item, oldest first. `send(item)` resolves to { ok, offline } (api.js shape).
+ *  2xx -> deleted; an answered failure -> attempts + 1 and kept (dead at MAX_ATTEMPTS); offline or a thrown
+ *  send -> stop without counting (the rest would fail too). `left` counts live items only. */
 export function drain(store, send, { onSent, locks = globalThis.navigator?.locks } = {}) {
   return withDrainLock(async () => {
     let sent = 0;
     for (const item of await store.list()) {
+      if (isDead(item)) continue;
       let r = null;
       try { r = await send(item); } catch { r = null; }
       if (r?.ok) {
@@ -79,9 +88,32 @@ export function drain(store, send, { onSent, locks = globalThis.navigator?.locks
         sent += 1;
         await onSent?.(item, r);
       } else if (!r || r.offline) break;
+      else {
+        const attempts = (Number(item.attempts) || 0) + 1;
+        await store.put({ ...item, attempts, ...(attempts >= MAX_ATTEMPTS ? { status: DEAD } : {}) });
+      }
     }
-    return { sent, left: (await store.list()).length };
+    return { sent, left: (await counts(store)).active };
   }, locks);
+}
+
+/** { active, dead }: live items drain will send, and dead-lettered items waiting for retryDead. */
+export async function counts(store) {
+  const items = await store.list();
+  const dead = items.filter(isDead).length;
+  return { active: items.length - dead, dead };
+}
+
+/** Put dead items back in the queue with a fresh attempt budget: one id, or every dead item. Returns how many. */
+export async function retryDead(store, id) {
+  let n = 0;
+  for (const item of await store.list()) {
+    if (!isDead(item) || (id != null && item.id !== id)) continue;
+    const { status: _s, attempts: _a, ...rest } = item;
+    await store.put(rest);
+    n += 1;
+  }
+  return n;
 }
 
 export function dataUrlToBlob(url) {
