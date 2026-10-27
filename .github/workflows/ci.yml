@@ -28,9 +28,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          # No requirements.txt: the dependency list lives in the Makefile (DEPS).
-          cache-dependency-path: Makefile
-      - name: Install dependencies
+          # Pinned install set (generated from Makefile DEPS by `make lock` under 3.12).
+          cache-dependency-path: requirements.lock
+      - name: Install dependencies (pip install -r requirements.lock via make setup)
         run: make setup
       - name: Run tests (mock mode)
         run: DRY_RUN=1 make test
