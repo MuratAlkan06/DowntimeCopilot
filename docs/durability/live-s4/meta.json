@@ -1,0 +1,26 @@
+{
+  "run_id": "live-s4",
+  "master_seed": 51054,
+  "server_cycles": 8,
+  "server_faults": [
+    "none",
+    "F1",
+    "F1die",
+    "F2",
+    "F4k",
+    "F7r",
+    "poison"
+  ],
+  "sync_interval_s": 1.0,
+  "replay": null,
+  "live": {
+    "table": "downtime-copilot-sync-bb29adb0",
+    "table_arn": "arn:<masked>",
+    "table_status": "ACTIVE",
+    "preexisting_items": 72,
+    "write_profile": "downtime-runtime",
+    "read_profile": "downtime-admin",
+    "region": "us-east-1",
+    "endpoint_override_test_only": false
+  }
+}

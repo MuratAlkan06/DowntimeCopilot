@@ -1,0 +1,61 @@
+{
+  "master_seed": 51054,
+  "run_id": "live-s4",
+  "sides": {
+    "server": {
+      "cycles": 8,
+      "dead_letter": 0,
+      "drain_s": {
+        "F1": {
+          "max": 3.149,
+          "n": 1,
+          "p50": 3.149
+        },
+        "F1die": {
+          "max": 2.875,
+          "n": 1,
+          "p50": 2.875
+        },
+        "F2": {
+          "max": 3.655,
+          "n": 1,
+          "p50": 3.655
+        },
+        "F4k": {
+          "max": 1.834,
+          "n": 1,
+          "p50": 1.834
+        },
+        "F7r": {
+          "max": 2.852,
+          "n": 1,
+          "p50": 2.852
+        },
+        "none": {
+          "max": 2.883,
+          "n": 1,
+          "p50": 2.883
+        }
+      },
+      "expected_fail": {},
+      "failing_cycles": [],
+      "faults_injected": {
+        "F1": 1,
+        "F1die": 1,
+        "F2": 1,
+        "F4k": 1,
+        "F7r": 1,
+        "none": 1,
+        "poison": 2
+      },
+      "known_windows": {},
+      "not_mirrored": 0,
+      "records_duplicated": 0,
+      "records_lost": 0,
+      "stall_skipped_attempts": [],
+      "violations": {}
+    }
+  },
+  "sync_interval_s": 1.0,
+  "verdict": "PASS"
+}
