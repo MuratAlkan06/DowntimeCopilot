@@ -53,3 +53,87 @@ jobs:
       - name: Validate infra
         working-directory: infra
         run: terraform init -backend=false -input=false && terraform validate
+
+  durability:
+    name: Durability harness
+    # docs/durability.md: server cycles against DynamoDB Local, then browser-queue cycles in node, then the
+    # report; fails on any violation. Not a required check during burn-in (#51).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      dynamodb:
+        image: amazon/dynamodb-local:3.3.2
+        ports:
+          - 8000:8000
+    env:
+      # DynamoDB Local accepts any credentials; nothing here reaches AWS.
+      AWS_ACCESS_KEY_ID: dummy
+      AWS_SECRET_ACCESS_KEY: dummy
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+      DDB_LOCAL_ENDPOINT: http://localhost:8000
+      DURABILITY_DIR: durability-runs/ci-${{ github.run_id }}
+      DURABILITY_SEED: ${{ github.run_id }}
+      DURABILITY_CYCLES: "25"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Install dependencies (pip install -r requirements.lock via make setup)
+        run: make setup
+      - name: Wait for DynamoDB Local
+        run: |
+          for i in $(seq 1 30); do
+            # Any HTTP answer means it is up (a bare GET gets a 400).
+            if curl -s -o /dev/null --max-time 2 "$DDB_LOCAL_ENDPOINT"; then
+              echo "DynamoDB Local answered at $DDB_LOCAL_ENDPOINT after ${i} attempt(s)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "DynamoDB Local did not answer at $DDB_LOCAL_ENDPOINT within 30 s" >&2
+          exit 1
+      - name: Server cycles
+        run: |
+          echo "durability: seed ${DURABILITY_SEED} (github.run_id), ${DURABILITY_CYCLES} cycles per side"
+          PYTHONPATH=. .venv/bin/python -m tools.durability.harness --run-dir "$DURABILITY_DIR" \
+            --cycles "$DURABILITY_CYCLES" --seed "$DURABILITY_SEED"
+      - name: Node cycles
+        run: |
+          PYTHONPATH=. .venv/bin/python -m tools.durability.queue_cycles --run-dir "$DURABILITY_DIR" \
+            --cycles "$DURABILITY_CYCLES" --seed "$DURABILITY_SEED"
+      - name: Report
+        if: ${{ !cancelled() }}
+        run: PYTHONPATH=. .venv/bin/python -m tools.durability.report "$DURABILITY_DIR"
+      - name: Upload run directory
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: durability-report-${{ github.run_id }}
+          path: ${{ env.DURABILITY_DIR }}
+          retention-days: 14
+          overwrite: true
+      - name: Fail on violations
+        run: |
+          .venv/bin/python - "$DURABILITY_DIR/report.json" <<'EOF'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          for side in ("server", "node"):
+              s = r["sides"].get(side)
+              if not s:
+                  sys.exit(f"durability: no {side} cycles in the report (skipped or crashed)")
+              print(f"{side}: cycles={s['cycles']} lost={s['records_lost']} dup={s['records_duplicated']} "
+                    f"violations={s['violations'] or 'none'} known={s['known_windows']} "
+                    f"expected_fail={s['expected_fail']} drain_s={s['drain_s']}")
+          print(f"verdict: {r['verdict']}")
+          sys.exit(0 if r["verdict"] == "PASS" else 1)
+          EOF
