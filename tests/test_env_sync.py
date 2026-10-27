@@ -102,3 +102,13 @@ def test_missing_outputs_or_terraform_failure_leave_env_untouched(tmp_path, caps
     assert env_sync.main(["--env-file", str(env_file)], run=fake_terraform(outputs, returncode=returncode)) == 1
     assert env_file.read_text() == OLD_ENV
     assert "env_sync:" in capsys.readouterr().err
+
+
+def test_wanted_rejects_values_with_shell_metacharacters():
+    outputs = dict(OUTPUTS)
+    first = next(iter(env_sync.OUTPUTS.values()))
+    outputs[first] = "safe\nexport PWNED=1"
+    with pytest.raises(env_sync.SyncError) as exc:
+        env_sync.wanted(outputs, "downtime-runtime")
+    assert first in str(exc.value)
+    assert "PWNED" not in str(exc.value)

@@ -31,15 +31,25 @@ data "aws_iam_policy_document" "trust_deploy_user" {
 }
 
 data "aws_iam_policy_document" "runtime" {
-  # S1. Converse is authorized as bedrock:InvokeModel. A `us.` profile fans out to the model in any US Region,
-  # so the foundation-model ARNs take a Region wildcard.
+  # S1a. The three `us.` inference profiles the router uses (app/ai/client.py ROUTES).
   statement {
-    sid     = "InvokeRoutedModels"
-    actions = ["bedrock:InvokeModel"]
-    resources = concat(
-      [for m in local.routed_models : "arn:aws:bedrock:${var.region}:${local.account_id}:inference-profile/us.${m}"],
-      [for m in local.routed_models : "arn:aws:bedrock:*::foundation-model/${m}"],
-    )
+    sid       = "InvokeRoutedProfiles"
+    actions   = ["bedrock:InvokeModel"]
+    resources = [for m in local.routed_models : "arn:aws:bedrock:${var.region}:${local.account_id}:inference-profile/us.${m}"]
+  }
+
+  # S1b. A `us.` profile fans out to the model in US Regions. The condition pins model invocation to those
+  # profiles, so the role cannot call the models directly or outside the profile's routing (security review L1).
+  statement {
+    sid       = "InvokeRoutedModelsViaProfile"
+    actions   = ["bedrock:InvokeModel"]
+    resources = [for m in local.routed_models : "arn:aws:bedrock:us-*::foundation-model/${m}"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "bedrock:InferenceProfileArn"
+      values   = [for m in local.routed_models : "arn:aws:bedrock:${var.region}:${local.account_id}:inference-profile/us.${m}"]
+    }
   }
 
   # S2. Policy answers (app/ai/guardrail.py).

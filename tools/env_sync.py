@@ -37,6 +37,7 @@ OUTPUTS = {
 }
 STATIC_KEYS = ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
 HEADER = "# AWS resources from Terraform (make infra-env, infra/outputs.tf). Re-run after every apply."
+_SAFE_VALUE = re.compile(r"^[A-Za-z0-9._:/-]{1,256}$")
 _ASSIGN = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=")
 
 
@@ -66,6 +67,10 @@ def wanted(outputs: dict, runtime_profile: str) -> dict[str, str]:
     if missing:
         raise SyncError("missing terraform outputs: " + ", ".join(missing)
                         + " (apply infra/ first, or check infra/outputs.tf)")
+    bad = [out for out in OUTPUTS.values() if not _SAFE_VALUE.match(str(outputs[out]))]
+    if bad:
+        raise SyncError("terraform outputs with unexpected characters (values not shown): " + ", ".join(bad)
+                        + " — a sourced .env must never carry shell metacharacters; inspect `terraform output` yourself")
     return {"AWS_PROFILE": runtime_profile} | {var: str(outputs[out]) for var, out in OUTPUTS.items()}
 
 
@@ -117,9 +122,14 @@ def main(argv: list[str] | None = None, run=subprocess.run) -> int:
         return 1
     existed = args.env_file.exists()
     text, changes = upsert(args.env_file.read_text() if existed else "", values)
-    args.env_file.write_text(text)
-    if not existed:
-        args.env_file.chmod(0o600)
+    tmp = args.env_file.with_name(args.env_file.name + ".tmp")
+    tmp.write_text(text)
+    tmp.chmod(0o600)
+    os.replace(tmp, args.env_file)
+    residue = [k for k in STATIC_KEYS if f"{k}=" in text]
+    if residue:
+        print("WARNING: static key assignments still present in .env (unusual syntax; remove by hand): "
+              + ", ".join(residue), file=sys.stderr)
     for name, action in changes:
         print(f"{args.env_file.name}: {name} {action}")
     if any(action == "removed" for _, action in changes):

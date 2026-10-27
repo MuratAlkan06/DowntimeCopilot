@@ -57,6 +57,54 @@ resource "aws_s3_bucket_lifecycle_configuration" "state" {
   }
 }
 
+data "aws_iam_policy_document" "state_bucket" {
+  statement {
+    sid       = "DenyInsecureTransport"
+    effect    = "Deny"
+    actions   = ["s3:*"]
+    resources = [aws_s3_bucket.state.arn, "${aws_s3_bucket.state.arn}/*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+
+  # State writes only from the admin role (plus a root carve-out against lockout). Blocks plan poisoning by
+  # any other principal in the account (security review L3).
+  statement {
+    sid       = "DenyStateWritesExceptAdmin"
+    effect    = "Deny"
+    actions   = ["s3:PutObject", "s3:DeleteObject"]
+    resources = ["${aws_s3_bucket.state.arn}/*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "StringNotEquals"
+      variable = "aws:PrincipalArn"
+      values = [
+        aws_iam_role.admin.arn,
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
+      ]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "state" {
+  bucket = aws_s3_bucket.state.id
+  policy = data.aws_iam_policy_document.state_bucket.json
+}
+
 # ---------------------------------------------------------------- admin role (profile downtime-admin)
 
 data "aws_iam_policy_document" "trust_deploy_user" {
