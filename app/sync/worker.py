@@ -74,6 +74,7 @@ def status(store=None) -> dict:
         "mode": base.mode(),
         "mirrored": int(store.get_kv("sync.mirrored", "0")),
         "pending": store.outbox_pending(),
+        "not_mirrored": int(store.get_kv("sync.not_mirrored", "0")),
         "last_success_ts": store.get_kv("sync.last_success_ts"),
         "last_error": store.get_kv("sync.last_error") or base.denied(),
     }
