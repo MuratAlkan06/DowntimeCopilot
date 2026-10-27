@@ -216,6 +216,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 
 - `sparthill-final` tag and [release](https://github.com/MuratAlkan06/DowntimeCopilot/releases/tag/sparthill-final) at `fac20b0`: the SpartHill Hacks 2026 event state.
 - Dependencies pinned in `requirements.lock` (Python 3.12, regenerate with `make lock`); `make setup` and CI install from it (#39).
+- `CONTRIBUTING.md` corrected: merges to `main` need a PR with green CI only — dropped the stale one-approving-review line (ruleset lifted Oct 24) (#41).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
