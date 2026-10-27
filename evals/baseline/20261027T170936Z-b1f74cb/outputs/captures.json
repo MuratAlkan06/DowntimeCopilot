@@ -1,0 +1,475 @@
+[
+  {
+    "fixture": "vitals_flowsheet-01",
+    "record": {
+      "audio_ref": null,
+      "backload_group": "nursing_vitals",
+      "captured_at": "2026-10-24T03:00:00Z",
+      "captured_by_role": "charge_nurse",
+      "entered_at": null,
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.026387864723801613,
+            "left": 0.08126400411128998,
+            "top": 0.23112207651138306,
+            "width": 0.029446998611092567
+          },
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": {
+            "height": 0.027297860011458397,
+            "left": 0.32743868231773376,
+            "top": 0.20928366482257843,
+            "width": 0.10600851476192474
+          },
+          "flag": null,
+          "name": "time",
+          "value": "02:55"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": {
+            "height": 0.029117565602064133,
+            "left": 0.09186580032110214,
+            "top": 0.32757407426834106,
+            "width": 0.08598461002111435
+          },
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.8"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.03184734284877777,
+            "left": 0.389866441488266,
+            "top": 0.32484421133995056,
+            "width": 0.07067226618528366
+          },
+          "flag": null,
+          "name": "heart_rate",
+          "value": "104"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": {
+            "height": 0.030027510598301888,
+            "left": 0.6855116486549377,
+            "top": 0.32029449939727783,
+            "width": 0.0541820228099823
+          },
+          "flag": null,
+          "name": "resp_rate",
+          "value": "22"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.027297619730234146,
+            "left": 0.08951102197170258,
+            "top": 0.42129606008529663,
+            "width": 0.060071416199207306
+          },
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "148"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": {
+            "height": 0.028207555413246155,
+            "left": 0.5465233325958252,
+            "top": 0.4231158196926117,
+            "width": 0.05182622745633125
+          },
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "86"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.02638758160173893,
+            "left": 0.08597870171070099,
+            "top": 0.5468648672103882,
+            "width": 0.04358120262622833
+          },
+          "flag": "out_of_range",
+          "name": "spo2",
+          "value": "89"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": {
+            "height": 0.038216523826122284,
+            "left": 0.532389223575592,
+            "top": 0.5386756062507629,
+            "width": 0.05771547928452492
+          },
+          "flag": "disagreement",
+          "name": "pain_score",
+          "value": "NW"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.030027618631720543,
+            "left": 0.6395745873451233,
+            "top": 0.21474310755729675,
+            "width": 0.04947063326835632
+          },
+          "flag": null,
+          "name": "initials",
+          "value": "PN"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "image_ref": "blob:90a040942cb24183ae107fac0dcfe519",
+      "patient_id": "pt-12",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.0,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "bp_diastolic": "86",
+            "bp_systolic": "148",
+            "heart_rate": "104",
+            "initials": "PN",
+            "pain_score": null,
+            "resp_rate": "22",
+            "spo2": "89",
+            "temp_c": "37.8",
+            "time": "02:55"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.97,
+            "bp_systolic": 0.99,
+            "heart_rate": 0.99,
+            "initials": 0.99,
+            "pain_score": 1.0,
+            "resp_rate": 0.96,
+            "spo2": 0.99,
+            "temp_c": 0.92,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "bp_diastolic": "86",
+            "bp_systolic": "148",
+            "heart_rate": "104",
+            "initials": "PN",
+            "pain_score": "NW",
+            "resp_rate": "22",
+            "spo2": "89",
+            "temp_c": "37.8",
+            "time": "02:55"
+          }
+        }
+      },
+      "record_id": "rec-14216523f35c",
+      "status": "needs_review",
+      "verified_at": null,
+      "verified_by": null
+    }
+  },
+  {
+    "fixture": "downtime_mar-01",
+    "record": {
+      "audio_ref": null,
+      "backload_group": "nursing_med_admin",
+      "captured_at": "2026-10-24T03:00:00Z",
+      "captured_by_role": "charge_nurse",
+      "entered_at": null,
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.03098529577255249,
+            "left": 0.10358157753944397,
+            "top": 0.22017642855644226,
+            "width": 0.03536359220743179
+          },
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": {
+            "height": 0.03743578866124153,
+            "left": 0.09529025107622147,
+            "top": 0.31117716431617737,
+            "width": 0.10253141820430756
+          },
+          "flag": null,
+          "name": "medication",
+          "value": "heparin"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": {
+            "height": 0.03117971681058407,
+            "left": 0.0822756215929985,
+            "top": 0.437665730714798,
+            "width": 0.19797401130199432
+          },
+          "flag": null,
+          "name": "dose",
+          "value": "5000 units"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.03009181097149849,
+            "left": 0.5430195927619934,
+            "top": 0.4236529469490051,
+            "width": 0.04832777380943298
+          },
+          "flag": null,
+          "name": "route",
+          "value": "SC"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.030167460441589355,
+            "left": 0.3639959692955017,
+            "top": 0.22230331599712372,
+            "width": 0.11313766241073608
+          },
+          "flag": null,
+          "name": "time_given",
+          "value": "02:50"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": {
+            "height": 0.03100692294538021,
+            "left": 0.0963704064488411,
+            "top": 0.5396134853363037,
+            "width": 0.05303826183080673
+          },
+          "flag": null,
+          "name": "initials",
+          "value": "PN"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.37,
+          "crop": {
+            "height": 0.013188009150326252,
+            "left": 0.6459590196609497,
+            "top": 0.49694570899009705,
+            "width": 0.14040572941303253
+          },
+          "flag": "unreadable",
+          "name": "second_verifier",
+          "value": null
+        }
+      ],
+      "form_type": "downtime_mar",
+      "image_ref": "blob:87c8670d42c24bd0adcef671bad4a353",
+      "patient_id": "pt-12",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.0,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "dose": "5000 units",
+            "initials": "PN",
+            "medication": "heparin",
+            "route": "SC",
+            "second_verifier": null,
+            "time_given": "02:50"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.91,
+            "initials": 0.98,
+            "medication": 0.96,
+            "route": 0.99,
+            "second_verifier": 0.37,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "12",
+            "dose": "5000 units",
+            "initials": "PN",
+            "medication": "heparin",
+            "route": "SC",
+            "second_verifier": "HIGH-ALERT MEDS",
+            "time_given": "02:50"
+          }
+        }
+      },
+      "record_id": "rec-91642e2f154b",
+      "status": "needs_review",
+      "verified_at": null,
+      "verified_by": null
+    }
+  },
+  {
+    "fixture": "admission_note-01",
+    "record": {
+      "audio_ref": null,
+      "backload_group": "unit_registration",
+      "captured_at": "2026-10-24T03:00:00Z",
+      "captured_by_role": "charge_nurse",
+      "entered_at": null,
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": {
+            "height": 0.030029181391000748,
+            "left": 0.09302602708339691,
+            "top": 0.23384177684783936,
+            "width": 0.03533723205327988
+          },
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": {
+            "height": 0.04186287149786949,
+            "left": 0.07653895765542984,
+            "top": 0.33484575152397156,
+            "width": 0.22850896418094635
+          },
+          "flag": null,
+          "name": "allergies",
+          "value": "penicillin (hives)"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": {
+            "height": 0.030029771849513054,
+            "left": 0.352159708738327,
+            "top": 0.2320275753736496,
+            "width": 0.05771699175238609
+          },
+          "flag": null,
+          "name": "height_cm",
+          "value": "178"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": {
+            "height": 0.027300525456666946,
+            "left": 0.6690113544464111,
+            "top": 0.21019555628299713,
+            "width": 0.08009709417819977
+          },
+          "flag": null,
+          "name": "weight_kg",
+          "value": "92.4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.93,
+          "crop": {
+            "height": 0.04277919605374336,
+            "left": 0.08007775247097015,
+            "top": 0.49863529205322266,
+            "width": 0.4793951213359833
+          },
+          "flag": null,
+          "name": "history",
+          "value": "type 2 diabetes, hypertension"
+        }
+      ],
+      "form_type": "admission_note",
+      "image_ref": "blob:6b748edb47be42ff950b53d26ccd4980",
+      "patient_id": "pt-12",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "penicillin (hives)",
+            "bed": "12",
+            "height_cm": "178",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": "92.4"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.96,
+            "bed": 1.0,
+            "height_cm": 1.0,
+            "history": 0.93,
+            "weight_kg": 0.98
+          },
+          "fields": {
+            "allergies": "penicillin (hives)",
+            "bed": "12",
+            "height_cm": "178",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": "92.4"
+          }
+        }
+      },
+      "record_id": "rec-5b8df58f7fb1",
+      "status": "needs_review",
+      "verified_at": null,
+      "verified_by": null
+    }
+  }
+]

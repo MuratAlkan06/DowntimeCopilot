@@ -1,0 +1,172 @@
+[
+  {
+    "answer": "Complete a red downtime requisition marked 'STAT' with the patient label, test name, ordering provider, and collection time. Call the lab at extension 4-5227 to announce the specimen before sending it, then deliver it by hand — do not use the pneumatic tube. The lab will phone results back to the unit within 60 minutes; write the result on your requisition copy, read it back to the caller, and note the caller's name and time. The unit clerk must also log the stat lab and its result on the census sheet for recovery backload.",
+    "citations": [
+      {
+        "quote": "the RN completes a red downtime requisition marked \"STAT\", including the patient label, the test, the ordering provider, and the collection time",
+        "section_id": "4.2.1",
+        "title": "Stat labs"
+      },
+      {
+        "quote": "The RN or unit clerk calls the laboratory at extension 4-5227 to announce the stat specimen before sending it, then sends the specimen by hand delivery; do not use the pneumatic tube for stat specimens during downtime",
+        "section_id": "4.2.2",
+        "title": "Stat labs"
+      },
+      {
+        "quote": "The laboratory phones critical and stat results to the unit within 60 minutes. The person receiving the result writes it on the requisition copy and reads it back to the laboratory, including the caller's name and the time",
+        "section_id": "4.2.3",
+        "title": "Stat labs"
+      },
+      {
+        "quote": "The unit clerk records the stat lab and its result on the census sheet so it is included in the recovery backload",
+        "section_id": "4.2.4",
+        "title": "Stat labs"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2167,
+      "tokens_out": 443,
+      "usd": 0.014461
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "question": "How do I get a stat lab with the order system down?"
+  },
+  {
+    "answer": "Verbal orders are limited to urgent situations where the provider cannot write the order. Write the order on the Verbal Order Read-Back form (DT-40), then read the complete order back to the provider and document 'read back and confirmed', the provider name, the date, and the time. The provider must co-sign the verbal order within 24 hours; any order missing a read-back or co-sign will be flagged during recovery and reviewed by the charge nurse.",
+    "citations": [
+      {
+        "quote": "Verbal orders are limited to urgent situations where the provider cannot write the order.",
+        "section_id": "6.1",
+        "title": "Verbal orders and read-back"
+      },
+      {
+        "quote": "The receiving nurse writes the order on the Verbal Order Read-Back form (DT-40), reads the complete order back to the provider, and records \"read back and confirmed\", the provider name, the date, and the time.",
+        "section_id": "6.2",
+        "title": "Verbal orders and read-back"
+      },
+      {
+        "quote": "The provider co-signs every verbal order within 24 hours. Orders without read-back or without co-sign are flagged in recovery and reviewed by the charge nurse.",
+        "section_id": "6.3",
+        "title": "Verbal orders and read-back"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2171,
+      "tokens_out": 344,
+      "usd": 0.01284
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "question": "How do I take a verbal order and do the read-back during downtime?"
+  },
+  {
+    "answer": "Without barcode scanning, verify the five rights against the paper Downtime MAR (form DT-20) and the most recent BCA medication list before every dose. For high-alert medications (insulin, heparin, opioids, concentrated electrolytes), a second licensed nurse must perform an independent double-check, and both nurses initial the Downtime MAR. Check the allergy band and BCA allergy list before every first dose, and if a medication conflicts with a documented allergy, hold the dose and contact the provider and pharmacy. Any new medication orders received during downtime must be verified by pharmacy before the first dose is given, except in emergencies covered by the rapid response policy.",
+    "citations": [
+      {
+        "quote": "Without barcode scanning, the RN verifies the five rights against the paper Downtime MAR (DT-20) and the most recent BCA medication list before every dose.",
+        "section_id": "5.1",
+        "title": "Medications without scanning"
+      },
+      {
+        "quote": "High-alert medications (insulin, heparin and other anticoagulants, opioids, concentrated electrolytes) require an independent double-check by a second licensed nurse before administration. Both nurses initial the Downtime MAR entry.",
+        "section_id": "5.2",
+        "title": "Medications without scanning"
+      },
+      {
+        "quote": "Check the allergy band and the BCA allergy list before every first dose. If an active medication conflicts with a documented allergy, hold the dose and contact the provider and pharmacy.",
+        "section_id": "5.3",
+        "title": "Medications without scanning"
+      },
+      {
+        "quote": "New medication orders received during downtime are verified by pharmacy before the first dose, except in emergencies covered by the rapid response policy.",
+        "section_id": "5.5",
+        "title": "Medications without scanning"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2164,
+      "tokens_out": 470,
+      "usd": 0.014896
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "question": "How do I give medications without barcode scanning?"
+  },
+  {
+    "answer": "Downtime is declared by the house supervisor when the EHR or related systems have been unavailable for more than 15 minutes, or immediately upon an Information Security isolation event. The house supervisor announces it via overhead page ('Code Gray, EHR downtime') and sends a text to all charge nurses. Each charge nurse then confirms activation on their unit and records the start time on the Downtime Log (form DT-01).",
+    "citations": [
+      {
+        "quote": "Downtime is declared when the electronic health record (EHR), barcode medication administration (BCMA), or computerized order entry is unavailable to a nursing unit for more than 15 minutes, or immediately when Information Security isolates the EHR (for example after a ransomware alert).",
+        "section_id": "1.1",
+        "title": "Activation"
+      },
+      {
+        "quote": "The house supervisor declares downtime by overhead page (\"Code Gray, EHR downtime\") and by text to all charge nurses. Each charge nurse confirms activation on their unit and records the start time on the Downtime Log (form DT-01).",
+        "section_id": "1.2",
+        "title": "Activation"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2165,
+      "tokens_out": 307,
+      "usd": 0.01221
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "question": "Who declares downtime, and how is it announced?"
+  },
+  {
+    "answer": "During recovery, each role backloads the following: RNs enter the medication administrations, vital signs, and intake and output they personally documented on paper during their shift. Pharmacy enters all orders written or received during downtime and reconciles every patient's medication profile. The unit clerk enters allergies, history, height and weight, and any admissions, discharges, and transfers that occurred during downtime. Every backloaded entry must be verified against the paper form by the person entering it, and high-alert medication administrations require verification by two people.",
+    "citations": [
+      {
+        "quote": "each RN enters the medication administrations, vital signs, and intake and output they documented on paper during their own shift",
+        "section_id": "7.2",
+        "title": "Nursing backload"
+      },
+      {
+        "quote": "pharmacy enters all orders written or received during downtime and reconciles the medication profile for every patient",
+        "section_id": "7.3",
+        "title": "Pharmacy backload"
+      },
+      {
+        "quote": "the unit clerk enters allergies, history, height and weight, and admissions, discharges, and transfers that occurred during downtime",
+        "section_id": "7.4",
+        "title": "Unit backload"
+      },
+      {
+        "quote": "Each backloaded entry is verified against the paper form by the person entering it. High-alert medication administrations are verified by two people.",
+        "section_id": "7.5",
+        "title": "Backload verification"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2168,
+      "tokens_out": 385,
+      "usd": 0.013507
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "question": "What does each role backload when the EHR comes back?"
+  }
+]
