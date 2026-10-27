@@ -1,0 +1,8 @@
+# Copy to infra/backend.hcl (git-ignored) and set the bucket from the bootstrap output:
+#   terraform -chdir=infra/bootstrap output -raw state_bucket
+bucket       = "downtime-copilot-tfstate-REPLACE_ME"
+key          = "downtime-copilot/terraform.tfstate"
+region       = "us-east-1"
+use_lockfile = true
+# The backend does not read the provider's profile variable; it needs its own.
+profile = "downtime-admin"

@@ -1,0 +1,3 @@
+# Copy to infra/terraform.tfvars (git-ignored; tools/guard.sh fails if a *.tfvars file is ever tracked).
+budget_email = "you@example.com"
+# budget_limit_usd = "10.0"

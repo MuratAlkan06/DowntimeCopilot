@@ -73,3 +73,12 @@ evals/fixtures/*.jpeg
 evals/fixtures/*.png
 # Eval run bundles (scratch). Scrubbed baselines are committed under evals/baseline/; the newest generates RESULTS.md.
 evals/runs/
+# Terraform (infra/). State and variable files stay local: state holds account IDs and ARNs, terraform.tfvars
+# holds the budget email. .terraform.lock.hcl IS committed. tools/guard.sh check 5 enforces this.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+infra/backend.hcl

@@ -14,9 +14,10 @@ APP_PORT ?= 8000
 SIM_PORT ?= 8001
 SIM_URL ?= http://localhost:$(SIM_PORT)
 APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
+TF      ?= terraform
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup lock probe schemas forms dev demo test evals results guard export-audit e2e
+.PHONY: setup lock probe schemas forms dev demo test evals results guard export-audit e2e infra-fmt infra-validate infra-env
 
 setup:  ## venv + pinned dependencies from requirements.lock
 	python3 -m venv $(VENV)
@@ -80,3 +81,16 @@ results:  ## regenerate RESULTS.md from the newest committed bundle (evals/basel
 
 guard:  ## secret / probe guard (run before every commit)
 	bash tools/guard.sh
+
+infra-fmt:  ## rewrite infra/**/*.tf in canonical format (CI runs the -check form, see infra-validate)
+	$(TF) fmt -recursive infra
+
+infra-validate:  ## the CI "Terraform validate" job locally: fmt -check, then init -backend=false + validate in infra/bootstrap and infra. No AWS calls, no state
+	$(TF) fmt -check -recursive infra
+	@for d in infra/bootstrap infra; do \
+		echo "== $$d"; \
+		$(TF) -chdir=$$d init -backend=false -input=false >/dev/null && $(TF) -chdir=$$d validate || exit 1; \
+	done
+
+infra-env:  ## terraform outputs (infra/, profile downtime-admin) -> .env: AWS_PROFILE=downtime-runtime + resource names; drops static keys. Prints names, never values
+	TF=$(TF) $(PY) tools/env_sync.py
