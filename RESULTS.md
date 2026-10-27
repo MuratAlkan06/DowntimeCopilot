@@ -3,19 +3,19 @@
 
 GENERATED - DO NOT EDIT. Every number below is computed from one recorded live run (the bundle named here); commentary comes verbatim from `evals/NOTES.md`.
 
-- Run id: `20261024T120050Z-90d316a`
-- Run started / finished (UTC, recorded at run time): 2026-10-24T12:00:50+00:00 / 2026-10-24T12:02:21+00:00
-- Git SHA at run time: `90d316a3df10e97a71ea6325d56ed22ad8b0b7d2`
-- Artifact bundle: `evals/baseline/20261024T120050Z-90d316a/`
-- Artifact digest (sha256 over the bundle, `evals.run.digest`): `78aee8247803bfc1ff1d85f4e024338f1aba78c9b338c008f381d8b9e630606e`
+- Run id: `20261027T170936Z-b1f74cb`
+- Run started / finished (UTC, recorded at run time): 2026-10-27T17:09:36+00:00 / 2026-10-27T17:10:54+00:00
+- Git SHA at run time: `b1f74cb20ce33b62646c5cfc3682802f0e329940`
+- Artifact bundle: `evals/baseline/20261027T170936Z-b1f74cb/`
+- Artifact digest (sha256 over the bundle, `evals.run.digest`): `72bed7ad44fece63ba08aca1c4ac04d73c9d3e05aedfd44e76e00092185e0540`
 - Inputs fixed before the run (`evals/manifest.json`): 12 seeded patients, 5 DEMO.md policy questions, form fixtures: 3, speech fixtures: 1, simulated clock +15 min then +45 min
 
 ## Headline
 
 | Metric | Value |
 |---|---|
-| Packet faithfulness, final lines with a resolving source_path | 100.0% (198/198) |
-| Packet faithfulness, first-pass model lines | 100.0% (198/198) |
+| Packet faithfulness, final lines with a resolving source_path | 100.0% (196/196) |
+| Packet faithfulness, first-pass model lines | 100.0% (196/196) |
 | Packet omissions (unverifiable lines withheld) | 0 |
 | Policy grounding rate | 100.0% (5/5) |
 | Policy expected-section correctness | 100.0% (5/5) |
@@ -24,8 +24,8 @@ GENERATED - DO NOT EDIT. Every number below is computed from one recorded live r
 | Form field accuracy, combined (agreement) (synthetic fixtures) | 95.5% (21/22) |
 | False-flag rate on clean fields (synthetic fixtures) | 0.0% (0/19) |
 | Speech transcription word accuracy (1 synthetic fixture) | 100.0% (17/17) |
-| Model spend, this run (`/costs`, Bedrock only) | $0.2780 |
-| Cost per simulated outage-hour | $0.3706 (0.75 simulated h) |
+| Model spend, this run (`/costs`, Bedrock only) | $0.2782 |
+| Cost per simulated outage-hour | $0.3710 (0.75 simulated h) |
 
 Photographed forms: 0 fixtures — pending
 
@@ -53,7 +53,7 @@ Photographed forms: 0 fixtures — pending
 
 ## 1. Packet faithfulness
 
-Packets: 12. Final: 100.0% (198/198) of shown lines resolve to a snapshot path, 0 omitted. First pass: 100.0% (198/198). Regenerated once: 0; unparseable model output: 0.
+Packets: 12. Final: 100.0% (196/196) of shown lines resolve to a snapshot path, 0 omitted. First pass: 100.0% (196/196). Regenerated once: 0; unparseable model output: 0.
 
 Notes (evals/NOTES.md, `faithfulness`):
 
@@ -127,12 +127,12 @@ four misses field for field. Verbal-order structuring is still the weakest measu
 
 | Call type | Calls | Median latency (ms) | Tokens in / out | USD |
 |---|---|---|---|---|
-| checker | 12 | 768.5 | 10173 / 298 | 0.004178 |
-| form_read | 3 | 2904 | 1737 / 1491 | 0.004673 |
-| packet | 12 | 5529.5 | 11499 / 9875 | 0.200885 |
-| policy | 5 | 3422 | 10835 / 1934 | 0.067666 |
-| structure | 1 | 1103 | 373 / 164 | 0.000574 |
-| **Total** | 33 | 2904 | 34617 / 13762 | 0.277976 |
+| checker | 12 | 864.5 | 10147 / 300 | 0.004174 |
+| form_read | 3 | 1991 | 1737 / 1489 | 0.004668 |
+| packet | 12 | 5986.5 | 11499 / 9876 | 0.200901 |
+| policy | 5 | 2971 | 10835 / 1949 | 0.067914 |
+| structure | 1 | 1009 | 373 / 164 | 0.000574 |
+| **Total** | 33 | 2552 | 34591 / 13778 | 0.278231 |
 
 Per-call-type sums equal the `/costs` totals (checked at run time and again here). Not metered by the app, so not in these sums: Textract AnalyzeDocument 3 page(s), Transcribe 1 job(s), ApplyGuardrail 5 check(s); see AWS billing. Budget guard: limit $2.00, max projected $0.8800.
 
@@ -149,7 +149,7 @@ run to run.
 
 ## 7. Cost per simulated outage-hour
 
-$0.3706 per simulated outage-hour: $0.277976 of model calls over 0.75 simulated hours (outage declared after +15 min, `/costs` read after +45 min).
+$0.3710 per simulated outage-hour: $0.278231 of model calls over 0.75 simulated hours (outage declared after +15 min, `/costs` read after +45 min).
 
 Notes (evals/NOTES.md, `outage_cost`):
 
