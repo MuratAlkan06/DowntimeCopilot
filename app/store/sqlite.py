@@ -84,11 +84,18 @@ class Store:
 
     def _enqueue(self, pk: str, sk: str, body: str) -> None:
         """Caller holds the lock and commits. A local SQLite insert only: a failure is logged, never raised,
-        so the audit row or record save it rides with still lands (the handler never sees a sync problem)."""
+        so the audit row or record save it rides with still lands (the handler never sees a sync problem).
+        Each such failure adds one to kv `sync.not_mirrored` (GET /sync/status), best effort."""
         try:
             self._db.execute("INSERT INTO sync_outbox (pk, sk, body) VALUES (?, ?, ?)", (pk, sk, body))
         except sqlite3.Error as exc:
             log.warning("sync outbox enqueue failed (%s); item not mirrored", type(exc).__name__)
+            # If the whole transaction rolls back (FULL/IOERR), this count rolls back with the save: #51 F6, harness.
+            try:
+                self._db.execute("INSERT INTO kv (key, value) VALUES ('sync.not_mirrored', '1') ON CONFLICT (key) "
+                                 "DO UPDATE SET value = CAST(value AS INTEGER) + 1")
+            except sqlite3.Error:
+                pass  # a dying DB never raises out of the trade-off path; the warning above is the record
 
     def _exec(self, sql: str, args: tuple = ()) -> list[tuple]:
         with self._lock:

@@ -62,7 +62,8 @@ def sync(role: str = Depends(actor_role)) -> dict:
 
 @router.get("/sync/status")
 def sync_status() -> dict:
-    """Non-contract. {mode, mirrored, pending, last_success_ts, last_error}; same keys in DRY_RUN. Not audited:
+    """Non-contract. {mode, mirrored, pending, not_mirrored, last_success_ts, last_error}; same keys in DRY_RUN.
+    `not_mirrored` counts saves whose outbox enqueue failed (they landed locally, never mirrored). Not audited:
     the web chip polls it, and an audit row per poll would itself be a pending item."""
     return sync_worker.status()
 

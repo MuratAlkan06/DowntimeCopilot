@@ -17,7 +17,7 @@ from app.sync import base, dynamodb, worker
 from simulator import main as sim
 
 TABLE = "downtime-copilot-sync-test"
-STATUS_KEYS = {"mode", "mirrored", "pending", "last_success_ts", "last_error"}
+STATUS_KEYS = {"mode", "mirrored", "pending", "not_mirrored", "last_success_ts", "last_error"}
 
 
 def err(code: str, op: str) -> ClientError:
@@ -109,6 +109,25 @@ def test_record_saves_share_one_key(store):
     keys = {(pk, sk) for _, pk, sk, _ in store.outbox()}
     assert keys == {("CapturedRecord", "2026-10-24T09:00:00+00:00#rec-9")}
     assert store.outbox_pending() == 2  # not coalesced; the later put overwrites the same item
+
+
+def test_failed_enqueue_keeps_the_save_and_counts_it(store):
+    """The Store._enqueue trade-off (#51): an outbox insert failure lands the save unmirrored, and status counts it."""
+    from contracts import BackloadGroup, CapturedRecord, FormType
+    rec = CapturedRecord(record_id="rec-1", form_type=FormType.vitals_flowsheet, image_ref="blob:x",
+                         captured_at=datetime(2026, 10, 24, 9, 0, tzinfo=timezone.utc), captured_by_role="rn",
+                         backload_group=BackloadGroup.nursing_vitals)
+    store.save_record(rec)
+    st = worker.status(store)
+    assert st["not_mirrored"] == 0 and st["pending"] == 1  # happy path: queued, nothing lost
+    # A statement-level failure on the outbox insert only (the save's transaction stays open and commits).
+    store._db.execute("CREATE TRIGGER fail_outbox BEFORE INSERT ON sync_outbox BEGIN SELECT RAISE(ABORT, 'x'); END")
+    store.save_record(rec.model_copy(update={"record_id": "rec-2"}))
+    st = worker.status(store)
+    assert store.get_record("rec-2") is not None and st["not_mirrored"] == 1 and st["pending"] == 1
+    store._db.execute("DROP TABLE kv")  # the count is best effort: a failing increment never raises out either
+    store.save_record(rec.model_copy(update={"record_id": "rec-3"}))
+    assert store.get_record("rec-3") is not None
 
 
 def test_ensure_table_creates_on_demand_with_waiter():
@@ -223,7 +242,7 @@ def test_status_shape_in_dry_run(api):
     assert api.get("/sync/status").json()["pending"] >= 1
     assert api.post("/sync").json()["pending"] == 0
     st = api.get("/sync/status").json()
-    assert set(st) == STATUS_KEYS and st["mirrored"] >= 1 and st["last_error"] is None
+    assert set(st) == STATUS_KEYS and st["mirrored"] >= 1 and st["last_error"] is None and st["not_mirrored"] == 0
     assert not any(e.action.startswith("sync.status") for e in get_store().list_audit())  # polls are not audited
 
 
@@ -242,10 +261,14 @@ def test_handlers_never_raise_on_sync_failure(api, monkeypatch):
     assert api.post("/downtime/start").status_code == 200
     st = api.get("/sync/status").json()
     assert st["pending"] > before and st["last_error"] == "dynamodb: EndpointConnectionError"
+    assert st["not_mirrored"] == 0
 
+    saved = len(get_store().audit_log())
     get_store()._db.execute("DROP TABLE sync_outbox")  # even a broken local outbox never fails a handler
     assert api.get("/costs").status_code == 200
     assert any(e.action == "costs.view" for e in get_store().list_audit())
+    # ...and every save it could not queue is counted (status itself reads the outbox, so read the kv here)
+    assert int(get_store().get_kv("sync.not_mirrored")) == len(get_store().audit_log()) - saved >= 1
 
 
 # ------------------------------------------------------------------ S3: lifecycle merge, snapshots, exports
