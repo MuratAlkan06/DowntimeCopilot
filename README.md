@@ -242,6 +242,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - Own AWS account in Terraform (`infra/`, us-east-1): bootstrap state bucket and admin role, the app's resources, a least-privilege runtime role, a monthly budget guard; `make infra-env` fills `.env`; guard check 5 and a CI "Terraform validate" job. Validated, not applied (#43).
 - Live phase on the own account: Bedrock model access fixed via Marketplace agreements for both Anthropic models, then the first `make evals` on the account — baseline `20261027T170936Z-b1f74cb` published as-is with headline numbers unchanged from the workshop baseline; `.env.example` moved to the profile-based flow (#46).
 - Release-gate parity pass: eval commentary corrected for the new baseline, the security fixups recorded, and the patient-notice check re-run on the new guardrail (#48).
+- `v1.1.0` released at `08b9850` (own-account migration boundary); "Terraform validate" added to the required checks; superseded PR #37 closed with its work already credited in #38.
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
