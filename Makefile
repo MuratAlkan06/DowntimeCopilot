@@ -17,7 +17,7 @@ APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 TF      ?= terraform
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup lock probe schemas forms dev demo test evals results guard export-audit e2e infra-fmt infra-validate infra-env
+.PHONY: setup lock probe schemas forms dev demo test evals results guard export-audit e2e infra-fmt infra-validate infra-env durability
 
 setup:  ## venv + pinned dependencies from requirements.lock
 	python3 -m venv $(VENV)
@@ -78,6 +78,16 @@ evals:  ## ONE live run of evals/manifest.json -> evals/runs/<run-id>/ + RESULTS
 
 results:  ## regenerate RESULTS.md from the newest committed bundle (evals/baseline/<run-id>/ + evals/NOTES.md); pure, no network. BUNDLE=<dir> overrides
 	$(PY) -m evals.report $(BUNDLE)
+
+CYCLES ?= 25
+SEED   ?= auto
+DURABILITY_STAMP := $(shell date -u +%Y%m%dT%H%M%SZ)
+DURABILITY_DIR ?= durability-runs/$(DURABILITY_STAMP)
+
+durability:  ## fault-injection durability harness (docs/durability.md): server cycles (DynamoDB Local via DDB_LOCAL_DIR + java, else SKIP), then node queue cycles, then the report. CYCLES=25 SEED=auto
+	PYTHONPATH=. $(PY) -m tools.durability.harness --run-dir $(DURABILITY_DIR) --cycles $(CYCLES) --seed $(SEED)
+	PYTHONPATH=. $(PY) -m tools.durability.queue_cycles --run-dir $(DURABILITY_DIR) --cycles $(CYCLES)
+	PYTHONPATH=. $(PY) -m tools.durability.report $(DURABILITY_DIR)
 
 guard:  ## secret / probe guard (run before every commit)
 	bash tools/guard.sh
