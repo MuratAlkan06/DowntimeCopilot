@@ -249,7 +249,8 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - An outbox enqueue failure that rolls back the whole SQLite transaction no longer loses the save under a 201: the record or audit row is redone in a fresh transaction, counted in `not_mirrored`; the harness F6-rollback cycle is now a passing check (#54).
 - A capture whose first upload gets a real 5xx (or a transient 408/429) is queued under the same client id instead of dropped (no duplicate on resubmit); a queued item the server refuses 8 times is dead-lettered, kept on the device, shown as "N failed" with a "Retry failed" action; the harness F2 and poison cycles are now passing checks (#55).
 - Durability harness `--live` mode for the S4 run against the real table: explicit table and write/read profiles (no defaults), proxyless live-safe faults only, a read-only preflight and reconciler on a separate profile, reconciliation scoped to the run's own items, a cleanup key list, ARNs masked on disk; a DynamoDB Local smoke proves the mechanics (#51).
-- THE confirming live run (S4): 8 cycles against the real sync table from `33b0081`, all 7 live faults, verdict PASS — 0 lost, 0 duplicated, 140 items mirrored and reconciled; report generator-written under [`docs/durability/live-s4/`](docs/durability/live-s4/report.md), cleanup pending from its key list (#51).
+- THE confirming live run (S4): 8 cycles against the real sync table from `33b0081`, all 7 live faults, verdict PASS — 0 violations, 140 items mirrored and reconciled; report generator-written under [`docs/durability/live-s4/`](docs/durability/live-s4/report.md), cleanup pending from its key list (#51).
+- Durability record restated after the release-gate sweep: zero violations (not "zero lost/duplicated" — pre-fix runs recorded the two found defects by design), the aborted S4 first attempt and the excluded calibration run named (#51).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
@@ -271,7 +272,7 @@ Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded
 ├── data/             # patients/*.json, policy/downtime_policy.md, forms/*.pdf
 ├── evals/            # harness, fixtures/ (photographed forms + ground truth), report generator
 ├── infra/            # Terraform: bootstrap/ (state bucket, admin role) and the app's resources + runtime role
-├── tools/            # bedrock_probe.py, env_sync.py (make infra-env), guard.sh
+├── tools/            # bedrock_probe.py, env_sync.py (make infra-env), guard.sh, durability/ (make durability)
 └── tests/
 ```
 
