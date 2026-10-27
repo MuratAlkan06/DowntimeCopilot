@@ -123,10 +123,12 @@ a per-life timeout (precedent: `tests/test_web_queue.py:21`). They talk to one r
 
 ## Live mode (S4, `--live`)
 
-`python -m tools.durability.harness --run-dir DIR --live --table T --write-profile W --read-profile R
+`python -m tools.durability.harness --run-dir DIR --live --table T --write-profile W --read-profile R --sync-interval 1.0
 [--region REGION]` runs server cycles against the existing table `T`. Table and both profiles are required,
 with no defaults, and the two profiles must differ. The harness prints them with the region and run id before
 it acts.
+
+Pass `--sync-interval 1.0` explicitly for production-shaped drains: the harness scrubs `SYNC_*` from the app env and otherwise uses its local default of 0.25 s.
 
 - No DynamoDB Local, no proxy, no CreateTable. Every cycle uses its own fresh `STORE_PATH` against the one
   table.
