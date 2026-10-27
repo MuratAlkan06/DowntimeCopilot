@@ -35,7 +35,9 @@ SERVER_FAULTS = ("none", "F3", "F4", "F4fd", "F5", "F6", "F6rb", "F7a", "F7b")
 POLL_S = 0.25
 DRAIN_TIMEOUT_S = 90.0
 STARTUP_TIMEOUT_S = 30.0
-EXPECTED_FAIL = {"F6rb": "S5: F6-rollback (SIMULATED transaction rollback under a 201; fix issue to be filed)"}
+# Fault -> label for a known, tracked failure reported apart from violations. Empty: F6rb (SIMULATED transaction
+# rollback on the outbox INSERT) was fixed in #54 and is now a normal invariant, so a lost save is a violation.
+EXPECTED_FAIL: dict[str, str] = {}
 DUMMY_AWS = {"AWS_ACCESS_KEY_ID": "durabilityharness", "AWS_SECRET_ACCESS_KEY": "durabilityharness",
              "AWS_REGION": "us-east-1", "AWS_DEFAULT_REGION": "us-east-1"}
 READBACK = "Verbal order read back: heparin 5000 units subcut q12h"

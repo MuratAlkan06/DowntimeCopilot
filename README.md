@@ -246,6 +246,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - `/sync/status` now counts unmirrored saves: `not_mirrored`, one per failed outbox enqueue, from kv `sync.not_mirrored` (#51).
 - Fault-injection durability harness for both capture paths (`tools/durability/`, `make durability`, frozen design in [`docs/durability.md`](docs/durability.md)): server cycles against DynamoDB Local behind a fault proxy, browser-queue cycles in node; calibration and the first fault run are in the PR (#51).
 - CI "Durability harness" job: 25 server cycles against a DynamoDB Local service container plus 25 node cycles per push, seeded from the run id, run directory kept as an artifact for 14 days; not a required check during burn-in (#51).
+- An outbox enqueue failure that rolls back the whole SQLite transaction no longer loses the save under a 201: the record or audit row is redone in a fresh transaction, counted in `not_mirrored`; the harness F6-rollback cycle is now a passing check (#54).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 

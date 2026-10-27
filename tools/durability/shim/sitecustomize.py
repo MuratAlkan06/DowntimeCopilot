@@ -13,8 +13,8 @@ With the flag it patches, in that process only:
   - Store._enqueue -> F6: the DUR_F6_NTH-th enqueue of a CapturedRecord fails.
       DUR_F6_MODE=statement: the outbox INSERT itself raises sqlite3.OperationalError inside the real
         _enqueue, so the app's own failure path runs (log + kv sync.not_mirrored).
-      DUR_F6_MODE=rollback (SIMULATED): the shim rolls the open transaction back and swallows, standing in
-        for SQLITE_FULL/IOERR/BUSY rolling back the record save under a 201. Labeled SIMULATED in the report.
+      DUR_F6_MODE=rollback (SIMULATED): the outbox INSERT first rolls the whole transaction back, then raises,
+        standing in for SQLITE_FULL/IOERR/BUSY auto-rollback; the app's real _enqueue failure path runs (#54).
 """
 from __future__ import annotations
 
@@ -79,13 +79,16 @@ if os.environ.get("DURABILITY_SHIM") == "1":
     _orig_enqueue = Store._enqueue
 
     class _FailingOutbox:
-        """Connection stand-in for one _enqueue call: the outbox INSERT raises, everything else delegates."""
+        """Connection stand-in for one _enqueue call: the outbox INSERT raises (after rolling the whole
+        transaction back when `rollback`), everything else delegates."""
 
-        def __init__(self, db):
-            self._db = db
+        def __init__(self, db, rollback=False):
+            self._db, self._rollback = db, rollback
 
         def execute(self, sql, *args):
             if sql.lstrip().upper().startswith("INSERT INTO SYNC_OUTBOX"):
+                if self._rollback:
+                    self._db.rollback()  # SIMULATED auto-rollback: the record insert goes with it
                 raise sqlite3.OperationalError("durability harness: injected outbox enqueue failure")
             return self._db.execute(sql, *args)
 
@@ -100,10 +103,7 @@ if os.environ.get("DURABILITY_SHIM") == "1":
                 hit = _f6_seen[0] == _f6_nth
         if not hit:
             return _orig_enqueue(self, pk, sk, body)
-        if _f6_mode == "rollback":
-            self._db.rollback()  # SIMULATED: the whole save rolls back, the handler still answers 201
-            return None
-        real, self._db = self._db, _FailingOutbox(self._db)
+        real, self._db = self._db, _FailingOutbox(self._db, rollback=_f6_mode == "rollback")
         try:
             return _orig_enqueue(self, pk, sk, body)
         finally:
