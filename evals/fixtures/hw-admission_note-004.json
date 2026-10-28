@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "30",
+    "height_cm": "169",
+    "weight_kg": "94.6",
+    "allergies": "shellfish",
+    "history": "type 2 diabetes, hypertension"
+  },
+  "image": "hw-admission_note-004.jpg",
+  "seed": 67,
+  "writer": "f0262_15",
+  "distortion": "L0",
+  "tags": [
+    "nominal"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "ee106cb0c02dd5adcd95acf999dd69b4de95a5069b97b1b7148f39c021e6021e"
+}

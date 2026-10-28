@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "24",
+    "time_given": "10:21",
+    "medication": "simvastatin",
+    "dose": "15 units",
+    "route": "IO",
+    "initials": null,
+    "second_verifier": "OS"
+  },
+  "image": "hw-downtime_mar-007.jpg",
+  "seed": 67,
+  "writer": "f1647_28",
+  "distortion": "L0",
+  "tags": [
+    "ambiguous",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "76a7e7e6a5de4cb2a44e4ce74d262c134579f3725b578a3f8f4bb99e74c54204"
+}

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "19",
+    "time_given": "16:28",
+    "medication": "heparin",
+    "dose": "25 mg",
+    "route": "SL",
+    "initials": "UG",
+    "second_verifier": "TH"
+  },
+  "image": "hw-downtime_mar-005.jpg",
+  "seed": 67,
+  "writer": "f0103_28",
+  "distortion": "L1",
+  "tags": [
+    "nominal"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "9be2b5ff94e60cf6c48e66d1349cb8a47b4305055509ed155195e087ced1c61c"
+}

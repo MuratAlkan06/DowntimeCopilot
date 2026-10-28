@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "2",
+    "time_given": "11:41",
+    "medication": "enoxaparin",
+    "dose": "4 mg",
+    "route": "IV",
+    "initials": "KK",
+    "second_verifier": "SFY"
+  },
+  "image": "hw-downtime_mar-004.jpg",
+  "seed": 67,
+  "writer": "f0451_44",
+  "distortion": "L0",
+  "tags": [
+    "nominal"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "74be14fdfb5933029429bd558e009660a3f4909dcafb1c600abbcc1f40a3222f"
+}

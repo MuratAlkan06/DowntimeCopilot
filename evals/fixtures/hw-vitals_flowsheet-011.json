@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "form_type": "vitals_flowsheet",
+  "fields": {
+    "bed": "5",
+    "time": "22:12",
+    "initials": "XQA",
+    "temp_c": "36.2",
+    "heart_rate": "83",
+    "resp_rate": "13",
+    "bp_systolic": "154",
+    "bp_diastolic": "99",
+    "spo2": "78",
+    "pain_score": "0"
+  },
+  "image": "hw-vitals_flowsheet-011.jpg",
+  "seed": 67,
+  "writer": "f0093_24",
+  "distortion": "L1",
+  "tags": [
+    "out_of_range"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "33c30a1b9ef0035e5e80c5b272e5bacbd218cddf34072ce7ae53417371415bbd"
+}

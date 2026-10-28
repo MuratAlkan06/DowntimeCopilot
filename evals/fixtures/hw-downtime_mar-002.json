@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "4",
+    "time_given": "16:26",
+    "medication": "insulin",
+    "dose": null,
+    "route": "SL",
+    "initials": "JP",
+    "second_verifier": "NGP"
+  },
+  "image": "hw-downtime_mar-002.jpg",
+  "seed": 67,
+  "writer": "f0360_15",
+  "distortion": "L1",
+  "tags": [
+    "nominal",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "42951a229389ad04217c36994e170f3ce4cd801c07b1f1722a3f5f91663ba198"
+}

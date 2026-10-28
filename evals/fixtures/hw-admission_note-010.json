@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "8",
+    "height_cm": "159",
+    "weight_kg": "50.8",
+    "allergies": null,
+    "history": "sickle cell disease"
+  },
+  "image": "hw-admission_note-010.jpg",
+  "seed": 67,
+  "writer": "f0739_42",
+  "distortion": "L0",
+  "tags": [
+    "ambiguous",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "cee4b6218bbba8c4edf1ca12bc5c9f47256ace2af98ebd5fd0fd467d5ccf43ab"
+}

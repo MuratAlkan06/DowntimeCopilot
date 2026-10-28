@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "29",
+    "height_cm": "163",
+    "weight_kg": null,
+    "allergies": "penicillin hives",
+    "history": "type 2 diabetes, hypertension"
+  },
+  "image": "hw-admission_note-002.jpg",
+  "seed": 67,
+  "writer": "f0125_02",
+  "distortion": "L1",
+  "tags": [
+    "nominal",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "dbda04f09216a0d728019ec61295124415c50ea2d75ccc7ba9457e9cb4fdf30a"
+}

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "18",
+    "time_given": "09:15",
+    "medication": "lisinopril",
+    "dose": "0.1 mg",
+    "route": "IO",
+    "initials": "BBZ",
+    "second_verifier": "BS"
+  },
+  "image": "hw-downtime_mar-009.jpg",
+  "seed": 67,
+  "writer": "f0554_17",
+  "distortion": "L2",
+  "tags": [
+    "ambiguous"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "36a9831758588d22153d447373ab831055b01bf3c5846f0fa8f1e6cc3ca6746c"
+}

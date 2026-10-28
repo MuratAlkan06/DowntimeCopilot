@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "27",
+    "height_cm": "155",
+    "weight_kg": null,
+    "allergies": "sulfa rash",
+    "history": null
+  },
+  "image": "hw-admission_note-012.jpg",
+  "seed": 67,
+  "writer": "f3350_11",
+  "distortion": "L2",
+  "tags": [
+    "ambiguous",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "1d91c38684338789ceb8418763c0cfc71568ea9ad1eef6b143c6033d47dd76eb"
+}

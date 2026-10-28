@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "15",
+    "height_cm": "159",
+    "weight_kg": "94.7",
+    "allergies": "iodine rash",
+    "history": null
+  },
+  "image": "hw-admission_note-007.jpg",
+  "seed": 67,
+  "writer": "f1439_27",
+  "distortion": "L0",
+  "tags": [
+    "ambiguous",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "7c3f6eb149e1cd881c248f65e3e9221e089f7b10cb742c9b186061d848c1460a"
+}
