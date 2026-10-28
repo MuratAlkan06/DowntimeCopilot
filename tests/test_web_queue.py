@@ -171,6 +171,26 @@ def test_dead_item_is_kept_skipped_and_retryable(tmp_path):
     assert got["all"] == 2 and got["c2"] == {"active": 2, "dead": 0}
 
 
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_retry_drops_the_refusal_evidence(tmp_path):
+    """#59 H1 (design review): a retried item starts over with no refusal on record. retryDead drops server_status
+    (the refused first submit) with the attempts, so the box cannot call it refused before the server answers it
+    again. The rest of the item is kept, and a live item's evidence is left alone (only dead items are retried)."""
+    got = run(tmp_path, ITEMS + (
+        "const [a, b] = await s.list();\n"
+        "await s.put({ ...a, server_status: 503, attempts: Q.MAX_ATTEMPTS, status: 'dead' });\n"
+        "await s.put({ ...b, server_status: 429 });\n"  # live, refused on submit: not retried, evidence kept
+        "const n = await Q.retryDead(s);\n"
+        "const [ra, rb] = await s.list();\n"
+        "console.log(JSON.stringify({ n, a: Object.keys(ra).sort(), b: [rb.server_status ?? null, rb.status ?? null],\n"
+        "  kept: [ra.id, ra.role, ra.queued_at, ra.blob instanceof Blob] }));"
+    ))
+    assert got["n"] == 1
+    assert got["a"] == ["blob", "form_type", "id", "queued_at", "role"]  # no status, attempts or server_status
+    assert got["b"] == [429, None]
+    assert got["kept"] == ["a", "pharmacy", "2026-10-24T03:01:00Z", True]
+
+
 # Just enough DOM for during.js initDuring/submitCapture/renderPending and dom.js h()/mount()/stateBox().
 DURING = r"""
 class El {
@@ -253,7 +273,7 @@ const drained = view();
 console.log(JSON.stringify({{ queued, drained, posts }}));
 """)
     assert got["queued"]["queued"] == "1 queued" and got["queued"]["failed"] is None
-    label = {408: "Upload timed out", 429: "Rate-limited"}.get(status, "Server error")  # #59: 408/429 are not server errors
+    label = {408: "Upload timed out", 429: "Server busy"}.get(status, "Server error")  # #59: 408/429 are not server errors
     assert f"{label} ({status})" in got["queued"]["result"]
     assert "will be retried automatically" in got["queued"]["result"]
     (first, s1), (retry, s2) = got["posts"]
@@ -403,6 +423,59 @@ console.log(JSON.stringify(seen));
     assert got["background"] is True
 
 
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_retry_answers_at_once_with_no_stale_refusal(tmp_path):
+    """#59 H1 (design review): after "Retry failed uploads" the box shows the retry, not the old refusals. The failed
+    box gives way to "Uploading capture 1 of 2…" before the first upload answers, the count moves as each answers,
+    and the amber "not accepting" copy never shows while 201s come back (retryDead dropped server_status). The busy
+    action keeps focus (aria-disabled, not disabled) and does nothing. "Upload now" shows the same progress; a
+    background drain does not (out of #59's scope, unchanged)."""
+    got = run_during(tmp_path, VISIBLE + FOCUS + """
+const tick = () => new Promise((r) => setTimeout(r, 0));
+await submit(503); await submit(503);  // two refused first submits: server_status on both
+answer = 422;
+for (let i = 0; i < 8; i++) await D.flushQueue();
+const before = view().failed;
+// Hold each POST /capture until released, so the box can be read while an upload is in flight.
+const real = globalThis.fetch, held = [];
+globalThis.fetch = (p, i) => (p === '/capture' ? new Promise((res) => held.push(() => res(real(p, i)))) : real(p, i));
+const inFlight = async () => { while (!held.length) await tick();
+  const a = document.activeElement;
+  return { pending: visible($('capture-pending')), boxes: $('capture-pending').kids.map((k) => k.className),
+    failed: view().failed, focused: focused(), busy: a.attrs?.['aria-disabled'] ?? null, inert: !a.on?.click }; };
+answer = 201;
+const retry = action('Retry failed uploads'); retry.focus();
+const done = retry.on.click();
+const first = await inFlight();
+held.shift()();
+const second = await inFlight();
+held.shift()();
+await done;
+const after = { pending: visible($('capture-pending')), focused: focused(), statuses: posts.slice(-2).map(([, s]) => s) };
+const sub = submit(503); await (async () => { while (!held.length) await tick(); held.shift()(); })(); await sub;
+const bg = D.flushQueue();  // background: the interval, Background Sync or the online event
+while (!held.length) await tick();
+const background = visible($('capture-pending'));
+held.shift()(); await bg;
+const up = action('Upload now'); up.focus();
+const pressed = up.on.click();
+const uploading = await inFlight();
+answer = 201; held.shift()(); await pressed;
+console.log(JSON.stringify({ before, first, second, after, background, uploading, end: visible($('capture-pending')) }));
+""")
+    assert got["before"] == "2 failed"
+    first, second = got["first"], got["second"]
+    assert first["pending"].startswith("Uploading capture 1 of 2…") and first["boxes"] == ["state state-loading"]
+    assert first["failed"] is None  # the failed box and chip are gone before the first upload answers
+    assert (first["focused"], first["busy"], first["inert"]) == ("Uploading…", "true", True)
+    assert second["pending"].startswith("Uploading capture 2 of 2…") and second["boxes"] == ["state state-loading"]
+    assert "not accepting" not in first["pending"] + second["pending"]
+    assert got["after"] == {"pending": "", "focused": "#capture-result", "statuses": [201, 201]}
+    assert got["background"].startswith("1 capture queued on this device — the server is not accepting")
+    assert got["uploading"]["pending"].startswith("Uploading capture 1 of 1…")
+    assert got["uploading"]["focused"] == "Uploading…" and got["end"] == ""
+
+
 def test_failed_chip_is_a_button_in_one_live_region():
     """#59 M3: the header "N failed" chip is a real button (keyboard and touch, no tooltip-only path) that app.js
     wires to open During at the retry action. A button cannot be the status, so both chips share one role=status
@@ -462,9 +535,10 @@ console.log(JSON.stringify({ one, two, shown, cleared: { hidden: chip.hidden, st
 
 @pytest.mark.skipif(NODE is None, reason="node not installed")
 @pytest.mark.parametrize("status,label", [(500, "Server error (500)"), (503, "Server error (503)"),
-                                          (408, "Upload timed out (408)"), (429, "Rate-limited (429)")])
+                                          (408, "Upload timed out (408)"), (429, "Server busy (429)")])
 def test_refusal_notice_names_each_status_honestly(tmp_path, status, label):
-    """#59 nit: a 408 (timeout) and a 429 (throttling) are queued like a 5xx, but they are not server errors."""
+    """#59 nit: a 408 (timeout) and a 429 (throttling) are queued like a 5xx, but they are not server errors. A 429
+    reads "Server busy", the plain-language name a nurse can act on (design review), not "Rate-limited"."""
     got = run_during(tmp_path, f"await submit({status});\nconsole.log(JSON.stringify(view()));")
     assert got["result"].startswith(f"{label} — form saved on this device and will be retried automatically.")
     assert ("Server error" in got["result"]) is (status >= 500)
@@ -481,3 +555,42 @@ def test_queue_failure_styles():
     assert "color: #fff" in rules["#capture-pending > .state-error"]
     assert "outline-color: #fff" in rules["#capture-pending > .state-error .btn:focus-visible"]
     assert "min-height: var(--tap)" in rules["#capture-pending .btn"]
+
+
+def _contrast(a: str, b: str) -> float:
+    """WCAG 2.x contrast ratio of two #rrggbb / #rgb colors."""
+    def lum(c: str) -> float:
+        c = c.lstrip("#")
+        c = "".join(x * 2 for x in c) if len(c) == 3 else c
+        ch = [int(c[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+        r, g, b = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in ch]
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    hi, lo = sorted((lum(a), lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def test_waiting_box_is_quiet_and_meets_aa():
+    """#59 H2 (design review): the "waiting to upload" box had no rule of its own and inherited .state, muted text on
+    surface-2 (4.39:1, under AA) with a quiet button on the same grey (no visible edge). It is the calmest queue state,
+    as is the upload in progress: an unfilled box, muted text at AA (>= 4.5:1), and a button with an edge at >= 3:1
+    (WCAG 1.4.11), so it reads as a button without the fill the offline, amber and failed boxes use. The busy action
+    (aria-disabled, so it keeps focus) looks inactive by its text, not by opacity, which would dim its focus ring."""
+    css = re.sub(r"/\*.*?\*/", "", (WEB_JS.parent / "styles.css").read_text(), flags=re.S)
+    tokens = dict(re.findall(r"(--[\w-]+):\s*([^;]+);", re.search(r":root \{([^}]*)\}", css).group(1)))
+    rules: dict[str, str] = {}
+    for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css):
+        for one in sel.split(","):
+            rules[" ".join(one.split())] = rules.get(" ".join(one.split()), "") + body
+
+    def color(sel: str, prop: str) -> str:
+        value = re.findall(rf"(?<![\w-]){prop}:\s*([^;]+);", rules[sel])[-1].split()[-1]
+        return re.sub(r"var\((--[\w-]+)\)", lambda m: tokens[m.group(1)].strip(), value)
+
+    for box in ("#capture-pending > .state-queued", "#capture-pending > .state-loading"):
+        bg = color(box, "background")
+        assert bg == tokens["--c-surface"].strip()  # unfilled: quieter than the offline, amber and failed boxes
+        assert _contrast(color(box, "color"), bg) >= 4.5
+        assert _contrast(color(f"{box} .btn", "border"), bg) >= 3  # the button's edge
+    assert _contrast(color(".btn-quiet", "color"), color(".btn-quiet", "background")) >= 4.5  # its label, on its fill
+    busy = rules['.btn[aria-disabled="true"]']
+    assert "cursor: not-allowed" in busy and "color: var(--c-muted)" in busy and "opacity" not in busy

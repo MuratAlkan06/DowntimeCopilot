@@ -169,6 +169,8 @@ main:focus { outline: none; }
 }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Busy but focusable (a queue action while it runs, #59): muted text, not opacity, so the focus ring stays full strength. */
+.btn[aria-disabled="true"] { color: var(--c-muted); cursor: not-allowed; }
 .btn-lg { min-height: 56px; padding: var(--sp-2) var(--sp-5); font-size: var(--fs-lg); }
 .btn-sm { min-height: 36px; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-sm); }
 .btn-primary { background: var(--c-accent); color: var(--c-accent-ink); font-weight: 600; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2); }
@@ -360,6 +362,10 @@ textarea.input { resize: vertical; }
 #capture-pending > .state-error .btn { background: #fff; color: var(--c-crit); }
 #capture-pending > .state-error .btn:focus-visible { outline-color: #fff; }
 #capture-pending .btn { min-height: var(--tap); }
+/* Waiting to upload, and an upload the user started: the calmest queue states, so unfilled (the offline, amber and
+   failed boxes are filled), with muted text that still meets AA on white (4.8:1) and a button edge at 4.8:1. */
+#capture-pending > .state-queued, #capture-pending > .state-loading { background: var(--c-surface); color: var(--c-muted); }
+#capture-pending > .state-queued .btn, #capture-pending > .state-loading .btn { border: 1px solid var(--c-muted); }
 
 /* ---------------------------------------------------------------- role checklist */
 .checklist { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-1); }

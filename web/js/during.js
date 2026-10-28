@@ -133,8 +133,9 @@ const sendQueued = (item) => api('/capture', {
 });
 
 // Live and dead items, the live ids, and whether the server has refused a live item: a first submit queued on a
-// 5xx/408/429 (server_status) or an answered failure on a drain (attempts). `ids` is null when the store is
-// unreadable, so nothing is concluded about an item from a failed read.
+// 5xx/408/429 (server_status) or an answered failure on a drain (attempts). A retry drops both (queue.js retryDead),
+// so this is never a refusal from before the retry. `ids` is null when the store is unreadable, so nothing is
+// concluded about an item from a failed read.
 async function queueState() {
   try {
     const items = await queue.list();
@@ -151,21 +152,33 @@ const captures = (n) => `${n} capture${n === 1 ? '' : 's'}`;
 // where an uploaded capture's record lands; never <body> (WCAG 2.4.3; the #38 pattern in recovery.js).
 let actions = new Map();
 
+// No onClick: the action is already running. aria-disabled, not disabled, so the button can still hold focus.
 function queueBox(kind, message, name, label, onClick) {
   const box = stateBox(kind, message);
-  const btn = h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: onClick }, label);
+  const btn = h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: onClick,
+    'aria-disabled': onClick ? null : 'true' }, label);
   actions.set(name, btn);
   box.append(btn);
   return box;
 }
 
+// A drain the user started from a queue box (#59): { n, of } while it runs, else null. It redraws before each
+// send, so the press is answered at once (after a retry, the failed box gives way to "Uploading capture 1 of 2…")
+// instead of the box looking unchanged until the first upload answers. Background drains do not redraw before a send.
+let progress = null;
+
 // Why live items are still waiting (#59): no connection, the server refusing them, or no drain has reached them
-// yet. "Will upload when connected" is said only when the connection is the problem.
+// yet. "Will upload when connected" is said only when the connection is the problem. During the user's own
+// drain, how far it has got instead.
 function waitingBox(n, refused) {
+  if (progress?.n) {
+    return queueBox('loading', `Uploading capture ${progress.n} of ${Math.max(progress.of, progress.n)}…`,
+      'upload', 'Uploading…', null);
+  }
   const [kind, why] = isOffline() ? ['offline', 'will upload when connected.']
     : refused ? ['warn', 'the server is not accepting uploads right now; retrying automatically.']
       : ['queued', 'waiting to upload.'];
-  return queueBox(kind, `${captures(n)} queued on this device — ${why}`, 'upload', 'Upload now', flushQueue);
+  return queueBox(kind, `${captures(n)} queued on this device — ${why}`, 'upload', 'Upload now', () => uploadNow());
 }
 
 // The submit notice of the capture last queued here ({ id, el } in #capture-result). It promises a retry, so it is
@@ -195,15 +208,22 @@ async function renderPending() {
   actions = new Map();
   const waiting = n ? waitingBox(n, refused) : null;
   const deadBox = dead ? queueBox('error', `${captures(dead)} could not upload after ${MAX_ATTEMPTS} tries and stopped `
-    + 'retrying. Kept on this device; keep the paper original.', 'retry', 'Retry failed uploads', retryFailed) : null;
+    + 'retrying. Kept on this device; keep the paper original.', 'retry', 'Retry failed uploads',
+    progress ? null : () => uploadNow(true)) : null;
   deadBox?.removeAttribute('role'); // #capture-pending is the live region; role=alert here would re-announce on every redraw
   mount($('capture-pending'), waiting, deadBox);
   if (had) (actions.get(had) || [...actions.values()][0] || $('capture-result')).focus();
 }
 
-async function retryFailed() {
-  try { await retryDead(queue); } catch { /* store unavailable: the next render shows the same count */ }
-  await flushQueue();
+// The queue boxes' actions: "Upload now", or with `retry` "Retry failed uploads", which first puts the dead items
+// back (a fresh attempt budget, no refusal evidence). A press while one runs does nothing; the box says so.
+async function uploadNow(retry = false) {
+  if (progress) return undefined;
+  const mine = { n: 0, of: 0 };
+  progress = mine;
+  if (retry) { try { await retryDead(queue); } catch { /* store unavailable: the next render shows the same count */ } }
+  mine.of = (await queueState()).active;
+  return drainQueue(mine);
 }
 
 /** The header "N failed" chip (#59): app.js opens During, then this puts focus on the failed box's retry action,
@@ -220,20 +240,29 @@ function requestBackgroundSync() {
   navigator.serviceWorker?.ready.then((reg) => reg.sync?.register(SYNC_TAG)).catch(() => {});
 }
 
-export async function flushQueue() {
-  if (isOffline()) { await renderPending(); return; }
-  const result = await drain(queue, sendQueued, {
-    onSent: async (_item, r) => { mount($('capture-result'), transcribeNote(r), renderRecord(r.data, { transcribe: heard(r) })); await renderPending(); },
-  });
-  await renderPending();
-  return result;
+/** Drain now: Background Sync, the online event, the interval and startup. */
+export function flushQueue() { return drainQueue(); }
+
+// `shown` is the user's progress (uploadNow) or null for a background drain, which sends exactly as before.
+async function drainQueue(shown = null) {
+  try {
+    if (isOffline()) return undefined;
+    const send = shown ? async (item) => { shown.n += 1; await renderPending(); return sendQueued(item); } : sendQueued;
+    return await drain(queue, send, {
+      onSent: async (_item, r) => { mount($('capture-result'), transcribeNote(r), renderRecord(r.data, { transcribe: heard(r) })); await renderPending(); },
+    });
+  } finally {
+    if (shown) progress = null; // before the last redraw, so it shows where the queue ended up
+    await renderPending();
+  }
 }
 
 // Queue a first submit under the same id on these: 5xx, or a transient 408 (timeout) / 429 (throttle). Retrying
 // the same client_id is safe, the server dedupes it. Keep tools/durability/queue_cycles.py submit() in step.
 const RETRYABLE = (s) => s >= 500 || s === 408 || s === 429;
-// What the notice calls each (#59): only a 5xx is the server's error; a 408 timed out, a 429 is throttling.
-const REFUSAL = { 408: 'Upload timed out', 429: 'Rate-limited' };
+// What the notice calls each (#59): only a 5xx is the server's error; a 408 timed out, a 429 is throttling, which a
+// nurse reads as the server being busy.
+const REFUSAL = { 408: 'Upload timed out', 429: 'Server busy' };
 
 async function submitCapture(e) {
   e.preventDefault();
