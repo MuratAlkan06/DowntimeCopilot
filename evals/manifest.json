@@ -61,8 +61,8 @@
     "hw-vitals_flowsheet-009", "hw-vitals_flowsheet-010", "hw-vitals_flowsheet-011", "hw-vitals_flowsheet-012"
   ],
   "budget": {
-    "limit_usd": 4.0,
-    "step_estimates_usd": {"packets": 0.40, "policy": 0.20, "forms": 0.25, "speech": 0.03, "photographed_forms": 2.70},
+    "limit_usd": 5.0,
+    "step_estimates_usd": {"packets": 0.40, "policy": 0.20, "refusals": 0.90, "forms": 0.25, "speech": 0.03, "photographed_forms": 2.70},
     "unmetered_allowance_usd": {"textract_page": 0.07, "transcribe_job": 0.01, "guardrail_check": 0.01}
   }
 }
