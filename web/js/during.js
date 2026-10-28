@@ -195,7 +195,7 @@ async function renderPending() {
   actions = new Map();
   const waiting = n ? waitingBox(n, refused) : null;
   const deadBox = dead ? queueBox('error', `${captures(dead)} could not upload after ${MAX_ATTEMPTS} tries and stopped `
-    + 'retrying. Kept on this device; keep the paper original.', 'retry', 'Retry failed', retryFailed) : null;
+    + 'retrying. Kept on this device; keep the paper original.', 'retry', 'Retry failed uploads', retryFailed) : null;
   deadBox?.removeAttribute('role'); // #capture-pending is the live region; role=alert here would re-announce on every redraw
   mount($('capture-pending'), waiting, deadBox);
   if (had) (actions.get(had) || [...actions.values()][0] || $('capture-result')).focus();
@@ -232,6 +232,8 @@ export async function flushQueue() {
 // Queue a first submit under the same id on these: 5xx, or a transient 408 (timeout) / 429 (throttle). Retrying
 // the same client_id is safe, the server dedupes it. Keep tools/durability/queue_cycles.py submit() in step.
 const RETRYABLE = (s) => s >= 500 || s === 408 || s === 429;
+// What the notice calls each (#59): only a 5xx is the server's error; a 408 timed out, a 429 is throttling.
+const REFUSAL = { 408: 'Upload timed out', 429: 'Rate-limited' };
 
 async function submitCapture(e) {
   e.preventDefault();
@@ -285,7 +287,7 @@ async function submitCapture(e) {
       $('capture-preview').hidden = true;
       syncFormType();
     } catch { queued = false; }
-    const why = serverError ? `Server error (${r.status})` : 'Offline';
+    const why = serverError ? `${REFUSAL[r.status] || 'Server error'} (${r.status})` : 'Offline';
     const note = stateBox(serverError ? 'warn' : 'offline', queued
       ? (serverError
         ? `${why} — form saved on this device and will be retried automatically. Keep the paper original.`

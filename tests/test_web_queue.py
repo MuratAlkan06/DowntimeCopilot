@@ -253,7 +253,8 @@ const drained = view();
 console.log(JSON.stringify({{ queued, drained, posts }}));
 """)
     assert got["queued"]["queued"] == "1 queued" and got["queued"]["failed"] is None
-    assert f"Server error ({status})" in got["queued"]["result"]
+    label = {408: "Upload timed out", 429: "Rate-limited"}.get(status, "Server error")  # #59: 408/429 are not server errors
+    assert f"{label} ({status})" in got["queued"]["result"]
     assert "will be retried automatically" in got["queued"]["result"]
     (first, s1), (retry, s2) = got["posts"]
     assert (s1, s2) == (status, 201) and first == retry and first  # one id, sent twice
@@ -290,7 +291,7 @@ await btn.on.click();
 console.log(JSON.stringify({ dead, label, sentWhileDead, after: view(), posts }));
 """)
     assert got["dead"]["queued"] is None and got["dead"]["failed"] == "1 failed"
-    assert "could not upload after 8 tries" in got["dead"]["pending"] and got["label"] == "Retry failed"
+    assert "could not upload after 8 tries" in got["dead"]["pending"] and got["label"] == "Retry failed uploads"
     assert got["sentWhileDead"] == 9  # 1 submit + 8 drains
     assert got["after"]["failed"] is None and got["after"]["queued"] is None
     ids = {c for c, _ in got["posts"]}
@@ -385,7 +386,7 @@ answer = 503;
 seen.upload = { ...(await press('Upload now')), focused: focused() };  // still refused: same action
 for (let i = 0; i < 6; i++) await press('Upload now');
 seen.toRetry = { ...(await press('Upload now')), focused: focused() };  // 8th refusal: dead, only the retry is left
-seen.retryRefused = { ...(await press('Retry failed')), focused: focused() };  // back in the queue, refused again
+seen.retryRefused = { ...(await press('Retry failed uploads')), focused: focused() };  // back in the queue, refused again
 answer = 201;
 seen.uploaded = { ...(await press('Upload now')), focused: focused(), pending: $('capture-pending').textContent };
 await submit(500);
@@ -396,7 +397,7 @@ seen.background = document.activeElement === other;
 console.log(JSON.stringify(seen));
 """)
     assert got["upload"] == {"replaced": True, "inPending": True, "focused": "Upload now"}
-    assert got["toRetry"] == {"replaced": True, "inPending": True, "focused": "Retry failed"}
+    assert got["toRetry"] == {"replaced": True, "inPending": True, "focused": "Retry failed uploads"}
     assert got["retryRefused"] == {"replaced": True, "inPending": True, "focused": "Upload now"}
     assert got["uploaded"]["focused"] == "#capture-result" and got["uploaded"]["pending"] == ""
     assert got["background"] is True
@@ -445,7 +446,7 @@ const deadBox = $('capture-pending').kids.at(-1);
 const shown = { focused: focused(), inDeadBox: walk(deadBox).includes(document.activeElement),
   box: deadBox.className, scrolled: document.activeElement.scrolled };
 answer = 201;
-await action('Retry failed').on.click();
+await action('Retry failed uploads').on.click();
 const before = document.activeElement;
 D.showFailedUploads();  // nothing dead: nothing to land on, focus stays
 console.log(JSON.stringify({ one, two, shown, cleared: { hidden: chip.hidden, stayed: document.activeElement === before } }));
@@ -454,6 +455,29 @@ console.log(JSON.stringify({ one, two, shown, cleared: { hidden: chip.hidden, st
                           "title": "1 capture stopped retrying after 8 failed uploads — kept on this device",
                           "rewritten": False}
     assert got["two"] == {"text": "2 failed", "label": "2 failed uploads — open to retry"}
-    assert got["shown"] == {"focused": "Retry failed", "inDeadBox": True, "box": "state state-error",
+    assert got["shown"] == {"focused": "Retry failed uploads", "inDeadBox": True, "box": "state state-error",
                             "scrolled": {"block": "center"}}
     assert got["cleared"] == {"hidden": True, "stayed": True}
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+@pytest.mark.parametrize("status,label", [(500, "Server error (500)"), (503, "Server error (503)"),
+                                          (408, "Upload timed out (408)"), (429, "Rate-limited (429)")])
+def test_refusal_notice_names_each_status_honestly(tmp_path, status, label):
+    """#59 nit: a 408 (timeout) and a 429 (throttling) are queued like a 5xx, but they are not server errors."""
+    got = run_during(tmp_path, f"await submit({status});\nconsole.log(JSON.stringify(view()));")
+    assert got["result"].startswith(f"{label} — form saved on this device and will be retried automatically.")
+    assert ("Server error" in got["result"]) is (status >= 500)
+
+
+def test_queue_failure_styles():
+    """#59 nits: the two header chips wrap as one group at 375px; the failed box is filled (as the offline box is),
+    never quieter than the queued one, with a focus ring that shows on red; queue actions are 44px touch targets."""
+    css = re.sub(r"/\*.*?\*/", "", (WEB_JS.parent / "styles.css").read_text(), flags=re.S)
+    rules = {" ".join(sel.split()): body for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css)}
+    assert "display: inline-flex" in rules[".queue-chips"] and "wrap" not in rules[".queue-chips"]
+    assert "background: #1d2939" in rules[".state-offline"]  # the queued (offline) box is filled ...
+    assert "background: var(--c-crit)" in rules["#capture-pending > .state-error"]  # ... and so is the failed box
+    assert "color: #fff" in rules["#capture-pending > .state-error"]
+    assert "outline-color: #fff" in rules["#capture-pending > .state-error .btn:focus-visible"]
+    assert "min-height: var(--tap)" in rules["#capture-pending .btn"]

@@ -354,6 +354,12 @@ textarea.input { resize: vertical; }
 }
 #policy-answer > .muted, #capture-pending:not(:empty) { margin-top: var(--sp-3); }
 #capture-pending > .state + .state { margin-top: var(--sp-2); } /* queued notice, then the failed (dead-letter) one */
+/* #59: the failed box is the most serious queue state, so it is filled like the offline box, never quieter; its
+   focus ring is white (the blue one is under 3:1 on red). Queue actions get the full 44px touch target. */
+#capture-pending > .state-error { background: var(--c-crit); color: #fff; border-color: var(--c-crit); }
+#capture-pending > .state-error .btn { background: #fff; color: var(--c-crit); }
+#capture-pending > .state-error .btn:focus-visible { outline-color: #fff; }
+#capture-pending .btn { min-height: var(--tap); }
 
 /* ---------------------------------------------------------------- role checklist */
 .checklist { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-1); }
