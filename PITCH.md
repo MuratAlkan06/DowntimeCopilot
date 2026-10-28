@@ -32,7 +32,9 @@ Rules decide; Bedrock explains. Humans verify everything before it counts.
 
 ## Measured results
 
-From one recorded live run of fixed inputs (`RESULTS.md`, run `20261024T120050Z-90d316a`, us-east-1). All inputs are synthetic: 12 seeded patients, 5 policy questions, 3 printed form fixtures, 1 text-to-speech clip.
+Each table comes from one recorded live run of fixed inputs in us-east-1; every run's bundle is kept under `evals/baseline/`.
+
+Synthetic-fixture baseline, run `20261024T120050Z-90d316a`. All inputs are synthetic: 12 seeded patients, 5 policy questions, 3 printed form fixtures, 1 text-to-speech clip.
 
 | What | Result |
 |---|---|
@@ -47,10 +49,20 @@ From one recorded live run of fixed inputs (`RESULTS.md`, run `20261024T120050Z-
 
 Verbal-order structuring is the weak spot, and we report it as measured. Three of the four misses are normalization gaps ("Doctor Quill" for "Dr. Quill", "confirmed" for "yes", "subcutaneous" for "SC"). The fourth is a co-sign the read-back never mentions. The previous baseline had the same four misses. Textract, Transcribe and Guardrail checks are billed outside the app's meter, about $0.20 more for this run.
 
+Forms built from public handwriting samples, run `20261028T060034Z-609f90e` (the run [`RESULTS.md`](RESULTS.md) shows): 36 forms, glyphs from NIST Special Database 19 composited onto the three templates, one writer per fixture, with a software photo-style distortion. They are not forms a person filled in by hand.
+
+| What | Result |
+|---|---|
+| Form fields, Nova 2 Lite / Textract / combined (forms built from public handwriting samples) | 89.8% (237/264) / 88.6% (234/264) / 92.4% (244/264) |
+| Wrong combined values left unflagged | 9 of 20. The other 11 were flagged for review |
+| False flags on clean fields | 10.7% (26/243) |
+
+The same run repeats every synthetic-set number in the first table except packet lines, 100.0% (192/192), and spend, $0.3278 ($0.4370 per simulated outage-hour), which also pays for the 36 extra form reads.
+
 ## Limitations
 
 - Synthetic data only: a simulated EHR, BCA feed and outage, for a single unit.
-- Form accuracy comes from printed synthetic fixtures, which overstate real-world handwriting accuracy. Photographed handwritten forms are pending.
+- Form accuracy comes from printed synthetic fixtures, which overstate real-world handwriting accuracy, and from forms built from public handwriting samples: NIST Special Database 19 glyphs composited onto the templates, not forms a person filled in by hand. On those the two readers combined get 92.4% (244/264) of fields right; the samples are careful block handprint rather than rushed bedside writing, and the photo effect is software, not a camera.
 - Speech is one synthetic clip, not real clinical speech.
 - The Spanish patient notice has passed the Guardrail check but is pending native-speaker review, and it says so on the page.
 - No real authentication: roles are self-asserted. The local store is not encrypted at rest. Knowledge Bases retrieval and the cloud-side Lambda puller were not built in this account.
