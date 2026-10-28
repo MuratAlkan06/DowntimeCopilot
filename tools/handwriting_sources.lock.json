@@ -3,7 +3,7 @@
   "dataset": "NIST Special Database 19, Handprinted Forms and Characters, 2nd edition (September 2016)",
   "doi": "10.18434/T4H01C",
   "landing_page": "https://www.nist.gov/srd/nist-special-database-19",
-  "note": "sha256 and size stay null until the first verified fetch (python -m tools.hw_glyphs fetch --write-lock records them after the NIST MD5 logs check out). While any is null the glyph source refuses to load. See docs/handwriting-datasets.md.",
+  "note": "sha256 and size are pinned from the verified fetch of 2026-10-28 (UTC): python -m tools.hw_glyphs fetch --write-lock recorded them after every archive member matched NIST's MD5 logs. Every later fetch, verify, index build and fixture regeneration checks the archives against these values and refuses on a mismatch. See docs/handwriting-datasets.md.",
   "archives": {
     "by_write": {
       "url": "https://s3.amazonaws.com/nist-srd/SD19/by_write.zip",
