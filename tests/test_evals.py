@@ -87,6 +87,75 @@ def test_manifest_with_missing_fixture_refuses(tmp_path):
         run.load_manifest(fixtures=tmp_path)
 
 
+# ------------------------------------------------------------------ guardrail refusal questions (#80), pre-registered
+
+REFUSAL_SUBCATEGORY_COUNTS = {
+    ("should_refuse", "direct_dosing"): 5, ("should_refuse", "treatment_advice"): 5,
+    ("should_refuse", "rephrased_indirect"): 5, ("should_refuse", "prompt_injection"): 5,
+    ("should_answer", "procedure"): 10, ("should_answer", "mentions_medication"): 5,
+}
+
+
+def test_manifest_pre_registers_the_refusal_question_set():
+    m = run.load_manifest()
+    rq = m["refusal_questions"]
+    assert Counter((q["category"], q["subcategory"]) for q in rq) == REFUSAL_SUBCATEGORY_COUNTS
+    assert len({q["id"] for q in rq}) == len({q["question"] for q in rq}) == 35
+    assert all(q["id"].startswith({"should_refuse": "sr-", "should_answer": "sa-"}[q["category"]]) for q in rq)
+    assert all(("expected_section" in q) == (q["category"] == "should_answer") for q in rq)
+    assert not {q["question"] for q in rq} & {q["question"] for q in m["questions"]}
+    assert run.scrub(json.dumps(rq)) == json.dumps(rq)  # the bundle scrubber leaves every entry as written
+
+
+def test_every_expected_section_is_a_real_policy_section():
+    """The sections the app grounds on (app.ai.policy parses data/policy/downtime_policy.md); imported here, never by
+    load_manifest, which stays env- and app-free."""
+    from app.ai import policy
+
+    m = run.load_manifest()
+    expected = [q["expected_section"] for q in [*m["questions"], *m["refusal_questions"]] if "expected_section" in q]
+    assert len(expected) == 5 + 15
+    assert [e for e in expected if e not in policy.sections()] == []
+
+
+def _refusal_manifest(tmp_path, edit) -> Path:
+    """The real manifest with `edit(refusal_questions, manifest)` applied."""
+    m = json.loads(run.MANIFEST.read_text())
+    edit(m["refusal_questions"], m)
+    p = tmp_path / "manifest.json"
+    p.write_text(json.dumps(m))
+    return p
+
+
+@pytest.mark.parametrize("edit, match", [
+    (lambda rq, m: m.update(refusal_questions={"sr-dose-01": "?"}), "list of objects"),
+    (lambda rq, m: rq[0].update(note="x"), "unknown field.*note"),
+    (lambda rq, m: rq[0].update(category="maybe"), "category must be one of"),
+    (lambda rq, m: rq[0].update(subcategory="procedure"), "subcategory of should_refuse"),
+    (lambda rq, m: rq[0].update(id="sa-dose-01"), "id must be sr-"),
+    (lambda rq, m: rq[1].update(id=rq[0]["id"]), "id repeated"),
+    (lambda rq, m: rq[0].update(question="  "), "non-empty"),
+    (lambda rq, m: rq[0].pop("question"), "non-empty"),
+    (lambda rq, m: rq[0].update(question=m["questions"][0]["question"]), "repeats a manifest `questions` text"),
+    (lambda rq, m: rq[1].update(question=rq[0]["question"]), "question repeated"),
+    (lambda rq, m: rq[0].update(question="Is 555123456789 the pharmacy line?"), "12-digit"),
+    (lambda rq, m: rq[-1].pop("expected_section"), "needs expected_section"),
+    (lambda rq, m: rq[0].update(expected_section="5"), "has no expected_section"),
+    (lambda rq, m: rq.pop(0), "19 should_refuse entries"),
+    (lambda rq, m: rq.append(rq[-1] | {"id": "sa-med-06", "question": "One more?"}), "16 should_answer entries"),
+], ids=["not-a-list", "unknown-field", "category", "subcategory", "id-prefix", "id-repeat", "blank-question",
+        "no-question", "demo-overlap", "question-repeat", "12-digit-run", "answer-without-section",
+        "refuse-with-section", "too-few", "too-many"])
+def test_refusal_questions_failing_a_static_check_refuse_in_load_manifest(tmp_path, edit, match):
+    with pytest.raises(run.Refused, match=match):
+        run.load_manifest(_refusal_manifest(tmp_path, edit))
+
+
+def test_a_manifest_without_refusal_questions_loads_as_before(tmp_path):
+    m = run.load_manifest(_refusal_manifest(tmp_path, lambda rq, m: m.pop("refusal_questions")))
+    assert "refusal_questions" not in m and len(m["questions"]) == 5
+
+
 # ------------------------------------------------------------------ budget guard
 
 def test_budget_guard_trips_on_mocked_cost_overrun():

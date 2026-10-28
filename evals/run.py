@@ -12,7 +12,8 @@ run's calls. The simulator is the real one at SIM_URL. Two observation hooks rec
 and transcribe.transcribe saw and returned; they never change a result.
 
 Refuses (exit nonzero, loud, no bundle, no RESULTS.md): DRY_RUN=1, missing fixtures, declared photographed_fixtures
-that do not match the committed truth (load_manifest, no image read), photographed pairs on disk that are not
+that do not match the committed truth (load_manifest, no image read), declared refusal_questions that fail their
+static checks (load_manifest, check_refusal_questions), photographed pairs on disk that are not
 exactly the declared set or whose image is missing or fails its sha256 (preflight, before any network or spend),
 TEXTRACT_ENABLED off, STORE_PATH unset or non-empty, simulator unreachable, a dry-run/mock call in the run, a
 projected spend over the manifest budget (checked before and after every step), or a /costs inconsistency.
@@ -42,6 +43,13 @@ RUNS = ROOT / "evals" / "runs"
 IMAGE_EXT = {".jpg": "jpeg", ".jpeg": "jpeg", ".png": "png"}
 ROLE = {"X-Role": "charge_nurse"}
 LIVE_TRANSCRIBE = frozenset({"transcribed"})  # X-Transcribe outcomes that count as a live transcript
+# The pre-registered guardrail refusal set (#80): per category, its id prefix, subcategories and question count.
+REFUSAL_CATEGORIES: dict[str, dict] = {
+    "should_refuse": {"prefix": "sr-", "count": 20,
+                      "subcategories": ("direct_dosing", "treatment_advice", "rephrased_indirect", "prompt_injection")},
+    "should_answer": {"prefix": "sa-", "count": 15, "subcategories": ("procedure", "mentions_medication")},
+}
+REFUSAL_FIELDS = frozenset({"id", "category", "subcategory", "question", "expected_section"})
 
 # Same patterns as tools/guard.sh (credentials, ARNs with an account segment, 12-digit account ids).
 SCRUB: tuple[tuple[re.Pattern, str], ...] = (
@@ -73,8 +81,9 @@ def loud(msg: str) -> None:
 def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES, photos: Path | None = None) -> dict:
     """The manifest fixes the inputs before the run. Raises Refused if any input is missing, or, when the manifest
     has photographed_fixtures, if the declared set and the committed truth in `photos` (default evals/fixtures) fail
-    check_photographed_truth. Reads no photographed image: the images are git-ignored, so absent in CI; preflight
-    checks them before any network or spend (check_photographed_images)."""
+    check_photographed_truth, or, when it has refusal_questions, if they fail check_refusal_questions. Reads no
+    photographed image: the images are git-ignored, so absent in CI; preflight checks them before any network or
+    spend (check_photographed_images)."""
     m = json.loads(path.read_text())
     if not m.get("questions") or any(not q.get("question") or not q.get("expected_section") for q in m["questions"]):
         raise Refused("manifest questions need question + expected_section")
@@ -87,7 +96,58 @@ def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES, photos: Path
         raise Refused(f"fixtures missing in {fixtures}: {', '.join(missing)} (need <stem>.jpg|png|wav + <stem>.json)")
     if "photographed_fixtures" in m:
         check_photographed_truth(m["photographed_fixtures"], PHOTO_FIXTURES if photos is None else photos)
+    if "refusal_questions" in m:
+        check_refusal_questions(m["refusal_questions"], m["questions"])
     return m
+
+
+def check_refusal_questions(declared, questions: list[dict]) -> None:
+    """Static checks of the pre-registered guardrail refusal set (#80), env-free (load_manifest; tools/model_compare.py
+    calls it too). Each entry is {id, category, subcategory, question, expected_section?}: category and subcategory
+    from REFUSAL_CATEGORIES, the id unique and starting with its category's prefix (sr- / sa-), expected_section
+    present exactly on should_answer entries, the question non-empty, not a text of the manifest's `questions` and
+    not repeated. No entry may hold a 12-digit run: the bundle scrubber (SCRUB) would rewrite it as an account id.
+    Exactly REFUSAL_CATEGORIES[*]["count"] entries per category. Whether each expected_section is a real policy
+    section is a test (tests/test_evals.py), not a run-time import of the app."""
+    if not isinstance(declared, list) or not all(isinstance(q, dict) for q in declared):
+        raise Refused("manifest refusal_questions must be a list of objects")
+    demo = {q["question"] for q in questions}
+    ids: set[str] = set()
+    texts: set[str] = set()
+    for i, q in enumerate(declared):
+        where = f"manifest refusal_questions[{i}] ({q.get('id')!r})"
+        if extra := sorted(set(q) - REFUSAL_FIELDS):
+            raise Refused(f"{where}: unknown field(s) {', '.join(extra)}")
+        cat = REFUSAL_CATEGORIES.get(q["category"]) if isinstance(q.get("category"), str) else None
+        if cat is None:
+            raise Refused(f"{where}: category must be one of {', '.join(REFUSAL_CATEGORIES)}")
+        if q.get("subcategory") not in cat["subcategories"]:
+            raise Refused(f"{where}: subcategory of {q['category']} must be one of {', '.join(cat['subcategories'])}")
+        qid = q.get("id")
+        if not isinstance(qid, str) or not re.fullmatch(rf"{cat['prefix']}[a-z0-9]+(-[a-z0-9]+)*", qid):
+            raise Refused(f"{where}: id must be {cat['prefix']}<lowercase words> for {q['category']}")
+        if qid in ids:
+            raise Refused(f"{where}: id repeated")
+        ids.add(qid)
+        text = q.get("question")
+        if not isinstance(text, str) or not text.strip():
+            raise Refused(f"{where}: question must be non-empty text")
+        if text in demo:
+            raise Refused(f"{where}: question repeats a manifest `questions` text")
+        if text in texts:
+            raise Refused(f"{where}: question repeated")
+        texts.add(text)
+        if re.search(r"[0-9]{12}", json.dumps(q)):
+            raise Refused(f"{where}: holds a 12-digit run, which the bundle scrubber would redact")
+        exp = q.get("expected_section")
+        if q["category"] == "should_answer" and not (isinstance(exp, str) and exp.strip()):
+            raise Refused(f"{where}: a should_answer entry needs expected_section")
+        if q["category"] == "should_refuse" and "expected_section" in q:
+            raise Refused(f"{where}: a should_refuse entry has no expected_section")
+    for name, cat in REFUSAL_CATEGORIES.items():
+        n = sum(q["category"] == name for q in declared)
+        if n != cat["count"]:
+            raise Refused(f"manifest refusal_questions: {n} {name} entries, the pre-registered set has {cat['count']}")
 
 
 def image_of(fixtures: Path, stem: str) -> Path:
