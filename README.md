@@ -277,7 +277,7 @@ Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded
 ├── web/              # static PWA: index.html, app.js, sw.js, styles.css, print.css
 ├── simulator/        # synthetic EHR / BCA feed, outage + restore controls, restored-state diff
 ├── data/             # patients/*.json, policy/downtime_policy.md, forms/*.pdf
-├── evals/            # harness, fixtures/ (photographed forms + ground truth), report generator
+├── evals/            # harness, fixtures/ (forms built from public handwriting samples + ground truth), report generator
 ├── infra/            # Terraform: bootstrap/ (state bucket, admin role) and the app's resources + runtime role
 ├── tools/            # bedrock_probe.py, env_sync.py (make infra-env), guard.sh, durability/ (make durability)
 └── tests/
