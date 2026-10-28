@@ -3,7 +3,7 @@ import { isOffline, net, onNetChange, setSimulatedOffline } from './js/api.js';
 import { mount, h, fmtTime, fmtAgo } from './js/dom.js';
 import { store, set, on, ROLES, STALE_MINUTES } from './js/state.js';
 import { loadPatients, goToDowntime, loadStatus, printAllPackets, refreshRelativeTimes, refreshOnReconnect } from './js/packets.js';
-import { initDuring, flushQueue } from './js/during.js';
+import { initDuring, flushQueue, showFailedUploads } from './js/during.js';
 import { initChecklist, loadChecklist, openChecklist } from './js/checklists.js';
 import { initRecovery, enterRecovery } from './js/recovery.js';
 import { initReadiness, loadReadiness } from './js/readiness.js';
@@ -118,6 +118,8 @@ function init() {
   $('btn-notice').addEventListener('click', () => setPhase('notice'));
   $('btn-notice-back').addEventListener('click', () => setPhase('during'));
   $('sim-offline').addEventListener('click', () => setSimulatedOffline(!net.simulated));
+  // Header "N failed" chip (#59): from any view, open During at the failed box's retry action.
+  $('queue-failed').addEventListener('click', () => { setPhase('during'); showFailedUploads(); });
 
   onNetChange((offline, info) => {
     renderOffline();

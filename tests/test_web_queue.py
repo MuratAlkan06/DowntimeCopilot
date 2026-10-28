@@ -6,6 +6,7 @@ Runs the real modules in node against the in-memory store (no IndexedDB, no new 
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -399,3 +400,60 @@ console.log(JSON.stringify(seen));
     assert got["retryRefused"] == {"replaced": True, "inPending": True, "focused": "Upload now"}
     assert got["uploaded"]["focused"] == "#capture-result" and got["uploaded"]["pending"] == ""
     assert got["background"] is True
+
+
+def test_failed_chip_is_a_button_in_one_live_region():
+    """#59 M3: the header "N failed" chip is a real button (keyboard and touch, no tooltip-only path) that app.js
+    wires to open During at the retry action. A button cannot be the status, so both chips share one role=status
+    group, with no nested live region left on either chip. Its touch target is 44px, and its rule follows .chip so
+    the chip's own padding and transparent border do not win."""
+    html = (WEB_JS.parent / "index.html").read_text()
+    group = re.search(r'<span class="queue-chips" role="status">\s*(<span id="queue-count"[^>]*>)</span>\s*'
+                      r'(<button id="queue-failed"[^>]*>)</button>\s*</span>', html)
+    assert group, "both queue chips sit in one role=status group"
+    count, failed = group.groups()
+    assert "role=" not in count and "role=" not in failed
+    assert 'type="button"' in failed and "chip-action" in failed and " hidden" in failed
+    assert html.count('id="queue-failed"') == 1
+    app_js = (WEB_JS.parent / "app.js").read_text()
+    assert "$('queue-failed').addEventListener('click', () => { setPhase('during'); showFailedUploads(); });" in app_js
+    css = (WEB_JS.parent / "styles.css").read_text()
+    assert "--tap: 44px;" in css
+    action = re.search(r"^\.chip-action \{([^}]*)\}", css, re.M)
+    assert action and "min-height: var(--tap)" in action.group(1)
+    assert css.index("\n.chip {") < action.start()
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_failed_chip_names_its_action_and_opens_the_retry(tmp_path):
+    """#59 M3: the chip's accessible name starts with its visible text (WCAG 2.5.3) and says what it does; the title
+    keeps the explanation. showFailedUploads() (the chip's click, after app.js opens During) centers and focuses the
+    failed box's retry action. A redraw with the same counts does not rewrite the chip text (no re-announcement)."""
+    got = run_during(tmp_path, FOCUS + """
+El.prototype.scrollIntoView = function (opts) { this.scrolled = opts; };
+const chip = $('queue-failed');
+const deadOut = async () => { answer = 422; for (let i = 0; i < 8; i++) await D.flushQueue(); };
+await submit(500); await deadOut();
+const one = { text: chip.textContent, label: chip.attrs['aria-label'], title: chip.title, hidden: chip.hidden };
+const node = chip.kids[0];
+await D.flushQueue();
+one.rewritten = chip.kids[0] !== node;
+await submit(503); await deadOut();
+const two = { text: chip.textContent, label: chip.attrs['aria-label'] };
+D.showFailedUploads();
+const deadBox = $('capture-pending').kids.at(-1);
+const shown = { focused: focused(), inDeadBox: walk(deadBox).includes(document.activeElement),
+  box: deadBox.className, scrolled: document.activeElement.scrolled };
+answer = 201;
+await action('Retry failed').on.click();
+const before = document.activeElement;
+D.showFailedUploads();  // nothing dead: nothing to land on, focus stays
+console.log(JSON.stringify({ one, two, shown, cleared: { hidden: chip.hidden, stayed: document.activeElement === before } }));
+""")
+    assert got["one"] == {"text": "1 failed", "label": "1 failed upload — open to retry", "hidden": False,
+                          "title": "1 capture stopped retrying after 8 failed uploads — kept on this device",
+                          "rewritten": False}
+    assert got["two"] == {"text": "2 failed", "label": "2 failed uploads — open to retry"}
+    assert got["shown"] == {"focused": "Retry failed", "inDeadBox": True, "box": "state state-error",
+                            "scrolled": {"block": "center"}}
+    assert got["cleared"] == {"hidden": True, "stayed": True}

@@ -28,8 +28,12 @@
         <span class="role-label">Role</span>
         <select id="role-select" class="select" aria-label="Your role"></select>
       </label>
-      <span id="queue-count" class="chip chip-warn" role="status" hidden></span>
-      <span id="queue-failed" class="chip chip-crit" role="status" hidden></span>
+      <!-- Capture queue chips (during.js renderPending), one live region for both: "N failed" is a button that opens
+           the retry action on During from any view (#59), and a button cannot itself be the status. -->
+      <span class="queue-chips" role="status">
+        <span id="queue-count" class="chip chip-warn" hidden></span>
+        <button id="queue-failed" class="chip chip-crit chip-action" type="button" hidden></button>
+      </span>
       <button id="sim-offline" class="btn btn-quiet" type="button" aria-pressed="false">Simulate offline</button>
     </div>
   </header>

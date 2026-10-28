@@ -92,6 +92,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .header-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
 .role-control { display: flex; align-items: center; gap: var(--sp-2); }
 .role-label { font-size: var(--fs-sm); font-weight: 600; color: var(--c-muted); }
+/* Queue chips: one live region. With both chips hidden it leaves the flex flow (no empty gap) but stays in the
+   accessibility tree, so the first chip to appear is announced. */
+.queue-chips { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.queue-chips:not(:has(> :not([hidden]))) { position: absolute; }
 
 .phase-nav {
   position: sticky; top: 0; z-index: 5;
@@ -209,6 +213,9 @@ textarea.input { resize: vertical; }
   min-height: 40px; padding: var(--sp-1) var(--sp-3); white-space: normal; text-align: left;
   background: var(--c-accent-soft); color: var(--c-accent); border-color: #b2ccf5; cursor: pointer;
 }
+/* The header "N failed" chip is a button (#59): chip colors, a border that says it acts, a 44px touch target. */
+.chip-action { min-height: var(--tap); padding: var(--sp-1) var(--sp-3); border-color: currentColor; cursor: pointer; }
+.chip-action.chip-crit:hover { background: var(--c-crit); color: #fff; } /* as .btn-danger */
 .rule-badge, .section-badge, .ha-badge {
   display: inline-block; padding: 1px var(--sp-2); border-radius: var(--radius-sm);
   font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 700; white-space: nowrap;

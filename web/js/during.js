@@ -173,17 +173,23 @@ function waitingBox(n, refused) {
 // says so instead) or uploaded by another tab. When this tab uploads it, onSent replaces it with the record.
 let queuedNote = null;
 
+// The header chips share one live region: rewrite a chip's text only when it changes, or every drain re-announces.
+const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
+
 async function renderPending() {
   const note = queuedNote; // read before the store: an item queued after this read is not in the list below
   const { active: n, dead, ids, refused } = await queueState();
   if (note && note === queuedNote && ids && !ids.has(note.id)) { note.el.hidden = true; queuedNote = null; }
   const badge = $('queue-count'); // header, next to "Simulate offline"; counts down as the queue drains
   badge.hidden = !n;
-  badge.textContent = `${n} queued`;
+  setText(badge, `${n} queued`);
   badge.title = `${captures(n)} waiting to upload from this device`;
-  const failed = $('queue-failed'); // dead-lettered (#55): kept on this device, retried only on request
+  // Dead-lettered (#55): kept on this device, retried only on request. The chip is a button (#59): app.js opens
+  // During and showFailedUploads() lands on the retry action. The name starts with the visible text (WCAG 2.5.3).
+  const failed = $('queue-failed');
   failed.hidden = !dead;
-  failed.textContent = `${dead} failed`;
+  setText(failed, `${dead} failed`);
+  failed.setAttribute('aria-label', `${dead} failed upload${dead === 1 ? '' : 's'} — open to retry`);
   failed.title = `${captures(dead)} stopped retrying after ${MAX_ATTEMPTS} failed uploads — kept on this device`;
   const had = [...actions].find(([, btn]) => btn === document.activeElement)?.[0]; // read just before the redraw
   actions = new Map();
@@ -198,6 +204,15 @@ async function renderPending() {
 async function retryFailed() {
   try { await retryDead(queue); } catch { /* store unavailable: the next render shows the same count */ }
   await flushQueue();
+}
+
+/** The header "N failed" chip (#59): app.js opens During, then this puts focus on the failed box's retry action,
+ *  the one place a dead-lettered capture is sent again. Centered, so the sticky phase bar never covers it. */
+export function showFailedUploads() {
+  const retry = actions.get('retry');
+  if (!retry) return;
+  retry.scrollIntoView({ block: 'center' });
+  retry.focus({ preventScroll: true });
 }
 
 function requestBackgroundSync() {
