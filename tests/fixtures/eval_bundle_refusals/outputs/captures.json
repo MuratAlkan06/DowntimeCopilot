@@ -1,0 +1,205 @@
+[
+  {
+    "fixture": "vitals_flowsheet-01",
+    "record": {
+      "audio_ref": null,
+      "backload_group": "nursing_vitals",
+      "captured_at": "2026-10-24T03:00:00Z",
+      "captured_by_role": "charge_nurse",
+      "entered_at": null,
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.0588,
+            "top": 0.1727,
+            "width": 0.2118
+          },
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.2882,
+            "top": 0.1727,
+            "width": 0.2965
+          },
+          "flag": null,
+          "name": "time",
+          "value": "02:55"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.94,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.0588,
+            "top": 0.2773,
+            "width": 0.2824
+          },
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.8"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.93,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.3588,
+            "top": 0.2773,
+            "width": 0.2824
+          },
+          "flag": null,
+          "name": "heart_rate",
+          "value": "104"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.58,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.6588,
+            "top": 0.2773,
+            "width": 0.2824
+          },
+          "flag": "disagreement",
+          "name": "resp_rate",
+          "value": "27"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.92,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.0588,
+            "top": 0.3818,
+            "width": 0.4324
+          },
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "148"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.5088,
+            "top": 0.3818,
+            "width": 0.4324
+          },
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "86"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.0588,
+            "top": 0.4864,
+            "width": 0.4324
+          },
+          "flag": "out_of_range",
+          "name": "spo2",
+          "value": "89"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.2,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.5088,
+            "top": 0.4864,
+            "width": 0.4324
+          },
+          "flag": "unreadable",
+          "name": "pain_score",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": {
+            "height": 0.0909,
+            "left": 0.6024,
+            "top": 0.1727,
+            "width": 0.3388
+          },
+          "flag": null,
+          "name": "initials",
+          "value": "PN"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "image_ref": "blob:8c92cd51f3ea4813bd5911d3bda60b68",
+      "patient_id": "pt-12",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.97,
+            "bp_diastolic": 0.88,
+            "bp_systolic": 0.9,
+            "heart_rate": 0.9,
+            "initials": 0.95,
+            "pain_score": 0.2,
+            "resp_rate": 0.62,
+            "spo2": 0.92,
+            "temp_c": 0.91,
+            "time": 0.93
+          },
+          "fields": {
+            "bed": "12",
+            "bp_diastolic": "86",
+            "bp_systolic": "148",
+            "heart_rate": "104",
+            "initials": "PN",
+            "pain_score": null,
+            "resp_rate": "27",
+            "spo2": "89",
+            "temp_c": "37.8",
+            "time": "02:55"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.9,
+            "bp_systolic": 0.92,
+            "heart_rate": 0.93,
+            "initials": 0.9,
+            "pain_score": 0.12,
+            "resp_rate": 0.58,
+            "spo2": 0.95,
+            "temp_c": 0.94,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "bp_diastolic": "86",
+            "bp_systolic": "148",
+            "heart_rate": "104",
+            "initials": "PN",
+            "pain_score": null,
+            "resp_rate": "22",
+            "spo2": "89",
+            "temp_c": "37.8",
+            "time": "02:55"
+          }
+        }
+      },
+      "record_id": "rec-a4c83d55afcc",
+      "status": "needs_review",
+      "verified_at": null,
+      "verified_by": null
+    }
+  }
+]

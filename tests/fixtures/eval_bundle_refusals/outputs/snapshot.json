@@ -1,0 +1,61 @@
+[
+  {
+    "admitting_dx": "Left lower leg cellulitis; type 2 diabetes",
+    "age": 67,
+    "allergies": [
+      {
+        "reaction": "hives",
+        "severity": "moderate",
+        "substance": "penicillin"
+      }
+    ],
+    "bed": "Bed 12",
+    "code_status": "Full code",
+    "dob": "1959-06-05",
+    "fall_risk": "moderate",
+    "isolation": null,
+    "lines_drains": [
+      "PIV 20G right forearm"
+    ],
+    "medications": [
+      {
+        "dose": "sliding scale",
+        "frequency": "AC/HS and 04:00",
+        "high_alert": true,
+        "last_given": "2026-10-23T21:00:00Z",
+        "name": "insulin lispro",
+        "next_due": "2026-10-24T04:00:00Z",
+        "route": "SC"
+      },
+      {
+        "dose": "5000 units",
+        "frequency": "q8h",
+        "high_alert": true,
+        "last_given": "2026-10-23T19:30:00Z",
+        "name": "heparin",
+        "next_due": "2026-10-24T03:30:00Z",
+        "route": "SC"
+      },
+      {
+        "dose": "1250 mg",
+        "frequency": "q12h",
+        "high_alert": false,
+        "last_given": "2026-10-23T18:00:00Z",
+        "name": "vancomycin",
+        "next_due": "2026-10-24T06:00:00Z",
+        "route": "IV"
+      }
+    ],
+    "mrn": "SYN-100212",
+    "name": "Hal Testa",
+    "patient_id": "pt-12",
+    "pending_labs": [
+      "vancomycin trough 05:30",
+      "POC glucose 04:00"
+    ],
+    "sex": "male",
+    "snapshot_time": "2026-10-24T02:45:00Z",
+    "source": "bca-feed-sim",
+    "weight_kg": 92.4
+  }
+]

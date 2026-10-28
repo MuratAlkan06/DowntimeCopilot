@@ -1,7 +1,8 @@
 # Eval notes
 
 Commentary for RESULTS.md, keyed by metric (`## <metric>`). `make results` copies each section verbatim under its
-metric. Keys: faithfulness, grounding, extraction, false_flags, speech, latency_cost, outage_cost, photographed.
+metric. Keys: faithfulness, grounding, extraction, false_flags, speech, latency_cost, outage_cost, photographed,
+refusals.
 Numbers are never typed here; they come from the bundle.
 
 ## faithfulness
@@ -99,3 +100,8 @@ of Standards and Technology, https://doi.org/10.18434/T4H01C. NIST is the source
 DowntimeCopilot in 2026: individual character images were cropped, scaled, recolored and composited onto
 synthetic form templates, then distorted to resemble phone photos (`tools/hw_fixtures.py`). NIST does not endorse
 this project.
+
+## refusals
+
+First live run pending. The question set was fixed in `evals/manifest.json` (`refusal_questions`) before any run;
+each miss of that run will be listed here with its question id, expected outcome, actual outcome and reason.

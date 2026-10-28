@@ -55,7 +55,45 @@ def test_preflight_passes_the_real_manifest_when_every_declared_image_is_bound_t
     monkeypatch.setenv("DRY_RUN", "0")
     monkeypatch.setenv("TEXTRACT_ENABLED", "1")
     monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
+    _published_guardrail(monkeypatch)  # the manifest declares refusal_questions (env only, no network)
     assert run.preflight(run.FIXTURES) == json.loads(run.MANIFEST.read_text())
+
+
+def _published_guardrail(monkeypatch, **env) -> None:
+    """A published guardrail in the env (GUARDRAIL_MODE unset) unless `env` overrides it; a None value unsets."""
+    for k, v in ({"GUARDRAIL_ID": "gr0test", "GUARDRAIL_VERSION": "1", "GUARDRAIL_MODE": None} | env).items():
+        if v is None:
+            monkeypatch.delenv(k, raising=False)
+        else:
+            monkeypatch.setenv(k, v)
+
+
+@pytest.mark.parametrize("env", [
+    {"GUARDRAIL_ID": None, "GUARDRAIL_VERSION": None},
+    {"GUARDRAIL_MODE": "checker"},
+    {"GUARDRAIL_VERSION": None},
+], ids=["unpublished", "forced-checker", "id-without-version"])
+def test_refusal_questions_without_the_published_bedrock_guardrail_refuse_before_any_step(tmp_path, monkeypatch,
+                                                                                         capsys, env):
+    """The refusal set measures the published Bedrock guardrail, never the checker fallback: preflight refuses (env
+    checks only) before the simulator is contacted. A manifest without refusal_questions keeps the fallback allowed."""
+    from app import sim_client
+
+    touched: list[str] = []
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", _stub_pairs(tmp_path / "photos"))
+    monkeypatch.setattr(sim_client, "make_client", lambda: touched.append("simulator"))
+    monkeypatch.setenv("DRY_RUN", "0")
+    monkeypatch.setenv("TEXTRACT_ENABLED", "1")
+    monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
+    _published_guardrail(monkeypatch, **env)
+    with pytest.raises(run.Refused, match="refusal_questions.*published Bedrock guardrail.*'checker'"):
+        run.preflight(run.FIXTURES)
+    assert run.main(["--runs", str(tmp_path / "runs"), "--out", str(tmp_path / "RESULTS.md")]) == 3
+    assert touched == [] and not (tmp_path / "runs").exists() and not (tmp_path / "RESULTS.md").exists()
+    assert "published Bedrock guardrail" in capsys.readouterr().err
+    no_refusals, load = _refusal_manifest(tmp_path, lambda rq, m: m.pop("refusal_questions")), run.load_manifest
+    monkeypatch.setattr(run, "load_manifest", lambda **kw: load(no_refusals, **kw))
+    assert "refusal_questions" not in run.preflight(run.FIXTURES)
 
 
 # ------------------------------------------------------------------ manifest fixes the inputs
@@ -77,14 +115,83 @@ def test_manifest_fixes_inputs():
     assert m["speech_fixture"] == {"stem": "verbal_order-01", "patient_id": "pt-07"}
     assert m["clock_advance_minutes"] == {"before_downtime": 15, "before_costs": 45}
     b = m["budget"]
-    assert b["limit_usd"] == 4.0 and sum(b["step_estimates_usd"].values()) < b["limit_usd"]
-    assert b["step_estimates_usd"]["photographed_forms"] == 2.70
+    assert b["limit_usd"] == 5.0 and sum(b["step_estimates_usd"].values()) < b["limit_usd"]
+    assert b["step_estimates_usd"]["photographed_forms"] == 2.70 and b["step_estimates_usd"]["refusals"] == 0.90
 
 
 def test_manifest_with_missing_fixture_refuses(tmp_path):
     (tmp_path / "vitals_flowsheet-01.json").write_text("{}")  # ground truth without its image
     with pytest.raises(run.Refused, match="vitals_flowsheet-01"):
         run.load_manifest(fixtures=tmp_path)
+
+
+# ------------------------------------------------------------------ guardrail refusal questions (#80), pre-registered
+
+REFUSAL_SUBCATEGORY_COUNTS = {
+    ("should_refuse", "direct_dosing"): 5, ("should_refuse", "treatment_advice"): 5,
+    ("should_refuse", "rephrased_indirect"): 5, ("should_refuse", "prompt_injection"): 5,
+    ("should_answer", "procedure"): 10, ("should_answer", "mentions_medication"): 5,
+}
+
+
+def test_manifest_pre_registers_the_refusal_question_set():
+    m = run.load_manifest()
+    rq = m["refusal_questions"]
+    assert Counter((q["category"], q["subcategory"]) for q in rq) == REFUSAL_SUBCATEGORY_COUNTS
+    assert len({q["id"] for q in rq}) == len({q["question"] for q in rq}) == 35
+    assert all(q["id"].startswith({"should_refuse": "sr-", "should_answer": "sa-"}[q["category"]]) for q in rq)
+    assert all(("expected_section" in q) == (q["category"] == "should_answer") for q in rq)
+    assert not {q["question"] for q in rq} & {q["question"] for q in m["questions"]}
+    assert run.scrub(json.dumps(rq)) == json.dumps(rq)  # the bundle scrubber leaves every entry as written
+
+
+def test_every_expected_section_is_a_real_policy_section():
+    """The sections the app grounds on (app.ai.policy parses data/policy/downtime_policy.md); imported here, never by
+    load_manifest, which stays env- and app-free."""
+    from app.ai import policy
+
+    m = run.load_manifest()
+    expected = [q["expected_section"] for q in [*m["questions"], *m["refusal_questions"]] if "expected_section" in q]
+    assert len(expected) == 5 + 15
+    assert [e for e in expected if e not in policy.sections()] == []
+
+
+def _refusal_manifest(tmp_path, edit) -> Path:
+    """The real manifest with `edit(refusal_questions, manifest)` applied."""
+    m = json.loads(run.MANIFEST.read_text())
+    edit(m["refusal_questions"], m)
+    p = tmp_path / "manifest.json"
+    p.write_text(json.dumps(m))
+    return p
+
+
+@pytest.mark.parametrize("edit, match", [
+    (lambda rq, m: m.update(refusal_questions={"sr-dose-01": "?"}), "list of objects"),
+    (lambda rq, m: rq[0].update(note="x"), "unknown field.*note"),
+    (lambda rq, m: rq[0].update(category="maybe"), "category must be one of"),
+    (lambda rq, m: rq[0].update(subcategory="procedure"), "subcategory of should_refuse"),
+    (lambda rq, m: rq[0].update(id="sa-dose-01"), "id must be sr-"),
+    (lambda rq, m: rq[1].update(id=rq[0]["id"]), "id repeated"),
+    (lambda rq, m: rq[0].update(question="  "), "non-empty"),
+    (lambda rq, m: rq[0].pop("question"), "non-empty"),
+    (lambda rq, m: rq[0].update(question=m["questions"][0]["question"]), "repeats a manifest `questions` text"),
+    (lambda rq, m: rq[1].update(question=rq[0]["question"]), "question repeated"),
+    (lambda rq, m: rq[0].update(question="Is 555123456789 the pharmacy line?"), "12-digit"),
+    (lambda rq, m: rq[-1].pop("expected_section"), "needs expected_section"),
+    (lambda rq, m: rq[0].update(expected_section="5"), "has no expected_section"),
+    (lambda rq, m: rq.pop(0), "19 should_refuse entries"),
+    (lambda rq, m: rq.append(rq[-1] | {"id": "sa-med-06", "question": "One more?"}), "16 should_answer entries"),
+], ids=["not-a-list", "unknown-field", "category", "subcategory", "id-prefix", "id-repeat", "blank-question",
+        "no-question", "demo-overlap", "question-repeat", "12-digit-run", "answer-without-section",
+        "refuse-with-section", "too-few", "too-many"])
+def test_refusal_questions_failing_a_static_check_refuse_in_load_manifest(tmp_path, edit, match):
+    with pytest.raises(run.Refused, match=match):
+        run.load_manifest(_refusal_manifest(tmp_path, edit))
+
+
+def test_a_manifest_without_refusal_questions_loads_as_before(tmp_path):
+    m = run.load_manifest(_refusal_manifest(tmp_path, lambda rq, m: m.pop("refusal_questions")))
+    assert "refusal_questions" not in m and len(m["questions"]) == 5
 
 
 # ------------------------------------------------------------------ budget guard
@@ -118,7 +225,7 @@ def test_budget_projection_with_the_photographed_estimate_stays_under_the_limit(
     b = run.load_manifest()["budget"]
     est = b["step_estimates_usd"]
     projected = run.BudgetGuard(b["limit_usd"], est).check(0.0)  # before the first step: nothing spent, all ahead
-    assert projected == pytest.approx(3.58) and projected <= b["limit_usd"] == 4.0
+    assert projected == pytest.approx(4.48) and projected <= b["limit_usd"] == 5.0  # refusals $0.90 (#80)
     spend, guard = {"usd": 0.0}, run.BudgetGuard(b["limit_usd"], est)
     run.execute([(name, lambda usd=usd: spend.update(usd=spend["usd"] + usd)) for name, usd in est.items()],
                 guard, lambda: spend["usd"])  # every step costs exactly its estimate: the projection stays flat
@@ -417,14 +524,19 @@ def _flow(tmp_path, monkeypatch, manifest: Path) -> tuple[Path, list[str]]:
 
 
 def test_flow_without_photographed_fixtures_keeps_the_bundle_shape(tmp_path, monkeypatch):
+    """Neither photographed_fixtures nor refusal_questions declared: both steps run as no-ops and the bundle has
+    exactly the pre-#67 outputs."""
     monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")
-    bundle, steps = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, []))
-    assert steps == ["packets", "policy", "forms", "speech", "photographed_forms"]
+    manifest = _photo_manifest(tmp_path, [])
+    manifest.write_text(json.dumps({k: v for k, v in json.loads(manifest.read_text()).items()
+                                    if k != "refusal_questions"}))
+    bundle, steps = _flow(tmp_path, monkeypatch, manifest)
+    assert steps == ["packets", "policy", "refusals", "forms", "speech", "photographed_forms"]
     meta = json.loads((bundle / "run.json").read_text())
     assert "photographed_truth" not in meta and meta["photographed_fixtures"] == 0
     assert sorted(p.name for p in (bundle / "outputs").iterdir()) == [
         "captures.json", "packet_passes.json", "packets.json", "policy.json", "snapshot.json", "speech.json"]
-    assert report.photographed(bundle) is None
+    assert report.photographed(bundle) is None and report.refusals(bundle) is None
 
 
 def test_flow_with_photographed_fixtures_runs_them_last_and_bundles_fields_only(tmp_path, monkeypatch):
@@ -432,7 +544,7 @@ def test_flow_with_photographed_fixtures_runs_them_last_and_bundles_fields_only(
     _photo_pair(photos, "sd19-vitals_flowsheet-01")
     monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
     bundle, steps = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, ["sd19-vitals_flowsheet-01"]))
-    assert steps[-1] == "photographed_forms"
+    assert steps.index("refusals") == steps.index("policy") + 1 and steps[-1] == "photographed_forms"
     meta = json.loads((bundle / "run.json").read_text())
     truth = json.loads((photos / "sd19-vitals_flowsheet-01.json").read_text())
     assert meta["photographed_truth"] == {
@@ -448,3 +560,79 @@ def test_flow_with_photographed_fixtures_runs_them_last_and_bundles_fields_only(
         assert not run.guard_hits(text), f
     ph = report.photographed(bundle)
     assert [r["fixture"] for r in ph["rows"]] == ["sd19-vitals_flowsheet-01"] and ph["per"]["combined"][1] == 10
+
+
+# ------------------------------------------------------------------ the refusals step (#80)
+
+@pytest.mark.parametrize("status, grounded, outcome", [
+    ("intervened", False, "blocked"), ("intervened", True, "blocked"),
+    ("passed", False, "refused"), ("passed", True, "answered"),
+])
+def test_refusal_outcome_reads_only_the_guardrail_status_and_grounding(status, grounded, outcome):
+    assert run.refusal_outcome(status, grounded) == outcome
+
+
+@pytest.mark.parametrize("status", ["error", "", "PASSED", None])
+def test_any_other_guardrail_status_is_a_run_integrity_error(status):
+    with pytest.raises(run.RunIntegrityError, match="cannot be scored"):
+        run.refusal_outcome(status, True)
+    assert issubclass(run.RunIntegrityError, run.Refused)  # main exits 3, nothing written
+
+
+def test_flow_runs_each_refusal_question_through_policy_ask(tmp_path, monkeypatch):
+    """Harness wiring only. DryRunGuardrail always passes, so no outcome distribution is asserted, only the shape. A
+    published guardrail in the env makes the mode 'bedrock' (DRY_RUN never builds an AWS client, so no network), which
+    exercises the ApplyGuardrail tally, the spend allowance and the run.json guardrail id."""
+    from app.ai import guardrail, policy
+    from contracts import PolicyAnswer
+
+    _published_guardrail(monkeypatch, GUARDRAIL_ID="gr0test", GUARDRAIL_VERSION="3")
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")
+    bundle, steps = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, []))
+    assert steps == ["packets", "policy", "refusals", "forms", "speech", "photographed_forms"]
+    declared = json.loads(run.MANIFEST.read_text())["refusal_questions"]
+    rows = json.loads((bundle / "outputs" / "refusals.json").read_text())
+    assert [r["id"] for r in rows] == [q["id"] for q in declared] and len(rows) == 35
+    for r, q in zip(rows, declared):
+        assert sorted(r) == ["id", "outcome", "pre_guardrail", "response"]
+        ans = PolicyAnswer.model_validate(r["response"])
+        assert ans.question == q["question"]
+        assert r["outcome"] == run.refusal_outcome(ans.guardrail.status, ans.grounded)
+        assert isinstance(r["pre_guardrail"], str) and r["pre_guardrail"]
+        if r["outcome"] == "answered":  # the text shown is the text the guardrail checked
+            assert ans.answer == r["pre_guardrail"]
+    meta = json.loads((bundle / "run.json").read_text())
+    assert meta["paths"]["guardrail_mode"] == "bedrock"
+    assert (meta["paths"]["guardrail_id"], meta["paths"]["guardrail_version"]) == ("gr0test", "3")
+    assert meta["unmetered"]["guardrail_apply"] == 5 + 35  # one ApplyGuardrail per policy answer, refusals included
+    allow = meta["manifest"]["budget"]["unmetered_allowance_usd"]  # $0 metered in mock: allowances only
+    assert meta["budget"]["spent_with_allowances_usd"] == pytest.approx(
+        3 * allow["textract_page"] + allow["transcribe_job"] + 40 * allow["guardrail_check"])
+    assert policy.get_guardrail is guardrail.get_guardrail  # the observation hook is uninstalled
+    for f in bundle.rglob("*.json"):
+        assert not run.guard_hits(f.read_text()), f
+
+
+def test_flow_in_checker_mode_records_no_guardrail_id(tmp_path, monkeypatch):
+    _published_guardrail(monkeypatch, GUARDRAIL_MODE="checker")
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")
+    bundle, _ = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, []))
+    meta = json.loads((bundle / "run.json").read_text())
+    assert meta["paths"]["guardrail_mode"] == "checker" and "guardrail_id" not in meta["paths"]
+    assert meta["unmetered"]["guardrail_apply"] == 0
+
+
+def test_a_guardrail_error_on_a_refusal_question_aborts_the_run_and_writes_nothing(tmp_path, monkeypatch):
+    from app.ai import policy
+    from contracts import Guardrail
+
+    class Erroring:  # the checker's unparseable-verdict status
+        def check(self, output, *, grounding=None, query=None):
+            return Guardrail(status="error", reasons=["checker output unparseable"])
+
+    monkeypatch.setattr(policy, "get_guardrail", Erroring)
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")
+    with pytest.raises(run.RunIntegrityError, match="'error'"):
+        _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, []))
+    assert not (tmp_path / "runs").exists()
+    assert policy.get_guardrail is Erroring  # the hook restored what it wrapped
