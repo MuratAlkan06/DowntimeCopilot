@@ -12,6 +12,7 @@ see the patient record either, so it flags doses the record itself states (verif
 restating a scheduled insulin dose INTERVENED). Hence record-grounded output without a query (packets,
 digest) keeps the checker, which judges against the grounding source; policy answers (grounding + query)
 go through ApplyGuardrail. Limits per the Bedrock user guide: grounding source 100,000 chars, query 1,000.
+The denied topic evaluates the answer text only; the query and grounding source are excluded from topic evaluation.
 """
 from __future__ import annotations
 
