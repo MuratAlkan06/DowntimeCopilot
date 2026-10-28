@@ -358,3 +358,44 @@ console.log(JSON.stringify(seen));
     assert got["offlineAgain"][0].startswith(offline)
     assert got["drained"] == ""
     assert got["refusedOnSubmit"][0].startswith(refused) and "when connected" not in got["refusedOnSubmit"][0]
+
+
+# Focus tracking for the fake DOM, patched here so the shared DURING prelude stays as it was.
+FOCUS = (
+    "El.prototype.focus = function () { document.activeElement = this; };\n"
+    "const walk = (el) => [el, ...(el.kids || []).flatMap(walk)];\n"
+    "const action = (label) => walk($('capture-pending')).find((e) => e.tag === 'button' && e.textContent === label);\n"
+    "const focused = () => (document.activeElement === $('capture-result') ? '#capture-result'\n"
+    "  : document.activeElement?.textContent ?? null);\n"
+    "const press = async (label) => { const b = action(label); b.focus(); await b.on.click();\n"
+    "  return { replaced: document.activeElement !== b, inPending: walk($('capture-pending')).includes(document.activeElement) }; };\n"
+)
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_queue_actions_keep_focus_through_the_redraw(tmp_path):
+    """#59 M2 (WCAG 2.4.3): the redraw after "Upload now" or the retry action replaces the pressed button. Focus goes
+    to the same action's new button, else the action still shown, else #capture-result where the upload's record
+    lands, as recovery.js does for the discrepancy review (#38). A background drain never moves focus."""
+    got = run_during(tmp_path, FOCUS + """
+const seen = {};
+await submit(500);
+answer = 503;
+seen.upload = { ...(await press('Upload now')), focused: focused() };  // still refused: same action
+for (let i = 0; i < 6; i++) await press('Upload now');
+seen.toRetry = { ...(await press('Upload now')), focused: focused() };  // 8th refusal: dead, only the retry is left
+seen.retryRefused = { ...(await press('Retry failed')), focused: focused() };  // back in the queue, refused again
+answer = 201;
+seen.uploaded = { ...(await press('Upload now')), focused: focused(), pending: $('capture-pending').textContent };
+await submit(500);
+const other = new El('button'); other.focus();  // the user is elsewhere when the interval drain redraws
+answer = 503;
+await D.flushQueue();
+seen.background = document.activeElement === other;
+console.log(JSON.stringify(seen));
+""")
+    assert got["upload"] == {"replaced": True, "inPending": True, "focused": "Upload now"}
+    assert got["toRetry"] == {"replaced": True, "inPending": True, "focused": "Retry failed"}
+    assert got["retryRefused"] == {"replaced": True, "inPending": True, "focused": "Upload now"}
+    assert got["uploaded"]["focused"] == "#capture-result" and got["uploaded"]["pending"] == ""
+    assert got["background"] is True

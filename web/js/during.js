@@ -146,13 +146,26 @@ async function queueState() {
 
 const captures = (n) => `${n} capture${n === 1 ? '' : 's'}`;
 
+// Each rendered queue action by name ('upload', 'retry'). renderPending redraws #capture-pending, which replaces
+// the button the user was on: focus goes back to the same action, else the one still shown, else #capture-result,
+// where an uploaded capture's record lands; never <body> (WCAG 2.4.3; the #38 pattern in recovery.js).
+let actions = new Map();
+
+function queueBox(kind, message, name, label, onClick) {
+  const box = stateBox(kind, message);
+  const btn = h('button', { class: 'btn btn-quiet btn-sm', type: 'button', onclick: onClick }, label);
+  actions.set(name, btn);
+  box.append(btn);
+  return box;
+}
+
 // Why live items are still waiting (#59): no connection, the server refusing them, or no drain has reached them
 // yet. "Will upload when connected" is said only when the connection is the problem.
 function waitingBox(n, refused) {
   const [kind, why] = isOffline() ? ['offline', 'will upload when connected.']
     : refused ? ['warn', 'the server is not accepting uploads right now; retrying automatically.']
       : ['queued', 'waiting to upload.'];
-  return stateBox(kind, `${captures(n)} queued on this device — ${why}`, { label: 'Upload now', onClick: flushQueue });
+  return queueBox(kind, `${captures(n)} queued on this device — ${why}`, 'upload', 'Upload now', flushQueue);
 }
 
 // The submit notice of the capture last queued here ({ id, el } in #capture-result). It promises a retry, so it is
@@ -172,10 +185,14 @@ async function renderPending() {
   failed.hidden = !dead;
   failed.textContent = `${dead} failed`;
   failed.title = `${captures(dead)} stopped retrying after ${MAX_ATTEMPTS} failed uploads — kept on this device`;
-  const deadBox = dead ? stateBox('error', `${captures(dead)} could not upload after ${MAX_ATTEMPTS} tries and stopped `
-    + 'retrying. Kept on this device; keep the paper original.', { label: 'Retry failed', onClick: retryFailed }) : null;
+  const had = [...actions].find(([, btn]) => btn === document.activeElement)?.[0]; // read just before the redraw
+  actions = new Map();
+  const waiting = n ? waitingBox(n, refused) : null;
+  const deadBox = dead ? queueBox('error', `${captures(dead)} could not upload after ${MAX_ATTEMPTS} tries and stopped `
+    + 'retrying. Kept on this device; keep the paper original.', 'retry', 'Retry failed', retryFailed) : null;
   deadBox?.removeAttribute('role'); // #capture-pending is the live region; role=alert here would re-announce on every redraw
-  mount($('capture-pending'), n ? waitingBox(n, refused) : null, deadBox);
+  mount($('capture-pending'), waiting, deadBox);
+  if (had) (actions.get(had) || [...actions.values()][0] || $('capture-result')).focus();
 }
 
 async function retryFailed() {

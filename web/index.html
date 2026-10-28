@@ -152,7 +152,8 @@
       </div>
       <section class="card" aria-labelledby="h-capture-result">
         <h2 id="h-capture-result" class="card-title">Captured record</h2>
-        <div id="capture-result" aria-live="polite"></div>
+        <!-- tabindex=-1: focus lands here when a queue action uploads the last queued capture (during.js renderPending). -->
+        <div id="capture-result" aria-live="polite" tabindex="-1"></div>
       </section>
       <section class="card" aria-labelledby="h-checklist">
         <div class="card-head">
