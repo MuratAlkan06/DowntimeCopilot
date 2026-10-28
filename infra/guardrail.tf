@@ -14,6 +14,12 @@ resource "aws_bedrock_guardrail" "main" {
   blocked_outputs_messaging = local.guardrail_blocked_message
 
   topic_policy_config {
+    # Iteration 3 (#80 S3a): the classic-tier classifier keyed on the clinical domain regardless of
+    # wording; the standard tier is AWS's higher-accuracy topic classifier (requires cross_region_config).
+    tier_config {
+      tier_name = "STANDARD"
+    }
+
     topics_config {
       name       = "dosing-treatment-advice"
       type       = "DENY"
@@ -26,6 +32,10 @@ resource "aws_bedrock_guardrail" "main" {
         "Switch him from the IV antibiotic to the oral form now.",
       ]
     }
+  }
+
+  cross_region_config {
+    guardrail_profile_identifier = "arn:aws:bedrock:${var.region}:${local.account_id}:guardrail-profile/us.guardrail.v1:0"
   }
 
   contextual_grounding_policy_config {
