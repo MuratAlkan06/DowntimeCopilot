@@ -168,12 +168,12 @@ def render_html(form_type: str) -> str:
 
 # ------------------------------------------------------------------ fixture photo
 
-def _fonts():
+def _fonts(scale: float = 1.0):
     from PIL import ImageFont
 
-    label = ImageFont.load_default(size=13)
-    title = ImageFont.load_default(size=26)
-    small = ImageFont.load_default(size=11)
+    label = ImageFont.load_default(size=round(13 * scale))
+    title = ImageFont.load_default(size=round(26 * scale))
+    small = ImageFont.load_default(size=round(11 * scale))
     for path in HANDWRITING_FONTS:
         if Path(path).exists():
             return label, title, small, (lambda size, p=path: ImageFont.truetype(p, size)), False
@@ -195,28 +195,63 @@ def _ink_text(page, xy, text, font, shear: bool, ink=(28, 48, 125)):
     return mask.size
 
 
-def render_fixture(form_type: str, seed: int) -> bytes:
-    from PIL import Image, ImageChops, ImageDraw, ImageFilter
+def render_blank(form_type: str, dpi: int = DPI):
+    """The printed form with nothing written on it: page, header, boxes, labels and footer at `dpi` (pixel
+    offsets and font sizes scale by dpi / DPI). Returns (page, boxes), boxes = field -> (left, top, right,
+    bottom) in pixels. Uses no randomness. render_fixture writes its values on top of this page;
+    tools/hw_fixtures.py composites handwriting samples onto it."""
+    from PIL import Image, ImageDraw
 
-    rng = random.Random(f"{seed}:{form_type}")
+    s = dpi / DPI
     spec, boxes, names = FORMS[form_type], layout(form_type), labels(form_type)
-    W, H = int(PAGE_W_IN * DPI), int(PAGE_H_IN * DPI)
+    W, H = int(PAGE_W_IN * dpi), int(PAGE_H_IN * dpi)
     page = Image.new("RGB", (W, H), (250, 248, 241))
     d = ImageDraw.Draw(page)
-    label_font, title_font, small_font, hand, shear = _fonts()
+    label_font, title_font, small_font, _hand, _shear = _fonts(s)
 
     # header, matching the HTML template's header block
-    x0, y0 = MARGIN_IN * DPI, MARGIN_IN * DPI
+    x0, y0 = MARGIN_IN * dpi, MARGIN_IN * dpi
     d.text((x0, y0), "MERCY RIDGE MEDICAL CENTER (SYNTHETIC) · UNIT 4 WEST", font=small_font, fill=(20, 20, 20))
-    d.text((x0, y0 + 18), spec["title"], font=title_font, fill=(10, 10, 10))
-    d.rectangle((x0, y0 + 54, x0 + 250, y0 + 72), outline=(10, 10, 10), width=2)
-    d.text((x0 + 8, y0 + 57), "EHR DOWNTIME · PAPER RECORD", font=small_font, fill=(10, 10, 10))
-    d.line((x0, (0.5 + 1.25) * DPI, W - x0, (0.5 + 1.25) * DPI), fill=(10, 10, 10), width=2)
+    d.text((x0, y0 + 18 * s), spec["title"], font=title_font, fill=(10, 10, 10))
+    d.rectangle((x0, y0 + 54 * s, x0 + 250 * s, y0 + 72 * s), outline=(10, 10, 10), width=round(2 * s))
+    d.text((x0 + 8 * s, y0 + 57 * s), "EHR DOWNTIME · PAPER RECORD", font=small_font, fill=(10, 10, 10))
+    d.line((x0, (0.5 + 1.25) * dpi, W - x0, (0.5 + 1.25) * dpi), fill=(10, 10, 10), width=round(2 * s))
 
+    px: dict[str, tuple[float, float, float, float]] = {}
     for name, b in boxes.items():
         left, top, right, bottom = b["x"] * W, b["y"] * H, (b["x"] + b["w"]) * W, (b["y"] + b["h"]) * H
-        d.rectangle((left, top, right, bottom), outline=(15, 15, 15), width=2)
-        d.text((left + 8, top + 6), names[name].upper(), font=label_font, fill=(15, 15, 15))
+        d.rectangle((left, top, right, bottom), outline=(15, 15, 15), width=round(2 * s))
+        d.text((left + 8 * s, top + 6 * s), names[name].upper(), font=label_font, fill=(15, 15, 15))
+        px[name] = (left, top, right, bottom)
+    d.text((x0, H - MARGIN_IN * dpi - 14 * s), FOOTER, font=small_font, fill=(40, 40, 40))
+    return page, px
+
+
+def photo_effect(page, rng: random.Random, max_angle: float = 1.6, blur: float = 0.6, quality: int = 70) -> bytes:
+    """Photo-ish finish, all from the seeded RNG: slight rotation, sensor noise, softness, then JPEG.
+    The defaults are the synthetic fixtures' effect (and level L0 of tools/hw_fixtures.py)."""
+    from PIL import Image, ImageChops, ImageFilter
+
+    W, H = page.size
+    angle = rng.uniform(-max_angle, max_angle)
+    page = page.rotate(angle, resample=Image.Resampling.BICUBIC, fillcolor=(196, 192, 184))
+    noise = Image.frombytes("L", (W, H), bytes(b % 22 for b in rng.randbytes(W * H))).convert("RGB")
+    page = ImageChops.subtract(page, noise).filter(ImageFilter.GaussianBlur(blur))
+    buf = io.BytesIO()
+    page.save(buf, "JPEG", quality=quality, optimize=True)
+    return buf.getvalue()
+
+
+def render_fixture(form_type: str, seed: int) -> bytes:
+    from PIL import ImageDraw
+
+    rng = random.Random(f"{seed}:{form_type}")
+    spec = FORMS[form_type]
+    page, boxes = render_blank(form_type, DPI)
+    d = ImageDraw.Draw(page)
+    _label, _title, _small, hand, shear = _fonts()
+
+    for name, (left, top, right, bottom) in boxes.items():
         value = spec["truth"].get(name)
         written = value if value is not None else spec["scribbled"].get(name)
         if written is None:
@@ -229,16 +264,7 @@ def render_fixture(form_type: str, seed: int) -> bytes:
             for _ in range(7):
                 d.line((tx + rng.randint(-4, 6), ty + rng.randint(4, th), tx + tw + rng.randint(-6, 4),
                         ty + rng.randint(4, th)), fill=(28, 48, 125), width=4)
-    d.text((x0, H - MARGIN_IN * DPI - 14), FOOTER, font=small_font, fill=(40, 40, 40))
-
-    # photo-ish: slight rotation, sensor noise, softness (all from the seeded RNG)
-    angle = rng.uniform(-1.6, 1.6)
-    page = page.rotate(angle, resample=Image.Resampling.BICUBIC, fillcolor=(196, 192, 184))
-    noise = Image.frombytes("L", (W, H), bytes(b % 22 for b in rng.randbytes(W * H))).convert("RGB")
-    page = ImageChops.subtract(page, noise).filter(ImageFilter.GaussianBlur(0.6))
-    buf = io.BytesIO()
-    page.save(buf, "JPEG", quality=70, optimize=True)
-    return buf.getvalue()
+    return photo_effect(page, rng)
 
 
 def ground_truth(form_type: str, image_name: str, seed: int) -> dict:
