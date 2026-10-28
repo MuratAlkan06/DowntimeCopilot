@@ -10,6 +10,7 @@ DRY_RUN=1: every call returns the caller's canned, contract-shaped text with zer
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import threading
@@ -51,6 +52,36 @@ PRICING: dict[str, tuple[float, float]] = {
 }
 
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
+
+# Per-job route override for the model comparison harness (tools/model_compare.py, #76); None = ROUTES only.
+# A plain module global, not a ContextVar: /downtime/start generates packets on a ThreadPoolExecutor whose workers
+# do not inherit the caller's context, and the harness runs its passes one at a time in one process.
+_route_override: dict[str, str] | None = None
+
+
+def set_route_override(mapping: dict[str, str] | None) -> None:
+    """Route each named ROUTES job to a PRICING model id (None clears). An overridden job never falls back to
+    Haiku: its Bedrock errors propagate, so a measured row is always the requested model."""
+    global _route_override
+    if mapping is not None:
+        jobs = sorted(set(mapping) - set(ROUTES))
+        models = sorted({str(m) for m in mapping.values() if m not in PRICING})
+        if jobs or models:
+            raise ValueError(f"route override: unknown job(s) {jobs or '-'}, unpriced model(s) {models or '-'} "
+                             f"(jobs: ROUTES keys; models: PRICING keys)")
+        mapping = dict(mapping)
+    _route_override = mapping
+
+
+@contextlib.contextmanager
+def route_override(mapping: dict[str, str]):
+    """set_route_override(mapping) for the block, then the previous override back."""
+    previous = _route_override
+    set_route_override(mapping)
+    try:
+        yield
+    finally:
+        set_route_override(previous)
 
 
 @dataclass
@@ -112,7 +143,9 @@ def _converse(model_id: str, system: str, user_text: str, image: bytes | None, i
 
 def call(job: str, prompt: str, user_text: str, *, mock: Callable[[], str], image: bytes | None = None,
          image_format: str = "jpeg", max_tokens: int = 2000, actor_role: str = "system") -> AIResult:
-    model_id = ROUTES[job]
+    override = _route_override  # read once: the harness swaps the mapping between steps
+    pinned = override is not None and job in override
+    model_id = override[job] if pinned else ROUTES[job]
     system = load_prompt(prompt)
     t0 = time.perf_counter()
     if config.dry_run():
@@ -124,7 +157,7 @@ def call(job: str, prompt: str, user_text: str, *, mock: Callable[[], str], imag
         try:
             resp = _converse(model_id, system, user_text, image, image_format, max_tokens)
         except Exception as exc:  # noqa: BLE001 - any Bedrock failure falls back once to Haiku
-            if model_id == FALLBACK_MODEL:
+            if model_id == FALLBACK_MODEL or pinned:  # an overridden job never falls back (set_route_override)
                 raise
             log.warning("bedrock %s failed for %s (%s); falling back to %s", model_id, job, exc, FALLBACK_MODEL)
             used = FALLBACK_MODEL
