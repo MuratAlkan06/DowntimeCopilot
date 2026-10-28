@@ -143,13 +143,18 @@ def grounding(bundle: Path, manifest: dict) -> dict:
 
 
 def extraction(bundle: Path, meta: dict) -> dict:
-    ranges = meta["vital_ranges"]
+    return _score_captures(_load(bundle, "outputs/captures.json"), meta["truth"], meta["vital_ranges"])
+
+
+def _score_captures(captures: list[dict], truth_map: dict, ranges: dict) -> dict:
+    """Pure scorer of captured form records ({"fixture", "record"}) against truth_map[fixture]["fields"]: per-reader
+    and combined [hits, n], clean fields, false flags, flags that caught a wrong value, silent errors, every miss."""
     per = {"nova": [0, 0], "textract": [0, 0], "combined": [0, 0]}
     rows, misses = [], []
     clean = false_flags = caught = silent = 0
-    for cap in _load(bundle, "outputs/captures.json"):
+    for cap in captures:
         stem, rec = cap["fixture"], cap["record"]
-        truth = meta["truth"][stem]["fields"]
+        truth = truth_map[stem]["fields"]
         reads = {"nova": rec["reads"]["bedrock"], "textract": rec["reads"]["textract"]}
         merged = {f["name"]: f for f in rec["fields"]}
         row = {"fixture": stem}
