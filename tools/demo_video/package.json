@@ -1,0 +1,18 @@
+{
+  "name": "downtime-copilot-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scripted demo video: Playwright records DEMO.md's 90-second cut (record.mjs), ffmpeg cuts, captions and encodes it (postprocess.mjs). See `make demo-video` and docs/decisions.md.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "record": "node record.mjs",
+    "post": "node postprocess.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.64.1"
+  }
+}

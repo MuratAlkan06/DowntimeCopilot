@@ -85,3 +85,7 @@ infra/backend.hcl
 
 # Durability harness runs (make durability)
 durability-runs/
+
+# Demo video recordings and encodes (make demo-video; runs live in tools/demo_video/out/). GIFs are not ignored.
+*.mp4
+*.webm
