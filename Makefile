@@ -17,7 +17,7 @@ APP_URL ?= http://localhost:$(APP_PORT)/?phase=before
 TF      ?= terraform
 export APP_PORT SIM_PORT SIM_URL
 
-.PHONY: setup lock probe schemas forms dev demo test evals results guard export-audit e2e infra-fmt infra-validate infra-env durability
+.PHONY: setup lock probe schemas forms dev demo test evals results guard export-audit e2e infra-fmt infra-validate infra-env durability demo-video-setup demo-video demo-video-dryrun demo-video-post
 
 setup:  ## venv + pinned dependencies from requirements.lock
 	python3 -m venv $(VENV)
@@ -88,6 +88,38 @@ durability:  ## fault-injection durability harness (docs/durability.md): server 
 	PYTHONPATH=. $(PY) -m tools.durability.harness --run-dir $(DURABILITY_DIR) --cycles $(CYCLES) --seed $(SEED)
 	PYTHONPATH=. $(PY) -m tools.durability.queue_cycles --run-dir $(DURABILITY_DIR) --cycles $(CYCLES)
 	PYTHONPATH=. $(PY) -m tools.durability.report $(DURABILITY_DIR)
+
+# Demo video (tools/demo_video, docs/decisions.md): Playwright records DEMO.md's 90-second cut against its own sim +
+# app on VIDEO_SIM_PORT / VIDEO_APP_PORT (a scratch store; refuses busy ports), then ffmpeg cuts, captions and encodes.
+VIDEO_DIR      := tools/demo_video
+NODE           ?= node
+NPM            ?= npm
+FFMPEG         ?= ffmpeg
+FFPROBE        ?= ffprobe
+VIDEO_APP_PORT ?= 8800
+VIDEO_SIM_PORT ?= 8801
+export VIDEO_APP_PORT VIDEO_SIM_PORT FFMPEG FFPROBE
+VIDEO_DEPS   = @test -d $(VIDEO_DIR)/node_modules/playwright || { echo "demo video: node dependencies missing; run \`make demo-video-setup\` (npm ci, then npx playwright install chromium)"; exit 1; }
+FFMPEG_CHECK = @command -v $(FFMPEG) >/dev/null 2>&1 && command -v $(FFPROBE) >/dev/null 2>&1 || { echo "demo video: $(FFMPEG) / $(FFPROBE) not found. Install them with \`brew install ffmpeg\` (or set FFMPEG=... FFPROBE=...)."; exit 1; }
+
+demo-video-setup:  ## demo video node deps: npm ci (Playwright pinned in tools/demo_video/package-lock.json), then npx playwright install chromium
+	cd $(VIDEO_DIR) && $(NPM) ci && npx playwright install chromium
+
+demo-video:  ## LIVE demo video, real AWS calls. Needs `source .env` (AWS_PROFILE) and ffmpeg (fails fast without either) -> tools/demo_video/out/<run>/demo.mp4 + demo.gif, gated 85-95 s, <=10 MB, GIF <=5 MB
+	@if [ -z "$$AWS_PROFILE" ]; then echo "demo-video: AWS_PROFILE is unset. \`source .env\` first (make infra-env writes it); development footage: make demo-video-dryrun"; exit 1; fi
+	$(FFMPEG_CHECK)
+	$(VIDEO_DEPS)
+	cd $(VIDEO_DIR) && PY=$(abspath $(PY)) $(NODE) record.mjs --mode live
+	cd $(VIDEO_DIR) && $(NODE) postprocess.mjs --latest live
+
+demo-video-dryrun:  ## the same pipeline with DRY_RUN=1 (no AWS): DRY RUN on every frame, never a deliverable. VIDEO_ARGS="--shots --simulate-latency 4" for development
+	$(VIDEO_DEPS)
+	cd $(VIDEO_DIR) && DRY_RUN=1 PY=$(abspath $(PY)) $(NODE) record.mjs --mode dry_run $(VIDEO_ARGS)
+	cd $(VIDEO_DIR) && $(NODE) postprocess.mjs --latest dry_run
+
+demo-video-post:  ## only the ffmpeg stage, on a recording: RUN=tools/demo_video/out/<run> (default: the latest live one)
+	$(FFMPEG_CHECK)
+	cd $(VIDEO_DIR) && $(NODE) postprocess.mjs $(if $(RUN),--run $(abspath $(RUN)),--latest live)
 
 guard:  ## secret / probe guard (run before every commit)
 	bash tools/guard.sh
