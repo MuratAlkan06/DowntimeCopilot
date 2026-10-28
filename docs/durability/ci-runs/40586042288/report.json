@@ -1,0 +1,117 @@
+{
+  "master_seed": 40586042288,
+  "run_id": "ci-40586042288",
+  "sides": {
+    "node": {
+      "cycles": 25,
+      "dead_letter": 4,
+      "drain_s": {},
+      "expected_fail": {},
+      "failing_cycles": [],
+      "faults_injected": {
+        "F1": 4,
+        "F1die": 4,
+        "F2": 3,
+        "none": 1,
+        "offline": 2,
+        "poison": 4,
+        "tabdeath": 4,
+        "twotab": 3
+      },
+      "known_windows": {
+        "unacked_inflight": 1
+      },
+      "not_mirrored": 0,
+      "records_duplicated": 0,
+      "records_lost": 0,
+      "stall_skipped_attempts": [
+        2,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2
+      ],
+      "violations": {}
+    },
+    "server": {
+      "cycles": 25,
+      "dead_letter": 0,
+      "drain_s": {
+        "F3": {
+          "max": 1.512,
+          "n": 3,
+          "p50": 0.757
+        },
+        "F4": {
+          "max": 0.506,
+          "n": 5,
+          "p50": 0.504
+        },
+        "F4fd": {
+          "max": 0.504,
+          "n": 2,
+          "p50": 0.252
+        },
+        "F5": {
+          "max": 1.264,
+          "n": 3,
+          "p50": 1.011
+        },
+        "F6": {
+          "max": 0.504,
+          "n": 2,
+          "p50": 0.504
+        },
+        "F6rb": {
+          "max": 0.757,
+          "n": 2,
+          "p50": 0.504
+        },
+        "F7a": {
+          "max": 1.261,
+          "n": 4,
+          "p50": 1.007
+        },
+        "F7b": {
+          "max": 0.504,
+          "n": 1,
+          "p50": 0.504
+        },
+        "none": {
+          "max": 0.756,
+          "n": 3,
+          "p50": 0.504
+        }
+      },
+      "expected_fail": {},
+      "failing_cycles": [],
+      "faults_injected": {
+        "F3": 3,
+        "F4": 5,
+        "F4fd": 2,
+        "F5": 3,
+        "F6": 2,
+        "F6rb": 2,
+        "F7a": 4,
+        "F7b": 1,
+        "none": 3
+      },
+      "known_windows": {
+        "not_mirrored": 4,
+        "record_without_create_audit": 3
+      },
+      "not_mirrored": 4,
+      "records_duplicated": 0,
+      "records_lost": 0,
+      "stall_skipped_attempts": [],
+      "violations": {}
+    }
+  },
+  "sync_interval_s": 0.25,
+  "verdict": "PASS"
+}

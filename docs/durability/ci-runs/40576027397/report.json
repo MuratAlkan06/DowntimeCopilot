@@ -1,0 +1,119 @@
+{
+  "master_seed": 40576027397,
+  "run_id": "ci-40576027397",
+  "sides": {
+    "node": {
+      "cycles": 25,
+      "drain_s": {},
+      "expected_fail": {},
+      "failing_cycles": [],
+      "faults_injected": {
+        "F1": 4,
+        "F1die": 5,
+        "F2": 3,
+        "none": 3,
+        "offline": 2,
+        "poison": 3,
+        "tabdeath": 2,
+        "twotab": 3
+      },
+      "known_windows": {
+        "f2_resubmit_duplicates": 3,
+        "stall": 3,
+        "unacked_inflight": 3
+      },
+      "not_mirrored": 0,
+      "records_duplicated": 0,
+      "records_lost": 0,
+      "stall_skipped_attempts": [
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        1
+      ],
+      "violations": {}
+    },
+    "server": {
+      "cycles": 25,
+      "drain_s": {
+        "F3": {
+          "max": 1.513,
+          "n": 3,
+          "p50": 1.264
+        },
+        "F4": {
+          "max": 1.514,
+          "n": 2,
+          "p50": 1.009
+        },
+        "F4fd": {
+          "max": 0.757,
+          "n": 2,
+          "p50": 0.504
+        },
+        "F5": {
+          "max": 1.767,
+          "n": 3,
+          "p50": 0.504
+        },
+        "F6": {
+          "max": 1.513,
+          "n": 3,
+          "p50": 1.261
+        },
+        "F6rb": {
+          "max": 1.262,
+          "n": 2,
+          "p50": 1.01
+        },
+        "F7a": {
+          "max": 1.77,
+          "n": 4,
+          "p50": 1.513
+        },
+        "F7b": {
+          "max": 0.771,
+          "n": 2,
+          "p50": 0.516
+        },
+        "none": {
+          "max": 1.023,
+          "n": 4,
+          "p50": 1.014
+        }
+      },
+      "expected_fail": {
+        "S5: F6-rollback (SIMULATED transaction rollback under a 201; fix issue to be filed)": 2
+      },
+      "failing_cycles": [],
+      "faults_injected": {
+        "F3": 3,
+        "F4": 2,
+        "F4fd": 2,
+        "F5": 3,
+        "F6": 3,
+        "F6rb": 2,
+        "F7a": 4,
+        "F7b": 2,
+        "none": 4
+      },
+      "known_windows": {
+        "not_mirrored": 3,
+        "record_without_create_audit": 3
+      },
+      "not_mirrored": 3,
+      "records_duplicated": 0,
+      "records_lost": 0,
+      "stall_skipped_attempts": [],
+      "violations": {}
+    }
+  },
+  "sync_interval_s": 0.25,
+  "verdict": "PASS"
+}

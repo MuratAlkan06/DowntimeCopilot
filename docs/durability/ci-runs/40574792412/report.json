@@ -1,0 +1,82 @@
+{
+  "master_seed": 40574792412,
+  "run_id": "ci-40574792412",
+  "sides": {
+    "server": {
+      "cycles": 25,
+      "drain_s": {
+        "F3": {
+          "max": 1.262,
+          "n": 2,
+          "p50": 0.504
+        },
+        "F4": {
+          "max": 0.769,
+          "n": 4,
+          "p50": 0.504
+        },
+        "F4fd": {
+          "max": 0.507,
+          "n": 3,
+          "p50": 0.504
+        },
+        "F5": {
+          "max": 1.514,
+          "n": 1,
+          "p50": 1.514
+        },
+        "F6": {
+          "max": 0.769,
+          "n": 2,
+          "p50": 0.756
+        },
+        "F6rb": {
+          "max": 0.77,
+          "n": 5,
+          "p50": 0.757
+        },
+        "F7a": {
+          "max": 1.009,
+          "n": 2,
+          "p50": 0.252
+        },
+        "F7b": {
+          "max": 0.504,
+          "n": 4,
+          "p50": 0.504
+        },
+        "none": {
+          "max": 0.757,
+          "n": 2,
+          "p50": 0.756
+        }
+      },
+      "expected_fail": {
+        "S5: F6-rollback (SIMULATED transaction rollback under a 201; fix issue to be filed)": 5
+      },
+      "failing_cycles": [],
+      "faults_injected": {
+        "F3": 2,
+        "F4": 4,
+        "F4fd": 3,
+        "F5": 1,
+        "F6": 2,
+        "F6rb": 5,
+        "F7a": 2,
+        "F7b": 4,
+        "none": 2
+      },
+      "known_windows": {
+        "not_mirrored": 2,
+        "record_without_create_audit": 1
+      },
+      "not_mirrored": 2,
+      "records_duplicated": 0,
+      "records_lost": 0,
+      "stall_skipped_attempts": [],
+      "violations": {}
+    }
+  },
+  "sync_interval_s": 0.25,
+  "verdict": "PASS"
+}
