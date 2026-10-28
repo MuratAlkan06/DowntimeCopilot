@@ -11,10 +11,11 @@ nothing is mirrored to the cloud) on a scratch STORE_PATH that must start empty,
 run's calls. The simulator is the real one at SIM_URL. Two observation hooks record what packets.faithful
 and transcribe.transcribe saw and returned; they never change a result.
 
-Refuses (exit nonzero, loud, no bundle, no RESULTS.md): DRY_RUN=1, missing fixtures, photographed pairs on disk
-that are not exactly the declared photographed_fixtures (or whose image fails its sha256), TEXTRACT_ENABLED off,
-STORE_PATH unset or non-empty, simulator unreachable, a dry-run/mock call in the run, a projected spend over
-the manifest budget (checked before and after every step), or a /costs inconsistency.
+Refuses (exit nonzero, loud, no bundle, no RESULTS.md): DRY_RUN=1, missing fixtures, declared photographed_fixtures
+that do not match the committed truth (load_manifest, no image read), photographed pairs on disk that are not
+exactly the declared set or whose image is missing or fails its sha256 (preflight, before any network or spend),
+TEXTRACT_ENABLED off, STORE_PATH unset or non-empty, simulator unreachable, a dry-run/mock call in the run, a
+projected spend over the manifest budget (checked before and after every step), or a /costs inconsistency.
 """
 from __future__ import annotations
 
@@ -35,7 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "evals" / "manifest.json"
 FIXTURES = ROOT / "data" / "forms" / "fixtures"
 PHOTO_FIXTURES = ROOT / "evals" / "fixtures"
-PHOTO_SCHEMA = 1  # truth schema of a photographed-style pair (check_photographed)
+PHOTO_SCHEMA = 1  # truth schema of a photographed-style pair (check_photographed_truth)
 RUNS = ROOT / "evals" / "runs"
 IMAGE_EXT = {".jpg": "jpeg", ".jpeg": "jpeg", ".png": "png"}
 ROLE = {"X-Role": "charge_nurse"}
@@ -70,7 +71,9 @@ def loud(msg: str) -> None:
 
 def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES, photos: Path | None = None) -> dict:
     """The manifest fixes the inputs before the run. Raises Refused if any input is missing, or, when the manifest
-    has photographed_fixtures, if the pairs in `photos` (default evals/fixtures) fail check_photographed."""
+    has photographed_fixtures, if the declared set and the committed truth in `photos` (default evals/fixtures) fail
+    check_photographed_truth. Reads no photographed image: the images are git-ignored, so absent in CI; preflight
+    checks them before any network or spend (check_photographed_images)."""
     m = json.loads(path.read_text())
     if not m.get("questions") or any(not q.get("question") or not q.get("expected_section") for q in m["questions"]):
         raise Refused("manifest questions need question + expected_section")
@@ -82,7 +85,7 @@ def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES, photos: Path
     if missing:
         raise Refused(f"fixtures missing in {fixtures}: {', '.join(missing)} (need <stem>.jpg|png|wav + <stem>.json)")
     if "photographed_fixtures" in m:
-        check_photographed(m["photographed_fixtures"], PHOTO_FIXTURES if photos is None else photos)
+        check_photographed_truth(m["photographed_fixtures"], PHOTO_FIXTURES if photos is None else photos)
     return m
 
 
@@ -96,7 +99,7 @@ def find_pairs(fixtures: Path) -> list[tuple[Path, Path]]:
             if img.suffix.lower() in IMAGE_EXT and img.with_suffix(".json").exists()]
 
 
-def check_photographed(declared, photos: Path) -> None:
+def check_photographed_truth(declared, photos: Path) -> None:
     """Truth schema v1 of a photographed-style pair in evals/fixtures/ (<stem>.jpg|png + <stem>.json), frozen for
     the fixture generator (#67):
 
@@ -107,12 +110,33 @@ def check_photographed(declared, photos: Path) -> None:
     bundle carries only the scored subset (run.json photographed_truth): image_sha256 is hex and can hold a 12-digit
     decimal run that the scrubber would mangle, so it and the other metadata stay in the committed truth file.
 
-    Runs in preflight, before any network or spend. Refuses: a declared stem without its image or truth, a pair on
-    disk that is not declared (the find_pairs stems must equal the declared set), two images for one stem, a truth
-    without form_type + fields or with another schema, and an image whose sha256 is not the truth's image_sha256."""
+    The static half of the photographed checks: runs in load_manifest and reads no image (the images are git-ignored,
+    so CI has the committed truth only). Refuses: a declaration that is not a list of distinct stems, a declared stem
+    without its truth, and a truth that is not JSON, has another schema, or lacks form_type + fields. The images are
+    bound to this truth before any spend by check_photographed_images."""
     if not isinstance(declared, list) or not all(isinstance(s, str) and s for s in declared) \
             or len(set(declared)) != len(declared):
         raise Refused("manifest photographed_fixtures must be a list of distinct fixture stems")
+    missing = [s for s in declared if not (photos / f"{s}.json").exists()]
+    if missing:
+        raise Refused(f"photographed truth missing in {photos}: {', '.join(missing)} (need <stem>.json)")
+    for s in declared:
+        try:
+            truth = json.loads((photos / f"{s}.json").read_text())
+        except json.JSONDecodeError as exc:
+            raise Refused(f"photographed truth {s}.json is not valid JSON: {exc}") from None
+        if truth.get("schema", PHOTO_SCHEMA) != PHOTO_SCHEMA:
+            raise Refused(f"photographed truth {s}.json has schema {truth['schema']!r}; this harness reads "
+                          f"schema {PHOTO_SCHEMA}")
+        if not isinstance(truth.get("form_type"), str) or not isinstance(truth.get("fields"), dict):
+            raise Refused(f"photographed truth {s}.json needs form_type (str) and fields (object)")
+
+
+def check_photographed_images(declared: list[str], photos: Path) -> None:
+    """The pre-spend half of the photographed checks: runs in preflight, after load_manifest has run
+    check_photographed_truth on the same declared set, before any network call or spend. Refuses: two images for one
+    stem, a declared stem without its image or truth, a pair on disk that is not declared (the find_pairs stems must
+    equal the declared set), and an image whose sha256 is not the truth's image_sha256."""
     on_disk = [img.stem for img, _ in find_pairs(photos)]
     twice = sorted({s for s in on_disk if on_disk.count(s) > 1})
     if twice:
@@ -127,16 +151,7 @@ def check_photographed(declared, photos: Path) -> None:
         raise Refused(f"photographed pairs in {photos} not declared in manifest photographed_fixtures: "
                       f"{', '.join(stray)} (declare them or move them out; the declared set is exactly what is scored)")
     for s in declared:
-        try:
-            truth = json.loads((photos / f"{s}.json").read_text())
-        except json.JSONDecodeError as exc:
-            raise Refused(f"photographed truth {s}.json is not valid JSON: {exc}") from None
-        if truth.get("schema", PHOTO_SCHEMA) != PHOTO_SCHEMA:
-            raise Refused(f"photographed truth {s}.json has schema {truth['schema']!r}; this harness reads "
-                          f"schema {PHOTO_SCHEMA}")
-        if not isinstance(truth.get("form_type"), str) or not isinstance(truth.get("fields"), dict):
-            raise Refused(f"photographed truth {s}.json needs form_type (str) and fields (object)")
-        want = truth.get("image_sha256")
+        want = json.loads((photos / f"{s}.json").read_text()).get("image_sha256")
         if want is not None and hashlib.sha256(image_of(photos, s).read_bytes()).hexdigest() != want:
             raise Refused(f"photographed fixture {s}: image sha256 does not match image_sha256 in {s}.json "
                           f"(image and truth are bound; restore or regenerate the pair)")
@@ -261,7 +276,9 @@ def preflight(fixtures: Path) -> dict:
     if config.dry_run():
         raise Refused("DRY_RUN=1 would measure canned mocks, not Bedrock/Textract/Transcribe. "
                       "Run with live credentials and DRY_RUN=0.")
-    manifest = load_manifest(fixtures=fixtures)
+    manifest = load_manifest(fixtures=fixtures)  # static: the inputs, the declared photographed set <-> its truth
+    if "photographed_fixtures" in manifest:  # pre-spend: the images, bound to that truth (sha256), pairs == declared
+        check_photographed_images(manifest["photographed_fixtures"], PHOTO_FIXTURES)
     if not config.textract_enabled():
         raise Refused("TEXTRACT_ENABLED is off; the manifest measures both readers (set TEXTRACT_ENABLED=1)")
     if not os.environ.get("STORE_PATH", "").strip():
@@ -454,7 +471,7 @@ def live_run(fixtures: Path, runs: Path) -> Path:
         "unmetered": {"textract_analyze_document": hooks.textract_calls, "transcribe_jobs": len(hooks.transcripts),
                       "guardrail_apply": guardrail_apply(config.guardrail_mode(), len(out["policy"]))},
     }
-    if photo_stems:  # the scored subset only (check_photographed); none declared -> today's bundle shape
+    if photo_stems:  # the scored subset only (check_photographed_truth); none declared -> today's bundle shape
         run_meta["photographed_truth"] = {
             s: {k: json.loads((PHOTO_FIXTURES / f"{s}.json").read_text())[k] for k in ("form_type", "fields")}
             for s in photo_stems}

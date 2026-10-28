@@ -16,6 +16,7 @@ from contracts import ReaderOutput
 from evals import report, run
 
 ROOT = Path(__file__).resolve().parent.parent
+COMMITTED_PHOTOS = ROOT / "evals" / "fixtures"  # run.PHOTO_FIXTURES before any monkeypatch: committed truth only
 
 
 def test_empty_fixtures_exit_nonzero(tmp_path, monkeypatch, capsys):
@@ -34,7 +35,8 @@ def test_dry_run_refuses_even_with_fixtures(tmp_path, monkeypatch, capsys):
     assert "DRY_RUN=1" in capsys.readouterr().err
 
 
-def test_textract_off_and_unset_store_refuse(monkeypatch):
+def test_textract_off_and_unset_store_refuse(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")  # not the checkout's git-ignored images
     monkeypatch.setenv("DRY_RUN", "0")
     monkeypatch.setenv("TEXTRACT_ENABLED", "0")
     with pytest.raises(run.Refused, match="TEXTRACT_ENABLED"):
@@ -233,8 +235,27 @@ def _photo_pair(photos: Path, stem: str, *, with_image: bool = True, with_truth:
         (photos / f"{stem}.json").write_text(json.dumps(doc))
 
 
+def _checked(manifest: Path, photos: Path, fixtures: Path = run.FIXTURES) -> dict:
+    """Both photographed halves in preflight's order: static (load_manifest), then pre-spend (images)."""
+    m = run.load_manifest(manifest, fixtures=fixtures, photos=photos)
+    run.check_photographed_images(m["photographed_fixtures"], photos)
+    return m
+
+
 def test_manifest_declares_no_photographed_fixtures_before_the_live_run():
     assert run.load_manifest()["photographed_fixtures"] == []
+
+
+def test_real_manifest_loads_with_no_photographed_image_present(tmp_path):
+    """The CI reality: the committed truth JSONs and no image (the images are git-ignored). load_manifest is the
+    static half only, so the real manifest loads; the images are preflight's (check_photographed_images)."""
+    truth_only = tmp_path / "photos"
+    truth_only.mkdir()
+    for p in COMMITTED_PHOTOS.glob("*.json"):
+        shutil.copy(p, truth_only / p.name)
+    on_disk = list(truth_only.iterdir())
+    assert on_disk and not [p for p in on_disk if p.suffix.lower() in run.IMAGE_EXT]
+    assert run.load_manifest(photos=truth_only) == json.loads(run.MANIFEST.read_text())
 
 
 def test_declared_photographed_pairs_pass(tmp_path):
@@ -242,22 +263,20 @@ def test_declared_photographed_pairs_pass(tmp_path):
     _photo_pair(photos, "sd19-a")
     _photo_pair(photos, "sd19-b", image_sha256=None, schema=None, seed=None, writer=None, distortion=None,
                 tags=None, source=None, image=None)  # form_type + fields only: metadata may be absent
-    m = run.load_manifest(_photo_manifest(tmp_path, ["sd19-a", "sd19-b"]), photos=photos)
-    assert m["photographed_fixtures"] == ["sd19-a", "sd19-b"]
-    assert run.load_manifest(_photo_manifest(tmp_path, []), photos=tmp_path / "none")["photographed_fixtures"] == []
+    assert _checked(_photo_manifest(tmp_path, ["sd19-a", "sd19-b"]), photos)["photographed_fixtures"] == [
+        "sd19-a", "sd19-b"]
+    assert _checked(_photo_manifest(tmp_path, []), tmp_path / "none")["photographed_fixtures"] == []
 
 
 @pytest.mark.parametrize("pairs, declared, match", [
-    ({"sd19-a": {"with_image": False}}, ["sd19-a"], "missing.*sd19-a"),
-    ({"sd19-a": {"with_truth": False}}, ["sd19-a"], "missing.*sd19-a"),
-    ({"sd19-a": {}, "sd19-b": {}}, ["sd19-a"], "not declared.*sd19-b"),
-    ({"sd19-a": {}}, [], "not declared.*sd19-a"),
-    ({"sd19-a": {"image_sha256": "0" * 64}}, ["sd19-a"], "sd19-a: image sha256 does not match"),
-    ({"sd19-a": {"schema": 2}}, ["sd19-a"], "schema 2"),
-    ({"sd19-a": {"fields": None}}, ["sd19-a"], "needs form_type"),
-    ({"sd19-a": {}}, ["sd19-a", "sd19-a"], "distinct"),
-], ids=["no-image", "no-truth", "stray", "stray-with-empty-list", "sha-mismatch", "schema", "no-fields", "repeat"])
-def test_photographed_pairs_not_matching_the_manifest_refuse(tmp_path, pairs, declared, match):
+    ({"sd19-a": {"with_truth": False}}, ["sd19-a"], "truth missing.*sd19-a"),
+    ({"sd19-a": {"with_image": False, "schema": 2}}, ["sd19-a"], "schema 2"),
+    ({"sd19-a": {"with_image": False, "fields": None}}, ["sd19-a"], "needs form_type"),
+    ({"sd19-a": {"with_image": False, "form_type": None}}, ["sd19-a"], "needs form_type"),
+    ({"sd19-a": {"with_image": False}}, ["sd19-a", "sd19-a"], "distinct"),
+], ids=["no-truth", "schema", "no-fields", "no-form-type", "repeat"])
+def test_photographed_truth_not_matching_the_manifest_refuses_in_load_manifest(tmp_path, pairs, declared, match):
+    """Static half: refused from the committed truth alone, no image needed (most cases have none on disk)."""
     photos = tmp_path / "photos"
     for stem, kw in pairs.items():
         _photo_pair(photos, stem, **kw)
@@ -265,12 +284,53 @@ def test_photographed_pairs_not_matching_the_manifest_refuse(tmp_path, pairs, de
         run.load_manifest(_photo_manifest(tmp_path, declared), photos=photos)
 
 
+@pytest.mark.parametrize("pairs, declared, match", [
+    ({"sd19-a": {"with_image": False}}, ["sd19-a"], "missing.*sd19-a"),
+    ({"sd19-a": {}, "sd19-b": {}}, ["sd19-a"], "not declared.*sd19-b"),
+    ({"sd19-a": {}}, [], "not declared.*sd19-a"),
+    ({"sd19-a": {"image_sha256": "0" * 64}}, ["sd19-a"], "sd19-a: image sha256 does not match"),
+], ids=["no-image", "stray", "stray-with-empty-list", "sha-mismatch"])
+def test_photographed_images_not_matching_the_manifest_refuse_in_the_pre_spend_check(tmp_path, pairs, declared,
+                                                                                     match):
+    """Pre-spend half: load_manifest reads no image, so it passes; check_photographed_images refuses."""
+    photos = tmp_path / "photos"
+    for stem, kw in pairs.items():
+        _photo_pair(photos, stem, **kw)
+    m = run.load_manifest(_photo_manifest(tmp_path, declared), photos=photos)
+    with pytest.raises(run.Refused, match=match):
+        run.check_photographed_images(m["photographed_fixtures"], photos)
+
+
 def test_two_images_for_one_photographed_stem_refuse(tmp_path):
     photos = tmp_path / "photos"
     _photo_pair(photos, "sd19-a")
     shutil.copy(photos / "sd19-a.jpg", photos / "sd19-a.png")
     with pytest.raises(run.Refused, match="more than one image.*sd19-a"):
-        run.load_manifest(_photo_manifest(tmp_path, ["sd19-a"]), photos=photos)
+        _checked(_photo_manifest(tmp_path, ["sd19-a"]), photos)
+
+
+@pytest.mark.parametrize("damage, match", [
+    (lambda img: img.unlink(), "missing.*sd19-a"),
+    (lambda img: img.write_bytes(img.read_bytes() + b"\0"), "sd19-a: image sha256 does not match"),
+], ids=["image-missing", "sha-mismatch"])
+def test_preflight_refuses_a_missing_or_altered_image_before_any_step(tmp_path, monkeypatch, capsys, damage, match):
+    """The live path (main -> live_run -> preflight) runs both halves: an image refusal exits 3 before the simulator
+    is contacted or any step executes, and nothing is written."""
+    from app import sim_client
+
+    photos = tmp_path / "photos"
+    _photo_pair(photos, "sd19-a")
+    damage(photos / "sd19-a.jpg")
+    manifest, load, touched = _photo_manifest(tmp_path, ["sd19-a"]), run.load_manifest, []
+    monkeypatch.setattr(run, "load_manifest", lambda **kw: load(manifest, **kw))
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
+    monkeypatch.setattr(run, "execute", lambda *a: touched.append("execute"))
+    monkeypatch.setattr(sim_client, "make_client", lambda: touched.append("simulator"))
+    monkeypatch.setenv("DRY_RUN", "0")
+    out = tmp_path / "RESULTS.md"
+    assert run.main(["--runs", str(tmp_path / "runs"), "--out", str(out)]) == 3
+    assert touched == [] and not out.exists() and not (tmp_path / "runs").exists()
+    assert re.search(match, capsys.readouterr().err)
 
 
 def test_stray_photographed_pair_refuses_in_preflight_before_anything_is_written(tmp_path, monkeypatch, capsys):
@@ -293,7 +353,8 @@ def _flow(tmp_path, monkeypatch, manifest: Path) -> tuple[Path, list[str]]:
     monkeypatch.setenv("DRY_RUN", "1")
     monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
     monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
-    monkeypatch.setattr(run, "preflight", lambda fixtures: run.load_manifest(manifest, fixtures=fixtures))
+    # the live preflight's input checks (both photographed halves), without its DRY_RUN / env refusals
+    monkeypatch.setattr(run, "preflight", lambda fixtures: _checked(manifest, run.PHOTO_FIXTURES, fixtures))
     monkeypatch.setattr(run, "LIVE_TRANSCRIBE", frozenset({"mock"}))
     monkeypatch.setattr(run, "check_costs", lambda costs: None)
     steps: list[str] = []
