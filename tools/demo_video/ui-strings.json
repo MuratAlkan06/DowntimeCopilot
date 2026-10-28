@@ -1,0 +1,28 @@
+{
+  "about": "Caption allowlist for the demo video. A caption may quote a UI string (in “curly quotes”) only if it is listed here, and the beat that shows the caption must assert the string on screen (tests/test_demo_beats.py, lib/manifest.mjs). Every entry is a fixed label or a deterministic count the app renders (web/), never model prose. Mode-specific counts are listed for both modes.",
+  "strings": [
+    "Declare downtime",
+    "R-DUE-01",
+    "Grounded in policy",
+    "Guardrail: passed",
+    "Read form",
+    "8 agree · 2 flagged for review",
+    "7 agree · 3 flagged for review",
+    "8 agree · 1 corrected · 1 flagged for review",
+    "7 agree · 1 corrected · 2 flagged for review",
+    "Corrected by reviewer",
+    "Verify",
+    "Verify (1 of 2)",
+    "R-VO-01",
+    "1 queued",
+    "Offline — form saved on this device and queued for reading when connected. Keep the paper original.",
+    "1 capture queued on this device — will upload when connected.",
+    "Cached for offline: all 4 roles.",
+    "Systems restored",
+    "R-REC-01",
+    "Mark entered in EHR",
+    "Synced · DynamoDB",
+    "Synced · dry run",
+    "Write digest"
+  ]
+}

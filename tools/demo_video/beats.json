@@ -1,0 +1,238 @@
+{
+  "about": "Single source of truth for the demo video: DEMO.md's 90-second cut as recorded by record.mjs and cut, captioned and encoded by postprocess.mjs. Each beat maps to a DEMO.md run-of-show row (demo.time + a fragment of its Beat cell). Captions describe actions; they never quote model prose, and a “quoted” UI string must be in ui-strings.json and asserted on screen by an assertText action in the same beat. max_s is the post-cut budget; hold pads the beat to it. trimWait brackets a wait with still windows; with speedup the wait is cut between them and, past 2 s, labelled with speedup_label ({s} = seconds removed).",
+  "schema": 1,
+  "script": "DEMO.md",
+  "opening": {
+    "live": "All data is synthetic. Recorded live against real AWS services.",
+    "dry_run": "DRY RUN — development footage, not a deliverable."
+  },
+  "dry_run_mark": "DRY RUN",
+  "still_s": 1.5,
+  "gif": { "beat": "offline", "from": "submitted", "seconds": 12 },
+  "preflight": {
+    "banner": "Last snapshot 02:45 AM unit time · 15 min ago",
+    "patients": 12,
+    "rule_on_bed12": "R-DUE-01"
+  },
+  "beats": [
+    {
+      "id": "declare",
+      "demo": { "time": "0:10", "beat": "Declare downtime" },
+      "max_s": 15,
+      "speedup": true,
+      "speedup_label": "Sped up: packet generation, {s} s of waiting removed",
+      "captions": [
+        { "text": "Charge nurse taps “Declare downtime”: one SBAR packet per patient" },
+        { "at": "bed12", "text": "Bed 12: rule alert “R-DUE-01”; every packet line cites its snapshot field" }
+      ],
+      "actions": [
+        { "do": "pause", "s": 1.4 },
+        { "do": "assertText", "sel": "#btn-go-downtime", "text": "Declare downtime" },
+        { "do": "click", "sel": "#btn-go-downtime" },
+        { "do": "trimWait", "id": "packets", "sel": "#downtime-status", "text": "12 packets generated", "timeout_s": 180 },
+        { "do": "idle" },
+        { "do": "mark", "id": "bed12" },
+        { "do": "scroll", "sel": "button.patient-row[data-id=\"pt-12\"]", "block": "center" },
+        { "do": "click", "sel": "button.patient-row[data-id=\"pt-12\"]" },
+        { "do": "waitFor", "sel": "#packet .alerts", "text": "R-DUE-01", "timeout_s": 30 },
+        { "do": "assertText", "sel": "#packet .alerts", "text": "R-DUE-01" },
+        { "do": "idle" },
+        { "do": "scroll", "sel": "#packet", "block": "start" },
+        { "do": "hold" }
+      ]
+    },
+    {
+      "id": "policy",
+      "demo": { "time": "0:25", "beat": "policy panel" },
+      "max_s": 10,
+      "speedup": true,
+      "speedup_label": "Sped up: policy answer, {s} s of waiting removed",
+      "captions": [
+        { "text": "During: ask the downtime policy (the suggested question)" },
+        { "at": "answer", "text": "Cited to section 4.2: “Grounded in policy”, “Guardrail: passed”" }
+      ],
+      "actions": [
+        { "do": "click", "sel": ".phase-tab[data-phase=\"during\"]" },
+        { "do": "pause", "s": 0.9 },
+        { "do": "click", "sel": "#policy-suggestions button", "text": "How do I get a stat lab with the order system down?" },
+        { "do": "trimWait", "id": "answer", "sel": "#policy-answer .policy-answer", "timeout_s": 90 },
+        { "do": "mark", "id": "answer" },
+        { "do": "check", "name": "policy", "section": "4.2", "chips": ["Grounded in policy", "Guardrail: passed"] },
+        { "do": "assertText", "sel": "#policy-answer .chips", "text": "Grounded in policy" },
+        { "do": "assertText", "sel": "#policy-answer .chips", "text": "Guardrail: passed" },
+        { "do": "scroll", "sel": "#policy-answer", "block": "start" },
+        { "do": "hold" }
+      ]
+    },
+    {
+      "id": "vitals",
+      "demo": { "time": "0:40", "beat": "Vitals flowsheet" },
+      "max_s": 17,
+      "speedup": true,
+      "speedup_label": "Sped up: two readers, {s} s of waiting removed",
+      "captions": [
+        { "text": "Photograph the vitals flowsheet, then “Read form”: Textract and Bedrock read it" },
+        { "at": "read", "text": "Each field shows its photo crop. Footer: “8 agree · 2 flagged for review”", "text_dry_run": "Each field shows its photo crop. Footer: “7 agree · 3 flagged for review”" },
+        { "at": "edit", "text": "Fix the illegible Pain score (“Corrected by reviewer”), then a human taps “Verify”" }
+      ],
+      "actions": [
+        { "do": "scroll", "sel": "#capture-form", "block": "start" },
+        { "do": "select", "sel": "#capture-type", "value": "vitals_flowsheet" },
+        { "do": "upload", "sel": "#capture-file", "file": "data/forms/fixtures/vitals_flowsheet-01.jpg" },
+        { "do": "pause", "s": 0.8 },
+        { "do": "assertText", "sel": "#capture-form button[type=\"submit\"]", "text": "Read form" },
+        { "do": "click", "sel": "#capture-form button[type=\"submit\"]" },
+        { "do": "trimWait", "id": "read", "sel": "#capture-result article.record", "timeout_s": 120 },
+        { "do": "mark", "id": "read" },
+        { "do": "scroll", "sel": "#capture-result", "block": "start" },
+        { "do": "idle" },
+        { "do": "pause", "s": 1.6 },
+        { "do": "scroll", "sel": "#capture-result tr[data-field=\"pain_score\"]", "block": "center" },
+        { "do": "assertText", "sel": "#capture-result .record-summary", "text": "8 agree · 2 flagged for review", "text_dry_run": "7 agree · 3 flagged for review" },
+        { "do": "pause", "s": 1.4 },
+        { "do": "mark", "id": "edit" },
+        { "do": "click", "sel": "#capture-result tr[data-field=\"pain_score\"] .field-edit" },
+        { "do": "type", "sel": "#capture-result input[aria-label=\"New value for Pain score\"]", "value": "3" },
+        { "do": "click", "sel": "#capture-result tr[data-field=\"pain_score\"] button[type=\"submit\"]" },
+        { "do": "waitFor", "sel": "#capture-result tr[data-field=\"pain_score\"]", "text": "Corrected by reviewer", "timeout_s": 30 },
+        { "do": "assertText", "sel": "#capture-result tr[data-field=\"pain_score\"]", "text": "Corrected by reviewer" },
+        { "do": "assertText", "sel": "#capture-result .record-summary", "text": "8 agree · 1 corrected · 1 flagged for review", "text_dry_run": "7 agree · 1 corrected · 2 flagged for review" },
+        { "do": "assertText", "sel": "#capture-result [data-action=\"verify\"]", "text": "Verify" },
+        { "do": "pause", "s": 0.9 },
+        { "do": "click", "sel": "#capture-result [data-action=\"verify\"]" },
+        { "do": "waitFor", "sel": "#capture-result article.record.status-verified", "timeout_s": 30 },
+        { "do": "hold" }
+      ]
+    },
+    {
+      "id": "verbal",
+      "demo": { "time": "0:55", "beat": "Verbal order" },
+      "max_s": 11,
+      "speedup": true,
+      "speedup_label": "Sped up: transcription, {s} s of waiting removed",
+      "captions": [
+        { "text": "Verbal order for Bed 7: attach the read-back audio; Transcribe turns it into text" },
+        { "at": "order", "text": "“R-VO-01” needs a co-sign; heparin is high-alert: “Verify (1 of 2)”" }
+      ],
+      "actions": [
+        { "do": "scroll", "sel": "#capture-form", "block": "start" },
+        { "do": "select", "sel": "#capture-type", "value": "verbal_order" },
+        { "do": "pause", "s": 0.4 },
+        { "do": "select", "sel": "#capture-patient", "value": "pt-07" },
+        { "do": "upload", "sel": "#capture-file", "file": "data/forms/fixtures/verbal_order-01.wav" },
+        { "do": "pause", "s": 0.8 },
+        { "do": "click", "sel": "#capture-form button[type=\"submit\"]" },
+        { "do": "trimWait", "id": "transcribe", "sel": "#capture-result [data-action=\"verify\"]", "text": "Verify (1 of 2)", "timeout_s": 240 },
+        { "do": "mark", "id": "order" },
+        { "do": "scroll", "sel": "#capture-result", "block": "start" },
+        { "do": "assertText", "sel": "#capture-result .alert", "text": "R-VO-01" },
+        { "do": "assertText", "sel": "#capture-result [data-action=\"verify\"]", "text": "Verify (1 of 2)" },
+        { "do": "hold" }
+      ]
+    },
+    {
+      "id": "offline",
+      "demo": { "time": "1:05", "beat": "Downtime MAR" },
+      "max_s": 16,
+      "speedup": true,
+      "speedup_label": "Sped up: upload and read after reconnect, {s} s of waiting removed",
+      "captions": [
+        { "text": "Network off: the Bed 2 Downtime MAR is queued on the device, “1 queued”" },
+        { "at": "reload", "text": "Reload offline: shell, patient list, “Cached for offline: all 4 roles.”" },
+        { "at": "online", "text": "Back online: the queue drains by itself and the MAR is read" }
+      ],
+      "actions": [
+        { "do": "idle" },
+        { "do": "scroll", "sel": "body", "block": "top" },
+        { "do": "offline", "value": true },
+        { "do": "waitFor", "sel": "#offline-banner", "timeout_s": 10 },
+        { "do": "select", "sel": "#capture-type", "value": "downtime_mar" },
+        { "do": "select", "sel": "#capture-patient", "value": "pt-02" },
+        { "do": "upload", "sel": "#capture-file", "file": "data/forms/fixtures/downtime_mar-01.jpg" },
+        { "do": "pause", "s": 0.6 },
+        { "do": "click", "sel": "#capture-form button[type=\"submit\"]" },
+        { "do": "waitFor", "sel": "#capture-result", "text": "queued for reading when connected", "timeout_s": 15 },
+        { "do": "mark", "id": "submitted" },
+        { "do": "assertText", "sel": "#queue-count", "text": "1 queued" },
+        { "do": "assertText", "sel": "#capture-result", "text": "Offline — form saved on this device and queued for reading when connected. Keep the paper original." },
+        { "do": "pause", "s": 1.6 },
+        { "do": "mark", "id": "reload" },
+        { "do": "reload" },
+        { "do": "check", "name": "offlineShell" },
+        { "do": "assertText", "sel": "#checklist-cached", "text": "Cached for offline: all 4 roles." },
+        { "do": "assertText", "sel": "#queue-count", "text": "1 queued" },
+        { "do": "assertText", "sel": "#capture-pending", "text": "1 capture queued on this device — will upload when connected." },
+        { "do": "pause", "s": 1.2 },
+        { "do": "click", "sel": ".phase-tab[data-phase=\"downtime\"]" },
+        { "do": "check", "name": "cachedList" },
+        { "do": "pause", "s": 1.2 },
+        { "do": "click", "sel": ".phase-tab[data-phase=\"during\"]" },
+        { "do": "scroll", "sel": "body", "block": "top" },
+        { "do": "pause", "s": 0.4 },
+        { "do": "mark", "id": "online" },
+        { "do": "offline", "value": false },
+        { "do": "trimWait", "id": "drain", "check": "drained", "timeout_s": 180 },
+        { "do": "scroll", "sel": "#capture-result", "block": "start" },
+        { "do": "hold" }
+      ]
+    },
+    {
+      "id": "restore",
+      "demo": { "time": "1:20", "beat": "Systems restored" },
+      "max_s": 12,
+      "speedup": true,
+      "speedup_label": "Sped up: restored-EHR diff, {s} s of waiting removed",
+      "notice": { "text": "Off camera: the unit clock was advanced 45 minutes before this step" },
+      "captions": [
+        { "text": "Recovery: tap “Systems restored” to diff the restored EHR" },
+        { "at": "found", "text": "Exactly 6 discrepancies, “R-REC-01” first; 3 records to backload" },
+        { "at": "entered", "text": "Verify a record, then “Mark entered in EHR”; the sync status updates" }
+      ],
+      "actions": [
+        { "do": "clock", "minutes": 45 },
+        { "do": "click", "sel": ".phase-tab[data-phase=\"recovery\"]" },
+        { "do": "pause", "s": 0.9 },
+        { "do": "assertText", "sel": "#btn-restore", "text": "Systems restored" },
+        { "do": "click", "sel": "#btn-restore" },
+        { "do": "trimWait", "id": "restore", "sel": "#disc-summary", "text": "discrepancies", "timeout_s": 120 },
+        { "do": "check", "name": "planted", "items": 6, "groups": 3, "rules": ["DIFF-ADT", "DIFF-ALLERGY", "DIFF-ORDER", "R-REC-01", "R-REC-02", "R-VO-01"] },
+        { "do": "mark", "id": "found" },
+        { "do": "assertText", "sel": "#discrepancies", "text": "R-REC-01" },
+        { "do": "scroll", "sel": "#h-disc", "block": "start" },
+        { "do": "pause", "s": 1.8 },
+        { "do": "mark", "id": "entered" },
+        { "do": "scroll", "sel": "#backload article.record:has(.record-title:has-text(\"Downtime MAR\"))", "block": "start" },
+        { "do": "click", "sel": "#backload article.record:has(.record-title:has-text(\"Downtime MAR\")) [data-action=\"verify\"]" },
+        { "do": "waitFor", "sel": "#backload article.record:has(.record-title:has-text(\"Downtime MAR\")) .verify-state", "text": "1 of 2 verifications", "timeout_s": 30 },
+        { "do": "pause", "s": 0.5 },
+        { "do": "scroll", "sel": "#backload article.record:has(.record-title:has-text(\"Vitals flowsheet\")) .record-foot", "block": "center" },
+        { "do": "assertText", "sel": "#backload article.record:has(.record-title:has-text(\"Vitals flowsheet\")) [data-action=\"entered\"]", "text": "Mark entered in EHR" },
+        { "do": "click", "sel": "#backload article.record:has(.record-title:has-text(\"Vitals flowsheet\")) [data-action=\"entered\"]" },
+        { "do": "waitFor", "sel": "#backload article.record.status-entered", "timeout_s": 30 },
+        { "do": "pause", "s": 0.5 },
+        { "do": "scroll", "sel": "#h-costs", "block": "start" },
+        { "do": "check", "name": "syncChip" },
+        { "do": "hold" }
+      ]
+    },
+    {
+      "id": "digest",
+      "demo": { "time": "1:45", "beat": "shift digest" },
+      "max_s": 7,
+      "speedup": true,
+      "speedup_label": "Sped up: digest, {s} s of waiting removed",
+      "notice": { "at": "close", "text": "Measured accuracy, latency and cost: RESULTS.md in the repository" },
+      "captions": [
+        { "text": "Shift digest for the 7 AM team from verified facts; “Write digest” re-runs it" }
+      ],
+      "actions": [
+        { "do": "trimWait", "id": "auto", "sel": "#digest .digest", "timeout_s": 120 },
+        { "do": "assertText", "sel": "#btn-digest", "text": "Write digest" },
+        { "do": "click", "sel": "#btn-digest" },
+        { "do": "trimWait", "id": "rerun", "sel": "#digest .digest", "timeout_s": 120 },
+        { "do": "mark", "id": "close" },
+        { "do": "hold" }
+      ]
+    }
+  ]
+}
