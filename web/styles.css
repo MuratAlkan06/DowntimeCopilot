@@ -92,6 +92,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .header-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
 .role-control { display: flex; align-items: center; gap: var(--sp-2); }
 .role-label { font-size: var(--fs-sm); font-weight: 600; color: var(--c-muted); }
+/* Queue chips: one live region. With both chips hidden it leaves the flex flow (no empty gap) but stays in the
+   accessibility tree, so the first chip to appear is announced. */
+.queue-chips { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.queue-chips:not(:has(> :not([hidden]))) { position: absolute; }
 
 .phase-nav {
   position: sticky; top: 0; z-index: 5;
@@ -165,6 +169,8 @@ main:focus { outline: none; }
 }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Busy but focusable (a queue action while it runs, #59): muted text, not opacity, so the focus ring stays full strength. */
+.btn[aria-disabled="true"] { color: var(--c-muted); cursor: not-allowed; }
 .btn-lg { min-height: 56px; padding: var(--sp-2) var(--sp-5); font-size: var(--fs-lg); }
 .btn-sm { min-height: 36px; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-sm); }
 .btn-primary { background: var(--c-accent); color: var(--c-accent-ink); font-weight: 600; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2); }
@@ -209,6 +215,9 @@ textarea.input { resize: vertical; }
   min-height: 40px; padding: var(--sp-1) var(--sp-3); white-space: normal; text-align: left;
   background: var(--c-accent-soft); color: var(--c-accent); border-color: #b2ccf5; cursor: pointer;
 }
+/* The header "N failed" chip is a button (#59): chip colors, a border that says it acts, a 44px touch target. */
+.chip-action { min-height: var(--tap); padding: var(--sp-1) var(--sp-3); border-color: currentColor; cursor: pointer; }
+.chip-action.chip-crit:hover { background: var(--c-crit); color: #fff; } /* as .btn-danger */
 .rule-badge, .section-badge, .ha-badge {
   display: inline-block; padding: 1px var(--sp-2); border-radius: var(--radius-sm);
   font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 700; white-space: nowrap;
@@ -347,6 +356,16 @@ textarea.input { resize: vertical; }
 }
 #policy-answer > .muted, #capture-pending:not(:empty) { margin-top: var(--sp-3); }
 #capture-pending > .state + .state { margin-top: var(--sp-2); } /* queued notice, then the failed (dead-letter) one */
+/* #59: the failed box is the most serious queue state, so it is filled like the offline box, never quieter; its
+   focus ring is white (the blue one is under 3:1 on red). Queue actions get the full 44px touch target. */
+#capture-pending > .state-error { background: var(--c-crit); color: #fff; border-color: var(--c-crit); }
+#capture-pending > .state-error .btn { background: #fff; color: var(--c-crit); }
+#capture-pending > .state-error .btn:focus-visible { outline-color: #fff; }
+#capture-pending .btn { min-height: var(--tap); }
+/* Waiting to upload, and an upload the user started: the calmest queue states, so unfilled (the offline, amber and
+   failed boxes are filled), with muted text that still meets AA on white (4.8:1) and a button edge at 4.8:1. */
+#capture-pending > .state-queued, #capture-pending > .state-loading { background: var(--c-surface); color: var(--c-muted); }
+#capture-pending > .state-queued .btn, #capture-pending > .state-loading .btn { border: 1px solid var(--c-muted); }
 
 /* ---------------------------------------------------------------- role checklist */
 .checklist { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-1); }
