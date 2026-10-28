@@ -4,6 +4,9 @@ evals/baseline/<run-id>/) plus evals/NOTES.md. The timestamp and git SHA come fr
 
     python -m evals.report [BUNDLE] [--notes evals/NOTES.md] [--out RESULTS.md]   (`make results`)
 
+A bundle with outputs/photographed.json (forms built from public handwriting samples, #67) gets its own headline rows
+and section 8, scored exactly like the synthetic set; a bundle without it renders exactly as before.
+
 Refuses (nonzero, nothing written) a bundle with dry-run/mock calls, /costs sums that do not reconcile, a null
 cost per outage-hour, or a NOTES.md section keyed by an unknown metric.
 """
@@ -20,7 +23,8 @@ from evals.run import ROOT, Refused, check_costs, digest, guardrail_apply, loud
 
 NOTES = ROOT / "evals" / "NOTES.md"
 BASELINE = ROOT / "evals" / "baseline"
-METRICS = ("faithfulness", "grounding", "extraction", "false_flags", "speech", "latency_cost", "outage_cost")
+METRICS = ("faithfulness", "grounding", "extraction", "false_flags", "speech", "latency_cost", "outage_cost",
+           "photographed")
 HEADER = "<!-- GENERATED - DO NOT EDIT. `make results` regenerates this file from the bundle named below. -->"
 
 
@@ -185,6 +189,18 @@ def _score_captures(captures: list[dict], truth_map: dict, ranges: dict) -> dict
             "silent": silent, "misses": misses}
 
 
+def photographed(bundle: Path) -> dict | None:
+    """The photographed-style set (forms built from public handwriting samples), scored like extraction() against
+    run.json photographed_truth. None when the bundle has no outputs/photographed.json (every bundle before #67)."""
+    if not (bundle / "outputs" / "photographed.json").exists():
+        return None
+    meta = _load(bundle, "run.json")
+    if "photographed_truth" not in meta:
+        raise Refused("outputs/photographed.json is in the bundle but run.json has no photographed_truth")
+    return _score_captures(_load(bundle, "outputs/photographed.json"), meta["photographed_truth"],
+                           meta["vital_ranges"])
+
+
 def speech(bundle: Path, meta: dict) -> dict:
     sp = _load(bundle, "outputs/speech.json")
     truth = meta["truth"][sp["fixture"]]
@@ -210,9 +226,12 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
     notes = load_notes(notes_path)
     manifest = meta["manifest"]
     fa, gr, ex, sp = faithfulness(bundle), grounding(bundle, manifest), extraction(bundle, meta), speech(bundle, meta)
+    ph = photographed(bundle)  # None for every bundle without outputs/photographed.json: rendered exactly as before
     lat = {j: statistics.median([c["latency_ms"] for c in costs["calls"] if c["job"] == j]) for j in by_job}
     label = bundle.resolve().relative_to(ROOT).as_posix() if bundle.resolve().is_relative_to(ROOT) else bundle.name
     syn = "synthetic fixtures"
+    pub = "forms built from public handwriting samples"
+    readers = (("nova", "Nova 2 Lite vision"), ("textract", "Textract"), ("combined", "combined (agreement)"))
     L: list[str] = []
     add = L.append
 
@@ -222,6 +241,25 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
             add(f"Notes (evals/NOTES.md, `{key}`):")
             add("")
             add(notes[key])
+
+    def form_table(x: dict, set_label: str) -> None:
+        add("| Fixture | Nova 2 Lite | Textract | Combined |")
+        add("|---|---|---|---|")
+        for r in x["rows"]:
+            cells = [pct(*r[k]) if r.get(k) else "n/a (reader did not run)" for k in ("nova", "textract", "combined")]
+            add(f"| {r['fixture']} | {' | '.join(cells)} |")
+        add(f"| **All ({set_label})** | {pct(*x['per']['nova'])} | {pct(*x['per']['textract'])} | "
+            f"{pct(*x['per']['combined'])} |")
+
+    def form_misses(x: dict, set_label: str) -> None:
+        add(f"Form fields ({set_label}; field, expected, got):")
+        add("")
+        for m in x["misses"]:
+            add(f"- {m['fixture']} / {m['reader']} / `{m['field']}`: expected {json.dumps(m['expected'])}, "
+                f"got {json.dumps(m['got'])}")
+        if not x["misses"]:
+            add("- none")
+        add("")
 
     add(HEADER)
     add("# RESULTS")
@@ -248,16 +286,22 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
     add(f"| Packet omissions (unverifiable lines withheld) | {fa['omitted']} |")
     add(f"| Policy grounding rate | {pct(gr['grounded'], gr['n'])} |")
     add(f"| Policy expected-section correctness | {pct(gr['correct'], gr['n'])} |")
-    for reader, name in (("nova", "Nova 2 Lite vision"), ("textract", "Textract"), ("combined", "combined (agreement)")):
+    for reader, name in readers:
         add(f"| Form field accuracy, {name} ({syn}) | {pct(*ex['per'][reader])} |")
     add(f"| False-flag rate on clean fields ({syn}) | {pct(ex['false_flags'], ex['clean'], 'n/a (0 clean fields)')} |")
+    if ph is not None:
+        for reader, name in readers:
+            add(f"| Form field accuracy, {name} ({pub}) | {pct(*ph['per'][reader])} |")
+        add(f"| False-flag rate on clean fields ({pub}) | "
+            f"{pct(ph['false_flags'], ph['clean'], 'n/a (0 clean fields)')} |")
     add(f"| Speech transcription word accuracy (1 {syn[:-1]}) | {pct(sp['correct'], sp['n'])} |")
     add(f"| Model spend, this run (`/costs`, Bedrock only) | ${costs['total_usd']:.4f} |")
     add(f"| Cost per simulated outage-hour | ${costs['usd_per_outage_hour']:.4f} "
         f"({costs['outage_hours']} simulated h) |")
     add("")
-    add(f"Photographed forms: {meta['photographed_fixtures']} fixtures — pending")
-    add("")
+    if ph is None:
+        add(f"Photographed forms: {meta['photographed_fixtures']} fixtures — pending")
+        add("")
     add("## Paths that ran")
     add("")
     routes = meta["paths"]["routes"]
@@ -295,15 +339,12 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
     add("")
     add(f"## 3. Form extraction ({syn})")
     add("")
-    add("| Fixture | Nova 2 Lite | Textract | Combined |")
-    add("|---|---|---|---|")
-    for r in ex["rows"]:
-        cells = [pct(*r[k]) if r.get(k) else "n/a (reader did not run)" for k in ("nova", "textract", "combined")]
-        add(f"| {r['fixture']} | {' | '.join(cells)} |")
-    add(f"| **All ({syn})** | {pct(*ex['per']['nova'])} | {pct(*ex['per']['textract'])} | "
-        f"{pct(*ex['per']['combined'])} |")
+    form_table(ex, syn)
     add("")
-    add(f"Photographed forms: {meta['photographed_fixtures']} fixtures — pending")
+    if ph is None:
+        add(f"Photographed forms: {meta['photographed_fixtures']} fixtures — pending")
+    else:
+        add(f"Forms built from public handwriting samples: {len(ph['rows'])} fixtures, scored separately in section 8.")
     note("extraction")
     add("")
     add(f"## 4. Flags on clean fields ({syn})")
@@ -348,6 +389,18 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
         f"{manifest['clock_advance_minutes']['before_costs']} min).")
     note("outage_cost")
     add("")
+    if ph is not None:
+        add(f"## 8. Form extraction ({pub})")
+        add("")
+        form_table(ph, pub)
+        add("")
+        add(f"Each fixture is one of the three form templates filled in with one writer's characters from NIST Special "
+            f"Database 19 (public, labeled handwriting samples), then given a photo-style distortion; scored exactly "
+            f"like sections 3 and 4. False-flag rate "
+            f"{pct(ph['false_flags'], ph['clean'], 'n/a (0 clean fields)')}. Flags that caught a wrong value: "
+            f"{ph['caught']}. Wrong values with no flag (silent errors): {ph['silent']}.")
+        note("photographed")
+        add("")
     add("## FAILURES")
     add("")
     add("Every miss in this run.")
@@ -368,14 +421,9 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
     if gr["correct"] == gr["n"]:
         add("- none")
     add("")
-    add(f"Form fields ({syn}; field, expected, got):")
-    add("")
-    for m in ex["misses"]:
-        add(f"- {m['fixture']} / {m['reader']} / `{m['field']}`: expected {json.dumps(m['expected'])}, "
-            f"got {json.dumps(m['got'])}")
-    if not ex["misses"]:
-        add("- none")
-    add("")
+    form_misses(ex, syn)
+    if ph is not None:
+        form_misses(ph, pub)
     add("Speech words (operation, expected, got):")
     add("")
     for op, want, got in sp["errors"]:
