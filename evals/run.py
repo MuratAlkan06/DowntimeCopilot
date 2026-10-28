@@ -37,6 +37,7 @@ MANIFEST = ROOT / "evals" / "manifest.json"
 FIXTURES = ROOT / "data" / "forms" / "fixtures"
 PHOTO_FIXTURES = ROOT / "evals" / "fixtures"
 PHOTO_SCHEMA = 1  # truth schema of a photographed-style pair (check_photographed_truth)
+PHOTO_TRUTH_GLOB = "hw-*.json"  # the generator's truth files (tools/hw_fixtures.py stems hw-<form_type>-<NNN>)
 RUNS = ROOT / "evals" / "runs"
 IMAGE_EXT = {".jpg": "jpeg", ".jpeg": "jpeg", ".png": "png"}
 ROLE = {"X-Role": "charge_nurse"}
@@ -112,14 +113,19 @@ def check_photographed_truth(declared, photos: Path) -> None:
 
     The static half of the photographed checks: runs in load_manifest and reads no image (the images are git-ignored,
     so CI has the committed truth only). Refuses: a declaration that is not a list of distinct stems, a declared stem
-    without its truth, and a truth that is not JSON, has another schema, or lacks form_type + fields. The images are
-    bound to this truth before any spend by check_photographed_images."""
+    without its truth, a generator truth file (PHOTO_TRUTH_GLOB) in `photos` that is not declared, and a truth that is
+    not JSON, has another schema, or lacks form_type + fields. The images are bound to this truth before any spend by
+    check_photographed_images."""
     if not isinstance(declared, list) or not all(isinstance(s, str) and s for s in declared) \
             or len(set(declared)) != len(declared):
         raise Refused("manifest photographed_fixtures must be a list of distinct fixture stems")
     missing = [s for s in declared if not (photos / f"{s}.json").exists()]
     if missing:
         raise Refused(f"photographed truth missing in {photos}: {', '.join(missing)} (need <stem>.json)")
+    stray = sorted({p.stem for p in photos.glob(PHOTO_TRUTH_GLOB)} - set(declared))
+    if stray:
+        raise Refused(f"photographed truth in {photos} not declared in manifest photographed_fixtures: "
+                      f"{', '.join(stray)} (declare it or move it out; the declared set is exactly what is scored)")
     for s in declared:
         try:
             truth = json.loads((photos / f"{s}.json").read_text())
@@ -448,9 +454,10 @@ def live_run(fixtures: Path, runs: Path) -> Path:
 
     guard = BudgetGuard(budget["limit_usd"], budget["step_estimates_usd"])
     with hooks.installed():
-        # photographed runs last: if any earlier step fails, its spend is never incurred.
+        # photographed runs last: if any earlier step fails, its spend is never incurred. Step names are the
+        # manifest's step_estimates_usd keys: the guard drops an estimate only when its step is done.
         execute([("packets", packets_step), ("policy", policy_step), ("forms", forms_step),
-                 ("speech", speech_step), ("photographed", photographed_step)], guard, spent)
+                 ("speech", speech_step), ("photographed_forms", photographed_step)], guard, spent)
     advance(manifest["clock_advance_minutes"]["before_costs"])
     costs = api.get("/costs").json()
     check_costs(costs)

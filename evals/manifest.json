@@ -12,10 +12,20 @@
   ],
   "form_fixtures": ["vitals_flowsheet-01", "downtime_mar-01", "admission_note-01"],
   "speech_fixture": {"stem": "verbal_order-01", "patient_id": "pt-07"},
-  "photographed_fixtures": [],
+  "photographed_fixtures": [
+    "hw-admission_note-001", "hw-admission_note-002", "hw-admission_note-003", "hw-admission_note-004",
+    "hw-admission_note-005", "hw-admission_note-006", "hw-admission_note-007", "hw-admission_note-008",
+    "hw-admission_note-009", "hw-admission_note-010", "hw-admission_note-011", "hw-admission_note-012",
+    "hw-downtime_mar-001", "hw-downtime_mar-002", "hw-downtime_mar-003", "hw-downtime_mar-004",
+    "hw-downtime_mar-005", "hw-downtime_mar-006", "hw-downtime_mar-007", "hw-downtime_mar-008",
+    "hw-downtime_mar-009", "hw-downtime_mar-010", "hw-downtime_mar-011", "hw-downtime_mar-012",
+    "hw-vitals_flowsheet-001", "hw-vitals_flowsheet-002", "hw-vitals_flowsheet-003", "hw-vitals_flowsheet-004",
+    "hw-vitals_flowsheet-005", "hw-vitals_flowsheet-006", "hw-vitals_flowsheet-007", "hw-vitals_flowsheet-008",
+    "hw-vitals_flowsheet-009", "hw-vitals_flowsheet-010", "hw-vitals_flowsheet-011", "hw-vitals_flowsheet-012"
+  ],
   "budget": {
-    "limit_usd": 2.0,
-    "step_estimates_usd": {"packets": 0.40, "policy": 0.20, "forms": 0.25, "speech": 0.03},
+    "limit_usd": 4.0,
+    "step_estimates_usd": {"packets": 0.40, "policy": 0.20, "forms": 0.25, "speech": 0.03, "photographed_forms": 2.70},
     "unmetered_allowance_usd": {"textract_page": 0.07, "transcribe_job": 0.01, "guardrail_check": 0.01}
   }
 }
