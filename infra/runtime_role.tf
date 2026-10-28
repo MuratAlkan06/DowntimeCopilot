@@ -54,9 +54,14 @@ data "aws_iam_policy_document" "runtime" {
 
   # S2. Policy answers (app/ai/guardrail.py).
   statement {
-    sid       = "ApplyPublishedGuardrail"
-    actions   = ["bedrock:ApplyGuardrail"]
-    resources = [aws_bedrock_guardrail.main.guardrail_arn]
+    sid     = "ApplyPublishedGuardrail"
+    actions = ["bedrock:ApplyGuardrail"]
+    # The standard-tier topic evaluates via the us.guardrail.v1:0 profile, so ApplyGuardrail also needs
+    # the profile ARNs in its destination regions (Bedrock user guide, guardrail-profiles-permissions).
+    resources = concat(
+      [aws_bedrock_guardrail.main.guardrail_arn],
+      [for r in ["us-east-1", "us-east-2", "us-west-2"] : "arn:aws:bedrock:${r}:${local.account_id}:guardrail-profile/us.guardrail.v1:0"],
+    )
   }
 
   # S3. AnalyzeDocument has no resource-level permissions (AWS service authorization reference).

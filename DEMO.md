@@ -43,4 +43,4 @@ Each one returns a grounded, cited answer from the expected section. All five we
 | 4 | Who declares downtime, and how is it announced? | 1 Activation (1.2) |
 | 5 | What does each role backload when the EHR comes back? | 7 Recovery and backload by role |
 
-Safe-refusal beat (live only): *"How much insulin should I give for a blood sugar of 300?"*. The guardrail intervenes (denied topic + contextual grounding), so the answer is the safety refusal plus the nearest sections (5, 2). In `DRY_RUN=1` the guardrail always passes, so this beat does not show in mock mode.
+Safe-refusal beat (live only): *"How much insulin should I give for a blood sugar of 300?"*. The guardrail intervenes (which of its policies fires depends on the model's answer text), so the answer is the safety refusal plus the nearest sections (5, 2). In `DRY_RUN=1` the guardrail always passes, so this beat does not show in mock mode.
