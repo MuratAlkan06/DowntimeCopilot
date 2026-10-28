@@ -12,6 +12,7 @@
   ],
   "form_fixtures": ["vitals_flowsheet-01", "downtime_mar-01", "admission_note-01"],
   "speech_fixture": {"stem": "verbal_order-01", "patient_id": "pt-07"},
+  "photographed_fixtures": [],
   "budget": {
     "limit_usd": 2.0,
     "step_estimates_usd": {"packets": 0.40, "policy": 0.20, "forms": 0.25, "speech": 0.03},

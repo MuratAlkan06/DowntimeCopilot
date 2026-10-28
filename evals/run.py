@@ -1,7 +1,8 @@
 """`make evals`: ONE live run of the fixed inputs in evals/manifest.json through the app, written to an
 artifact bundle evals/runs/<run-id>/ (git-ignored): run.json (manifest, ground truth, run-time git SHA and
 timestamps, paths that ran, the ALLOWED/DENIED table from docs/decisions.md), outputs/*.json (raw packets,
-faithfulness passes, policy answers, captured records, transcript) and costs.json (the GET /costs dump).
+faithfulness passes, policy answers, captured records, transcript; outputs/photographed.json only when the manifest
+declares photographed_fixtures) and costs.json (the GET /costs dump).
 Every file is scrubbed with the tools/guard.sh patterns before it is written. RESULTS.md is then generated
 from the bundle alone (evals/report.py).
 
@@ -10,7 +11,8 @@ nothing is mirrored to the cloud) on a scratch STORE_PATH that must start empty,
 run's calls. The simulator is the real one at SIM_URL. Two observation hooks record what packets.faithful
 and transcribe.transcribe saw and returned; they never change a result.
 
-Refuses (exit nonzero, loud, no bundle, no RESULTS.md): DRY_RUN=1, missing fixtures, TEXTRACT_ENABLED off,
+Refuses (exit nonzero, loud, no bundle, no RESULTS.md): DRY_RUN=1, missing fixtures, photographed pairs on disk
+that are not exactly the declared photographed_fixtures (or whose image fails its sha256), TEXTRACT_ENABLED off,
 STORE_PATH unset or non-empty, simulator unreachable, a dry-run/mock call in the run, a projected spend over
 the manifest budget (checked before and after every step), or a /costs inconsistency.
 """
@@ -33,6 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "evals" / "manifest.json"
 FIXTURES = ROOT / "data" / "forms" / "fixtures"
 PHOTO_FIXTURES = ROOT / "evals" / "fixtures"
+PHOTO_SCHEMA = 1  # truth schema of a photographed-style pair (check_photographed)
 RUNS = ROOT / "evals" / "runs"
 IMAGE_EXT = {".jpg": "jpeg", ".jpeg": "jpeg", ".png": "png"}
 ROLE = {"X-Role": "charge_nurse"}
@@ -65,8 +68,9 @@ def loud(msg: str) -> None:
 
 # ------------------------------------------------------------------ fixed inputs
 
-def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES) -> dict:
-    """The manifest fixes the inputs before the run. Raises Refused if any input is missing."""
+def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES, photos: Path | None = None) -> dict:
+    """The manifest fixes the inputs before the run. Raises Refused if any input is missing, or, when the manifest
+    has photographed_fixtures, if the pairs in `photos` (default evals/fixtures) fail check_photographed."""
     m = json.loads(path.read_text())
     if not m.get("questions") or any(not q.get("question") or not q.get("expected_section") for q in m["questions"]):
         raise Refused("manifest questions need question + expected_section")
@@ -77,6 +81,8 @@ def load_manifest(path: Path = MANIFEST, fixtures: Path = FIXTURES) -> dict:
         missing.append(sp)
     if missing:
         raise Refused(f"fixtures missing in {fixtures}: {', '.join(missing)} (need <stem>.jpg|png|wav + <stem>.json)")
+    if "photographed_fixtures" in m:
+        check_photographed(m["photographed_fixtures"], PHOTO_FIXTURES if photos is None else photos)
     return m
 
 
@@ -88,6 +94,52 @@ def find_pairs(fixtures: Path) -> list[tuple[Path, Path]]:
     """Photographed-form fixtures (evals/fixtures): image + ground truth with the same stem."""
     return [(img, img.with_suffix(".json")) for img in sorted(fixtures.glob("*"))
             if img.suffix.lower() in IMAGE_EXT and img.with_suffix(".json").exists()]
+
+
+def check_photographed(declared, photos: Path) -> None:
+    """Truth schema v1 of a photographed-style pair in evals/fixtures/ (<stem>.jpg|png + <stem>.json), frozen for
+    the fixture generator (#67):
+
+        {"schema": 1, "form_type": str, "fields": {name: str | null}, "image": "<stem>.jpg", "seed": int,
+         "writer": str, "distortion": "L0" | "L1" | "L2", "tags": [str, ...], "source": str, "image_sha256": str}
+
+    Only form_type and fields are scored; the rest is metadata and may be absent (older or foreign pairs). The run
+    bundle carries only the scored subset (run.json photographed_truth): image_sha256 is hex and can hold a 12-digit
+    decimal run that the scrubber would mangle, so it and the other metadata stay in the committed truth file.
+
+    Runs in preflight, before any network or spend. Refuses: a declared stem without its image or truth, a pair on
+    disk that is not declared (the find_pairs stems must equal the declared set), two images for one stem, a truth
+    without form_type + fields or with another schema, and an image whose sha256 is not the truth's image_sha256."""
+    if not isinstance(declared, list) or not all(isinstance(s, str) and s for s in declared) \
+            or len(set(declared)) != len(declared):
+        raise Refused("manifest photographed_fixtures must be a list of distinct fixture stems")
+    on_disk = [img.stem for img, _ in find_pairs(photos)]
+    twice = sorted({s for s in on_disk if on_disk.count(s) > 1})
+    if twice:
+        raise Refused(f"photographed fixtures with more than one image in {photos}: {', '.join(twice)}")
+    missing = [s for s in declared if not (photos / f"{s}.json").exists()
+               or not any((photos / f"{s}{ext}").exists() for ext in IMAGE_EXT)]
+    if missing:
+        raise Refused(f"photographed fixtures missing in {photos}: {', '.join(missing)} "
+                      f"(need <stem>.jpg|png + <stem>.json)")
+    stray = sorted(set(on_disk) - set(declared))
+    if stray:
+        raise Refused(f"photographed pairs in {photos} not declared in manifest photographed_fixtures: "
+                      f"{', '.join(stray)} (declare them or move them out; the declared set is exactly what is scored)")
+    for s in declared:
+        try:
+            truth = json.loads((photos / f"{s}.json").read_text())
+        except json.JSONDecodeError as exc:
+            raise Refused(f"photographed truth {s}.json is not valid JSON: {exc}") from None
+        if truth.get("schema", PHOTO_SCHEMA) != PHOTO_SCHEMA:
+            raise Refused(f"photographed truth {s}.json has schema {truth['schema']!r}; this harness reads "
+                          f"schema {PHOTO_SCHEMA}")
+        if not isinstance(truth.get("form_type"), str) or not isinstance(truth.get("fields"), dict):
+            raise Refused(f"photographed truth {s}.json needs form_type (str) and fields (object)")
+        want = truth.get("image_sha256")
+        if want is not None and hashlib.sha256(image_of(photos, s).read_bytes()).hexdigest() != want:
+            raise Refused(f"photographed fixture {s}: image sha256 does not match image_sha256 in {s}.json "
+                          f"(image and truth are bound; restore or regenerate the pair)")
 
 
 def services_table(decisions: Path = ROOT / "docs" / "decisions.md") -> list[dict]:
@@ -364,10 +416,24 @@ def live_run(fixtures: Path, runs: Path) -> Path:
         if out["speech"]["x_transcribe"] not in LIVE_TRANSCRIBE:
             raise Refused(f"speech fixture was not transcribed live (X-Transcribe: {out['speech']['x_transcribe']})")
 
+    photo_stems = manifest.get("photographed_fixtures", [])
+
+    def photographed_step() -> None:
+        """forms_step over the declared photographed-style pairs (checked in preflight); none declared -> no-op."""
+        out["photographed"] = []
+        for stem in photo_stems:
+            img = image_of(PHOTO_FIXTURES, stem)
+            ft = json.loads((PHOTO_FIXTURES / f"{stem}.json").read_text())["form_type"]
+            r = api.post("/capture", data={"form_type": ft},
+                         files={"file": (img.name, img.read_bytes(), f"image/{IMAGE_EXT[img.suffix.lower()]}")})
+            r.raise_for_status()
+            out["photographed"].append({"fixture": stem, "record": r.json()})
+
     guard = BudgetGuard(budget["limit_usd"], budget["step_estimates_usd"])
     with hooks.installed():
+        # photographed runs last: if any earlier step fails, its spend is never incurred.
         execute([("packets", packets_step), ("policy", policy_step), ("forms", forms_step),
-                 ("speech", speech_step)], guard, spent)
+                 ("speech", speech_step), ("photographed", photographed_step)], guard, spent)
     advance(manifest["clock_advance_minutes"]["before_costs"])
     costs = api.get("/costs").json()
     check_costs(costs)
@@ -388,6 +454,10 @@ def live_run(fixtures: Path, runs: Path) -> Path:
         "unmetered": {"textract_analyze_document": hooks.textract_calls, "transcribe_jobs": len(hooks.transcripts),
                       "guardrail_apply": guardrail_apply(config.guardrail_mode(), len(out["policy"]))},
     }
+    if photo_stems:  # the scored subset only (check_photographed); none declared -> today's bundle shape
+        run_meta["photographed_truth"] = {
+            s: {k: json.loads((PHOTO_FIXTURES / f"{s}.json").read_text())[k] for k in ("form_type", "fields")}
+            for s in photo_stems}
     bundle = runs / run_id
     write_json(bundle / "run.json", run_meta)
     write_json(bundle / "costs.json", costs)
@@ -397,6 +467,8 @@ def live_run(fixtures: Path, runs: Path) -> Path:
     write_json(bundle / "outputs" / "policy.json", out["policy"])
     write_json(bundle / "outputs" / "captures.json", out["captures"])
     write_json(bundle / "outputs" / "speech.json", out["speech"])
+    if photo_stems:
+        write_json(bundle / "outputs" / "photographed.json", out["photographed"])
     return bundle
 
 
