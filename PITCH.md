@@ -49,15 +49,15 @@ Synthetic-fixture baseline, run `20261024T120050Z-90d316a`. All inputs are synth
 
 Verbal-order structuring is the weak spot, and we report it as measured. Three of the four misses are normalization gaps ("Doctor Quill" for "Dr. Quill", "confirmed" for "yes", "subcutaneous" for "SC"). The fourth is a co-sign the read-back never mentions. The previous baseline had the same four misses. Textract, Transcribe and Guardrail checks are billed outside the app's meter, about $0.20 more for this run.
 
-Forms built from public handwriting samples, run `20261028T152718Z-336ee8a` (the run [`RESULTS.md`](RESULTS.md) shows): 36 forms, glyphs from NIST Special Database 19 composited onto the three templates, one writer per fixture, with a software photo-style distortion. They are not forms a person filled in by hand.
+Forms built from public handwriting samples, run `20261028T175833Z-46d6f2e` (the run [`RESULTS.md`](RESULTS.md) shows): 36 forms, glyphs from NIST Special Database 19 composited onto the three templates, one writer per fixture, with a software photo-style distortion. They are not forms a person filled in by hand.
 
 | What | Result |
 |---|---|
-| Form fields, Nova 2 Lite / Textract / combined (forms built from public handwriting samples) | 89.0% (235/264) / 88.6% (234/264) / 92.4% (244/264) |
+| Form fields, Nova 2 Lite / Textract / combined (forms built from public handwriting samples) | 89.4% (236/264) / 88.6% (234/264) / 92.4% (244/264) |
 | Wrong combined values left unflagged | 9 of 20. The other 11 were flagged for review |
-| False flags on clean fields | 11.5% (28/243) |
+| False flags on clean fields | 11.1% (27/243) |
 
-The same run repeats every synthetic-set number in the first table except packet lines, 100.0% (196/196), and spend, $0.7603 ($1.0137 per simulated outage-hour), which also pays for the 36 extra form reads and the 35 guardrail refusal questions.
+The same run repeats every synthetic-set number in the first table except packet lines, 100.0% (191/191), and spend, $0.7564 ($1.0085 per simulated outage-hour), which also pays for the 36 extra form reads and the 35 guardrail refusal questions.
 
 ## Limitations
 
