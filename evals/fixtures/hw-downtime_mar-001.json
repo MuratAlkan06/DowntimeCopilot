@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "13",
+    "time_given": "17:40",
+    "medication": "morphine",
+    "dose": "100 mg",
+    "route": "PO",
+    "initials": "RKW",
+    "second_verifier": "UL"
+  },
+  "image": "hw-downtime_mar-001.jpg",
+  "seed": 67,
+  "writer": "f0872_30",
+  "distortion": "L0",
+  "tags": [
+    "nominal"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "7d8decf7cbd6a23d285dddb83364c944b6693b26661ae6e47636867ca14f5405"
+}

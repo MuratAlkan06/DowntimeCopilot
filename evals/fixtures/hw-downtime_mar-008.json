@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "15",
+    "time_given": "22:45",
+    "medication": "losartan",
+    "dose": "0.1 mg",
+    "route": "IO",
+    "initials": "BZ",
+    "second_verifier": "BS"
+  },
+  "image": "hw-downtime_mar-008.jpg",
+  "seed": 67,
+  "writer": "f0028_05",
+  "distortion": "L1",
+  "tags": [
+    "ambiguous"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "a62384a69b65cc04cb7d79351924d348c1494a1fca10b62bd62c080307ab515f"
+}

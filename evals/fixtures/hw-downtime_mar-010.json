@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "5",
+    "time_given": "15:22",
+    "medication": "isosorbide",
+    "dose": "50 mg",
+    "route": null,
+    "initials": "SB",
+    "second_verifier": "ZZZ"
+  },
+  "image": "hw-downtime_mar-010.jpg",
+  "seed": 67,
+  "writer": "f0305_08",
+  "distortion": "L0",
+  "tags": [
+    "ambiguous",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "09305d7c73a512de41218c51a592e6869db084489c631cd4795dfb5bd6cc6560"
+}

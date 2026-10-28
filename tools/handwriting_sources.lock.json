@@ -8,14 +8,14 @@
     "by_write": {
       "url": "https://s3.amazonaws.com/nist-srd/SD19/by_write.zip",
       "md5_log_url": "https://s3.amazonaws.com/nist-srd/SD19/by_write_md5.log",
-      "sha256": null,
-      "size": null
+      "sha256": "39958e28827eb0d7d54f7e4c31c6cc36689b38aa218a4fc1e810c5413e7a35b8",
+      "size": 568113446
     },
     "by_class": {
       "url": "https://s3.amazonaws.com/nist-srd/SD19/by_class.zip",
       "md5_log_url": "https://s3.amazonaws.com/nist-srd/SD19/by_class_md5.log",
-      "sha256": null,
-      "size": null
+      "sha256": "b387d65249b2d0ed429cf81967d4c40a9d01ca2f7bb3931c6a36d825bc22d411",
+      "size": 1031576378
     }
   }
 }

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "form_type": "downtime_mar",
+  "fields": {
+    "bed": "5",
+    "time_given": "10:30",
+    "medication": "warfarin",
+    "dose": "100 mg",
+    "route": null,
+    "initials": "QK",
+    "second_verifier": "WA"
+  },
+  "image": "hw-downtime_mar-006.jpg",
+  "seed": 67,
+  "writer": "f0389_38",
+  "distortion": "L2",
+  "tags": [
+    "nominal",
+    "blank"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "685db37b5cf896a3519181390b93837f5ae0488fe90fed1dfaaccbcbfbe1b500"
+}

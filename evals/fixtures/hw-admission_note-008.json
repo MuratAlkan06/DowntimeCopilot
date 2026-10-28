@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "22",
+    "height_cm": "158",
+    "weight_kg": "89.9",
+    "allergies": "iodine rash",
+    "history": "ileus, colitis"
+  },
+  "image": "hw-admission_note-008.jpg",
+  "seed": 67,
+  "writer": "f1156_23",
+  "distortion": "L1",
+  "tags": [
+    "ambiguous"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "1c747c52e17118e09442a4cc548270a39817d1675d5760a407921df9ca0dc1b4"
+}

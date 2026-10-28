@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "24",
+    "height_cm": "182",
+    "weight_kg": "70.2",
+    "allergies": "penicillin hives",
+    "history": "lymphoma, sepsis"
+  },
+  "image": "hw-admission_note-009.jpg",
+  "seed": 67,
+  "writer": "f4046_46",
+  "distortion": "L2",
+  "tags": [
+    "ambiguous"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "fa6bf4a274b9a48997f700dbd22cefcda1caae1b25428927e3fa81834a9feed7"
+}

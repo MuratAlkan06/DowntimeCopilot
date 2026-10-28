@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "15",
+    "height_cm": "177",
+    "weight_kg": "61.4",
+    "allergies": "codeine nausea",
+    "history": "asthma"
+  },
+  "image": "hw-admission_note-001.jpg",
+  "seed": 67,
+  "writer": "f1053_00",
+  "distortion": "L0",
+  "tags": [
+    "nominal"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "242069a12f492df4b96744e7f6fb14229e8619c14d3c02e27060e9875d9dfce5"
+}

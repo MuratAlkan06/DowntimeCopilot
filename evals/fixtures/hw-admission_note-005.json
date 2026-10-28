@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "form_type": "admission_note",
+  "fields": {
+    "bed": "29",
+    "height_cm": "184",
+    "weight_kg": "46.4",
+    "allergies": "morphine itching",
+    "history": "asthma"
+  },
+  "image": "hw-admission_note-005.jpg",
+  "seed": 67,
+  "writer": "f1471_42",
+  "distortion": "L1",
+  "tags": [
+    "nominal"
+  ],
+  "source": "composited from public handwriting samples (NIST Special Database 19)",
+  "image_sha256": "6b9aba4be4b016dcf10905d91d24bfaf5a8d404d3df8bc68823fde9669393afb"
+}
