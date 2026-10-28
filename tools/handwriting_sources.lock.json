@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "dataset": "NIST Special Database 19, Handprinted Forms and Characters, 2nd edition (September 2016)",
+  "doi": "10.18434/T4H01C",
+  "landing_page": "https://www.nist.gov/srd/nist-special-database-19",
+  "note": "sha256 and size stay null until the first verified fetch (python -m tools.hw_glyphs fetch --write-lock records them after the NIST MD5 logs check out). While any is null the glyph source refuses to load. See docs/handwriting-datasets.md.",
+  "archives": {
+    "by_write": {
+      "url": "https://s3.amazonaws.com/nist-srd/SD19/by_write.zip",
+      "md5_log_url": "https://s3.amazonaws.com/nist-srd/SD19/by_write_md5.log",
+      "sha256": null,
+      "size": null
+    },
+    "by_class": {
+      "url": "https://s3.amazonaws.com/nist-srd/SD19/by_class.zip",
+      "md5_log_url": "https://s3.amazonaws.com/nist-srd/SD19/by_class_md5.log",
+      "sha256": null,
+      "size": null
+    }
+  }
+}
