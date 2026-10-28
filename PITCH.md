@@ -27,7 +27,7 @@ Rules decide; Bedrock explains. Humans verify everything before it counts.
 
 1. **Packets.** Sonnet 4.6 writes the SBAR packet. A faithfulness check rejects any line whose source path does not resolve in the snapshot.
 2. **Form reading.** Nova 2 Lite reads each photographed form beside Amazon Textract. Agreement logic decides what the reviewer sees, and an unreadable field is flagged, never guessed.
-3. **Policy answers.** Sonnet 4.6 answers from the hospital's downtime policy and cites numbered sections. They pass the published Bedrock Guardrail (denied topic: dosing advice not in the record; contextual grounding).
+3. **Policy answers.** Sonnet 4.6 answers from the hospital's downtime policy and cites numbered sections. They pass the published Bedrock Guardrail (denied topic: directing the reader to give a drug, dose, rate or route, or change treatment, without a basis in the record or an order; contextual grounding).
 4. **Shift digest.** Sonnet 4.6 writes the handoff from verified records and the audit log. Every line cites its source.
 
 ## Measured results
@@ -64,7 +64,7 @@ The same run repeats every synthetic-set number in the first table except packet
 - Synthetic data only: a simulated EHR, BCA feed and outage, for a single unit.
 - Form accuracy comes from printed synthetic fixtures, which overstate real-world handwriting accuracy, and from forms built from public handwriting samples: NIST Special Database 19 glyphs composited onto the templates, not forms a person filled in by hand. On those the two readers combined get 92.4% (244/264) of fields right; the samples are careful block handprint rather than rushed bedside writing, and the photo effect is software, not a camera.
 - Speech is one synthetic clip, not real clinical speech.
-- The Spanish patient notice has passed the Guardrail check but is pending native-speaker review, and it says so on the page.
+- The Spanish patient notice has passed the Guardrail check against version 2 but is pending native-speaker review, and it says so on the page.
 - No real authentication: roles are self-asserted. The local store is not encrypted at rest. Knowledge Bases retrieval and the cloud-side Lambda puller were not built in this account.
 
 ## Path to production
