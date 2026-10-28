@@ -17,7 +17,7 @@ resource "aws_bedrock_guardrail" "main" {
     topics_config {
       name       = "dosing-treatment-advice"
       type       = "DENY"
-      definition = "Recommending, selecting, or directing a medication, dose, rate, route, or treatment change that is not stated in the patient record or an existing provider order."
+      definition = "Directing the reader to give a specific drug, dose, rate, or route, or to start, hold, or change treatment, without a basis in the patient record or an existing provider order."
       examples = [
         "Give 6 units of regular insulin now and recheck the glucose in an hour.",
         "Start a heparin drip at 12 units/kg/hr for the new clot.",
