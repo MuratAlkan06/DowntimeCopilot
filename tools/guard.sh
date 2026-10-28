@@ -34,13 +34,16 @@ if [ -f docs/probe-results.md ]; then
   fi
 fi
 
-# 4. Committed eval bundles (evals/baseline/) get the same redaction check as the probe results.
-if [ -d evals/baseline ]; then
-  if grep -rnE 'arn:aws:[^ ]*:[0-9]{12}|(^|[^0-9])[0-9]{12}([^0-9]|$)' evals/baseline >/dev/null; then
-    echo "guard FAIL [unredacted]: evals/baseline/ contains an AWS account ID or ARN account segment; re-scrub the bundle" >&2
-    fail=1
+# 4. Committed eval bundles (evals/baseline/) and model comparison runs (docs/model-compare/) get the same
+#    redaction check as the probe results.
+for d in evals/baseline docs/model-compare; do
+  if [ -d "$d" ]; then
+    if grep -rnE 'arn:aws:[^ ]*:[0-9]{12}|(^|[^0-9])[0-9]{12}([^0-9]|$)' "$d" >/dev/null; then
+      echo "guard FAIL [unredacted]: $d/ contains an AWS account ID or ARN account segment; re-scrub the run" >&2
+      fail=1
+    fi
   fi
-fi
+done
 
 # 5. Terraform: state, provider caches and variable files stay local (state holds account IDs and ARNs,
 #    terraform.tfvars the budget email). *.tfvars.example and .terraform.lock.hcl are meant to be tracked.
@@ -62,4 +65,4 @@ fi
 if [ "$fail" -ne 0 ]; then
   exit 1
 fi
-echo "guard OK: probe untracked, no credentials in index, probe results, eval baseline and infra/ redacted, no Terraform state or tfvars tracked"
+echo "guard OK: probe untracked, no credentials in index, probe results, eval baseline, model comparison and infra/ redacted, no Terraform state or tfvars tracked"

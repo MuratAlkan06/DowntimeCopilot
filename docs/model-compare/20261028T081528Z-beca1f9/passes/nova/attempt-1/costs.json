@@ -1,0 +1,698 @@
+{
+  "calls": [
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1464,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 864,
+      "tokens_out": 348,
+      "ts": "2026-10-24T03:00:01.468830+00:00",
+      "usd": 0.001242
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 519,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 628,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:01.994712+00:00",
+      "usd": 0.00027
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2086,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 914,
+      "tokens_out": 504,
+      "ts": "2026-10-24T03:00:04.088661+00:00",
+      "usd": 0.001688
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 762,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 726,
+      "tokens_out": 39,
+      "ts": "2026-10-24T03:00:04.857352+00:00",
+      "usd": 0.000347
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1938,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 913,
+      "tokens_out": 448,
+      "ts": "2026-10-24T03:00:06.802534+00:00",
+      "usd": 0.001533
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 519,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 701,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:07.326978+00:00",
+      "usd": 0.000295
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2283,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 956,
+      "tokens_out": 463,
+      "ts": "2026-10-24T03:00:09.617173+00:00",
+      "usd": 0.001589
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 661,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 741,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:10.282295+00:00",
+      "usd": 0.000308
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2046,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 919,
+      "tokens_out": 422,
+      "ts": "2026-10-24T03:00:12.331524+00:00",
+      "usd": 0.001464
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 492,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 692,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:12.829030+00:00",
+      "usd": 0.000292
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2419,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 890,
+      "tokens_out": 496,
+      "ts": "2026-10-24T03:00:15.253195+00:00",
+      "usd": 0.001658
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 573,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 751,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:15.832213+00:00",
+      "usd": 0.000311
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1855,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 918,
+      "tokens_out": 449,
+      "ts": "2026-10-24T03:00:17.691197+00:00",
+      "usd": 0.001538
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 599,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 709,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:18.294129+00:00",
+      "usd": 0.000297
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2311,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1038,
+      "tokens_out": 606,
+      "ts": "2026-10-24T03:00:20.608644+00:00",
+      "usd": 0.002009
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 518,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 819,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:21.133108+00:00",
+      "usd": 0.000334
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1943,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 914,
+      "tokens_out": 387,
+      "ts": "2026-10-24T03:00:23.084348+00:00",
+      "usd": 0.001366
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 505,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 664,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:23.595584+00:00",
+      "usd": 0.000282
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2101,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 837,
+      "tokens_out": 335,
+      "ts": "2026-10-24T03:00:25.702630+00:00",
+      "usd": 0.001197
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 550,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 600,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:26.257609+00:00",
+      "usd": 0.000261
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2079,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 848,
+      "tokens_out": 457,
+      "ts": "2026-10-24T03:00:28.344590+00:00",
+      "usd": 0.001537
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 573,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 654,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:28.920209+00:00",
+      "usd": 0.000279
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1824,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 875,
+      "tokens_out": 412,
+      "ts": "2026-10-24T03:00:30.746869+00:00",
+      "usd": 0.001422
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 559,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 690,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:31.311619+00:00",
+      "usd": 0.000291
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1162,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1884,
+      "tokens_out": 221,
+      "ts": "2026-10-24T03:00:32.487852+00:00",
+      "usd": 0.001229
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 906,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1886,
+      "tokens_out": 143,
+      "ts": "2026-10-24T03:00:33.840580+00:00",
+      "usd": 0.001016
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1120,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1880,
+      "tokens_out": 187,
+      "ts": "2026-10-24T03:00:35.473986+00:00",
+      "usd": 0.001135
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 889,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1881,
+      "tokens_out": 136,
+      "ts": "2026-10-24T03:00:36.745706+00:00",
+      "usd": 0.000995
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1222,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1883,
+      "tokens_out": 235,
+      "ts": "2026-10-24T03:00:38.338960+00:00",
+      "usd": 0.001268
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 32907,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 662,
+      "ts": "2026-10-24T03:01:11.619126+00:00",
+      "usd": 0.002016
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2498,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 473,
+      "ts": "2026-10-24T03:01:14.120948+00:00",
+      "usd": 0.001491
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1776,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 354,
+      "ts": "2026-10-24T03:01:15.900464+00:00",
+      "usd": 0.001161
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1656,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 348,
+      "ts": "2026-10-24T03:01:17.560166+00:00",
+      "usd": 0.001145
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1966,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 353,
+      "ts": "2026-10-24T03:01:19.528714+00:00",
+      "usd": 0.001159
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1624,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 348,
+      "ts": "2026-10-24T03:01:21.156192+00:00",
+      "usd": 0.001145
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2069,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 352,
+      "ts": "2026-10-24T03:01:23.232520+00:00",
+      "usd": 0.001156
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1632,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 348,
+      "ts": "2026-10-24T03:01:24.867072+00:00",
+      "usd": 0.001145
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1788,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 313,
+      "ts": "2026-10-24T03:01:26.658443+00:00",
+      "usd": 0.001049
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1662,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 348,
+      "ts": "2026-10-24T03:01:28.326716+00:00",
+      "usd": 0.001145
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1624,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 350,
+      "ts": "2026-10-24T03:01:29.957089+00:00",
+      "usd": 0.00115
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2518,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 351,
+      "ts": "2026-10-24T03:01:32.481054+00:00",
+      "usd": 0.001153
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1946,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 347,
+      "ts": "2026-10-24T03:01:34.433579+00:00",
+      "usd": 0.001142
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2476,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 352,
+      "ts": "2026-10-24T03:01:36.914051+00:00",
+      "usd": 0.001156
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1799,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 569,
+      "tokens_out": 351,
+      "ts": "2026-10-24T03:01:38.718385+00:00",
+      "usd": 0.001153
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1869,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 470,
+      "ts": "2026-10-24T03:01:40.590500+00:00",
+      "usd": 0.001483
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1898,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 418,
+      "ts": "2026-10-24T03:01:42.492470+00:00",
+      "usd": 0.00134
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2095,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 470,
+      "ts": "2026-10-24T03:01:44.594698+00:00",
+      "usd": 0.001483
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2042,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 471,
+      "ts": "2026-10-24T03:01:46.639747+00:00",
+      "usd": 0.001485
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1988,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 470,
+      "ts": "2026-10-24T03:01:48.631098+00:00",
+      "usd": 0.001483
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2408,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 469,
+      "ts": "2026-10-24T03:01:51.046363+00:00",
+      "usd": 0.00148
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2085,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 470,
+      "ts": "2026-10-24T03:01:53.138310+00:00",
+      "usd": 0.001483
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1884,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 470,
+      "ts": "2026-10-24T03:01:55.026006+00:00",
+      "usd": 0.001483
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1854,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 472,
+      "ts": "2026-10-24T03:01:56.882611+00:00",
+      "usd": 0.001488
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2818,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 472,
+      "ts": "2026-10-24T03:01:59.708173+00:00",
+      "usd": 0.001488
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2067,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 468,
+      "ts": "2026-10-24T03:02:01.781254+00:00",
+      "usd": 0.001477
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1943,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 576,
+      "tokens_out": 475,
+      "ts": "2026-10-24T03:02:03.729381+00:00",
+      "usd": 0.001496
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2470,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 658,
+      "ts": "2026-10-24T03:02:06.201996+00:00",
+      "usd": 0.002005
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2045,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 593,
+      "ts": "2026-10-24T03:02:08.249806+00:00",
+      "usd": 0.001826
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2454,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 661,
+      "ts": "2026-10-24T03:02:10.712013+00:00",
+      "usd": 0.002013
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2690,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 660,
+      "ts": "2026-10-24T03:02:13.405662+00:00",
+      "usd": 0.00201
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2822,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 658,
+      "ts": "2026-10-24T03:02:16.235905+00:00",
+      "usd": 0.002005
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2922,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 662,
+      "ts": "2026-10-24T03:02:19.166685+00:00",
+      "usd": 0.002016
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2481,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 592,
+      "ts": "2026-10-24T03:02:21.655960+00:00",
+      "usd": 0.001823
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2285,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 660,
+      "ts": "2026-10-24T03:02:23.948536+00:00",
+      "usd": 0.00201
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2525,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 659,
+      "ts": "2026-10-24T03:02:26.475451+00:00",
+      "usd": 0.002008
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2579,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 658,
+      "ts": "2026-10-24T03:02:29.060971+00:00",
+      "usd": 0.002005
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2841,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 659,
+      "ts": "2026-10-24T03:02:31.903428+00:00",
+      "usd": 0.002008
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2683,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 592,
+      "tokens_out": 662,
+      "ts": "2026-10-24T03:02:34.589352+00:00",
+      "usd": 0.002016
+    }
+  ],
+  "dry_run": false,
+  "models": {
+    "us.amazon.nova-2-lite-v1:0": {
+      "calls": 68,
+      "tokens_in": 51256,
+      "tokens_out": 25568,
+      "usd": 0.087233
+    }
+  },
+  "outage_hours": 0.75,
+  "tokens_in": 51256,
+  "tokens_out": 25568,
+  "total_usd": 0.087233,
+  "usd_per_outage_hour": 0.116311
+}

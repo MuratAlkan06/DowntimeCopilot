@@ -1,0 +1,4370 @@
+[
+  {
+    "fixture": "vitals_flowsheet-01",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "02:55"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.8"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "104"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "22"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "148"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "86"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": "out_of_range",
+          "name": "spo2",
+          "value": "89"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "pain_score",
+          "value": "NW"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "PN"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.0,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "bp_diastolic": "86",
+            "bp_systolic": "148",
+            "heart_rate": "104",
+            "initials": "PN",
+            "pain_score": null,
+            "resp_rate": "22",
+            "spo2": "89",
+            "temp_c": "37.8",
+            "time": "02:55"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.97,
+            "bp_systolic": 0.99,
+            "heart_rate": 0.99,
+            "initials": 0.99,
+            "pain_score": 1.0,
+            "resp_rate": 0.96,
+            "spo2": 0.99,
+            "temp_c": 0.92,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "bp_diastolic": "86",
+            "bp_systolic": "148",
+            "heart_rate": "104",
+            "initials": "PN",
+            "pain_score": "NW",
+            "resp_rate": "22",
+            "spo2": "89",
+            "temp_c": "37.8",
+            "time": "02:55"
+          }
+        }
+      }
+    },
+    "set": "synthetic",
+    "unparseable": null
+  },
+  {
+    "fixture": "downtime_mar-01",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "heparin"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "5000 units"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "SC"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "02:50"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "PN"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.37,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "second_verifier",
+          "value": null
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.0,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "12",
+            "dose": "5000 units",
+            "initials": "PN",
+            "medication": "heparin",
+            "route": "SC",
+            "second_verifier": null,
+            "time_given": "02:50"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.91,
+            "initials": 0.98,
+            "medication": 0.96,
+            "route": 0.99,
+            "second_verifier": 0.37,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "12",
+            "dose": "5000 units",
+            "initials": "PN",
+            "medication": "heparin",
+            "route": "SC",
+            "second_verifier": "HIGH-ALERT MEDS",
+            "time_given": "02:50"
+          }
+        }
+      }
+    },
+    "set": "synthetic",
+    "unparseable": null
+  },
+  {
+    "fixture": "admission_note-01",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "penicillin (hives)"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "178"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "92.4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.93,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "type 2 diabetes, hypertension"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "penicillin (hives)",
+            "bed": "12",
+            "height_cm": "178",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": "92.4"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.96,
+            "bed": 1.0,
+            "height_cm": 1.0,
+            "history": 0.93,
+            "weight_kg": 0.98
+          },
+          "fields": {
+            "allergies": "penicillin (hives)",
+            "bed": "12",
+            "height_cm": "178",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": "92.4"
+          }
+        }
+      }
+    },
+    "set": "synthetic",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-001",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "15"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.77,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "allergies",
+          "value": "codeine nausea"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "177"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "61.4"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "history",
+          "value": "Asthmas"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "codeine nausea",
+            "bed": "15",
+            "height_cm": "177",
+            "history": "asthma",
+            "weight_kg": "61.4"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.77,
+            "bed": 1.0,
+            "height_cm": 1.0,
+            "history": 0.99,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "code ine nausen",
+            "bed": "15",
+            "height_cm": "177",
+            "history": "Asthmas",
+            "weight_kg": "61.4"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-002",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "29"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "penicillin hives"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "163"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.931,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "weight_kg",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.92,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "type 2 diabetes, hypertension"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.0
+          },
+          "fields": {
+            "allergies": "penicillin hives",
+            "bed": "29",
+            "height_cm": "163",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": null
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.99,
+            "bed": 0.99,
+            "height_cm": 0.99,
+            "history": 0.92,
+            "weight_kg": 0.931
+          },
+          "fields": {
+            "allergies": "penicillin hives",
+            "bed": "29",
+            "height_cm": "163",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": null
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-003",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "6"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "sulfa rash"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "179"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "107.1"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "hypertension"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "sulfa rash",
+            "bed": "6",
+            "height_cm": "179",
+            "history": "hypertension",
+            "weight_kg": "107.1"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.97,
+            "bed": 0.99,
+            "height_cm": 1.0,
+            "history": 1.0,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "sulfa rash",
+            "bed": "6",
+            "height_cm": "179",
+            "history": "hypertension",
+            "weight_kg": "107.1"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-004",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "30"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "allergies",
+          "value": "shellfish"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "169"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "94.6"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "type 2 diabetes, hypertension"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "sheffish",
+            "bed": "30",
+            "height_cm": "169",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": "94.6"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 1.0,
+            "bed": 0.99,
+            "height_cm": 1.0,
+            "history": 0.9,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "shellfish",
+            "bed": "30",
+            "height_cm": "169",
+            "history": "type 2 diabetes, hypertension",
+            "weight_kg": "94.6"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-005",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "29"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "morphine itching"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "184"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "46.4"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.89,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "history",
+          "value": "asthma"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.95,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "morphine itching",
+            "bed": "29",
+            "height_cm": "184",
+            "history": "asthma",
+            "weight_kg": "46.4"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.95,
+            "bed": 0.99,
+            "height_cm": 0.99,
+            "history": 0.89,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "morphine itching",
+            "bed": "29",
+            "height_cm": "184",
+            "history": "ast hma",
+            "weight_kg": "46.4"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-006",
+    "record": {
+      "fields": [
+        {
+          "agreement": "disagree",
+          "confidence": 0.87,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "bed",
+          "value": "9"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.927,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "allergies",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "170"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "58.7"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "asthma"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.0,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": null,
+            "bed": "9",
+            "height_cm": "170",
+            "history": "asthma",
+            "weight_kg": "58.7"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.927,
+            "bed": 0.87,
+            "height_cm": 0.99,
+            "history": 1.0,
+            "weight_kg": 0.97
+          },
+          "fields": {
+            "allergies": null,
+            "bed": "is",
+            "height_cm": "170",
+            "history": "asthma",
+            "weight_kg": "58.7"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-007",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "15"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "iodine rash"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "159"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "94.7"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "history",
+          "value": "ALLERGIES (SUBSTANCE + REACTION)"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.0,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "iodine rash",
+            "bed": "15",
+            "height_cm": "159",
+            "history": null,
+            "weight_kg": "94.7"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.99,
+            "bed": 1.0,
+            "height_cm": 1.0,
+            "history": 0.43,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "iodine rash",
+            "bed": "15",
+            "height_cm": "159",
+            "history": "ALLERGIES (SUBSTANCE + REACTION)",
+            "weight_kg": "94.7"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-008",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "22"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "iodine rAsh"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "158"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "84.9"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "ileus, colitis"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "iodine rash",
+            "bed": "22",
+            "height_cm": "158",
+            "history": "ileus, colitis",
+            "weight_kg": "84.9"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.97,
+            "bed": 0.99,
+            "height_cm": 0.99,
+            "history": 0.98,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "iodine rAsh",
+            "bed": "22",
+            "height_cm": "158",
+            "history": "ileus, colitis",
+            "weight_kg": "84.9"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-009",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "24"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "allergies",
+          "value": "penicillin hives"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "182"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "70.2"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "lymphoma, sepsis"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "penicilllin hives",
+            "bed": "24",
+            "height_cm": "182",
+            "history": "lymphoma, sepsis",
+            "weight_kg": "70.2"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.99,
+            "bed": 0.99,
+            "height_cm": 0.99,
+            "history": 0.83,
+            "weight_kg": 0.98
+          },
+          "fields": {
+            "allergies": "penicillin hives",
+            "bed": "24",
+            "height_cm": "182",
+            "history": "lymphoma, sepsis",
+            "weight_kg": "70.2"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-010",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "8"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.808,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "allergies",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "169"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "60.8"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "sickle cell disease"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.2,
+            "bed": 1.0,
+            "height_cm": 1.0,
+            "history": 1.0,
+            "weight_kg": 1.0
+          },
+          "fields": {
+            "allergies": null,
+            "bed": "8",
+            "height_cm": "169",
+            "history": "sickle cell disease",
+            "weight_kg": "60.8"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.808,
+            "bed": 1.0,
+            "height_cm": 1.0,
+            "history": 0.86,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": null,
+            "bed": "8",
+            "height_cm": "169",
+            "history": "sickle cell disease",
+            "weight_kg": "60.8"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-011",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "20"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "penicillin hives"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "height_cm",
+          "value": "20"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "weight_kg",
+          "value": "112.8"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "history",
+          "value": "lymphoma, sepsis"
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.0,
+            "history": 0.9,
+            "weight_kg": 0.95
+          },
+          "fields": {
+            "allergies": "penicillin hives",
+            "bed": "20",
+            "height_cm": null,
+            "history": "lymphoma, sepsis",
+            "weight_kg": "112.8"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.99,
+            "bed": 1.0,
+            "height_cm": 0.99,
+            "history": 0.55,
+            "weight_kg": 0.99
+          },
+          "fields": {
+            "allergies": "penicillin hives",
+            "bed": "20",
+            "height_cm": "20",
+            "history": "lymphoma, sepsis",
+            "weight_kg": "112.8"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-admission_note-012",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "27"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.94,
+          "crop": null,
+          "flag": null,
+          "name": "allergies",
+          "value": "sulfa rash"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "height_cm",
+          "value": "155"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.928,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "weight_kg",
+          "value": null
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.845,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "history",
+          "value": null
+        }
+      ],
+      "form_type": "admission_note",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "allergies": 0.9,
+            "bed": 0.95,
+            "height_cm": 0.95,
+            "history": 0.0,
+            "weight_kg": 0.0
+          },
+          "fields": {
+            "allergies": "sulfa rash",
+            "bed": "27",
+            "height_cm": "155",
+            "history": null,
+            "weight_kg": null
+          }
+        },
+        "textract": {
+          "confidence": {
+            "allergies": 0.94,
+            "bed": 0.99,
+            "height_cm": 1.0,
+            "history": 0.845,
+            "weight_kg": 0.928
+          },
+          "fields": {
+            "allergies": "sulfa rash",
+            "bed": "27",
+            "height_cm": "155",
+            "history": null,
+            "weight_kg": null
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-001",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "13"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "morphine"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "100 mg"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "PO"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.81,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time_given",
+          "value": "17:40"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "RKW"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "second_verifier",
+          "value": "UL"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "13",
+            "dose": "100 mg",
+            "initials": "RKW",
+            "medication": "morphine",
+            "route": "PO",
+            "second_verifier": "4L",
+            "time_given": "17:40"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.98,
+            "initials": 0.87,
+            "medication": 0.91,
+            "route": 0.93,
+            "second_verifier": 0.99,
+            "time_given": 0.81
+          },
+          "fields": {
+            "bed": "13",
+            "dose": "100 mg",
+            "initials": "RKW",
+            "medication": "morphine",
+            "route": "PO",
+            "second_verifier": "UL",
+            "time_given": "1740"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-002",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "insulin"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.93,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "dose",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "SL"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time_given",
+          "value": "16:26"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "JP"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "NGP"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.0,
+            "initials": 0.95,
+            "medication": 0.9,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "4",
+            "dose": null,
+            "initials": "JP",
+            "medication": "insulin",
+            "route": "SL",
+            "second_verifier": "NGP",
+            "time_given": "1626"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "dose": 0.93,
+            "initials": 0.91,
+            "medication": 1.0,
+            "route": 0.99,
+            "second_verifier": 0.97,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "4",
+            "dose": null,
+            "initials": "JP",
+            "medication": "insulin",
+            "route": "SL",
+            "second_verifier": "NGP",
+            "time_given": "16:26"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-003",
+    "record": {
+      "fields": [
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "bed",
+          "value": "4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "heparin"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "650 mg"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.78,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "route",
+          "value": "IV"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "01:42"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "ADT"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "CXJ"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "7",
+            "dose": "650 mg",
+            "initials": "ADT",
+            "medication": "heparin",
+            "route": "IV",
+            "second_verifier": "CXJ",
+            "time_given": "01:42"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "dose": 0.99,
+            "initials": 0.94,
+            "medication": 0.95,
+            "route": 0.78,
+            "second_verifier": 0.82,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "4",
+            "dose": "650 mg",
+            "initials": "ADT",
+            "medication": "heparin",
+            "route": "N",
+            "second_verifier": "CXJ",
+            "time_given": "01:42"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-004",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "2"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "enoxaparin"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "4 mg"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "IV"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "11:41"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "KK"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "Sfy"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.9,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "2",
+            "dose": "4 mg",
+            "initials": "KK",
+            "medication": "enoxaparin",
+            "route": "IV",
+            "second_verifier": "Sfy",
+            "time_given": "11:41"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "dose": 0.99,
+            "initials": 0.98,
+            "medication": 0.68,
+            "route": 0.99,
+            "second_verifier": 0.82,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "2",
+            "dose": "4 mg",
+            "initials": "KK",
+            "medication": "enoxaparin",
+            "route": "IV",
+            "second_verifier": "Sfy",
+            "time_given": "11:41"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-005",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "19"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "heparin"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.85,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "dose",
+          "value": "25 mg"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "route",
+          "value": "SL"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "16:28"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.955,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "UG"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "TH"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.85,
+            "initials": 0.9,
+            "medication": 0.9,
+            "route": 0.9,
+            "second_verifier": 0.9,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "19",
+            "dose": "a5 mg",
+            "initials": "UG",
+            "medication": "heparin",
+            "route": "BL",
+            "second_verifier": "TH",
+            "time_given": "16:28"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.99,
+            "initials": 0.955,
+            "medication": 0.95,
+            "route": 0.99,
+            "second_verifier": 0.87,
+            "time_given": 0.98
+          },
+          "fields": {
+            "bed": "19",
+            "dose": "25 mg",
+            "initials": "UG",
+            "medication": "heparin",
+            "route": "SL",
+            "second_verifier": "TH",
+            "time_given": "16:28"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-006",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "5"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "warfarin"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "100 mg"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "route",
+          "value": "WA"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "10:30"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.8,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "initials",
+          "value": "QL"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "WA"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.0,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "5",
+            "dose": "100 mg",
+            "initials": "QL",
+            "medication": "warfarin",
+            "route": null,
+            "second_verifier": "WA",
+            "time_given": "10:30"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "dose": 0.98,
+            "initials": 0.8,
+            "medication": 0.99,
+            "route": 0.97,
+            "second_verifier": 0.99,
+            "time_given": 1.0
+          },
+          "fields": {
+            "bed": "5",
+            "dose": "100 mg",
+            "initials": "QV",
+            "medication": "warfarin",
+            "route": "WA",
+            "second_verifier": "WA",
+            "time_given": "10:30"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-007",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "24"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "simvastatin"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.91,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "15 units"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "10"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "10:21"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.932,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "initials",
+          "value": null
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.44,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "second_verifier",
+          "value": "OS"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.9,
+            "initials": 0.0,
+            "medication": 0.9,
+            "route": 0.9,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "24",
+            "dose": "15 units",
+            "initials": null,
+            "medication": "simvastatin",
+            "route": "10",
+            "second_verifier": "OS",
+            "time_given": "10:21"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.91,
+            "initials": 0.932,
+            "medication": 0.99,
+            "route": 1.0,
+            "second_verifier": 0.44,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "24",
+            "dose": "15 units",
+            "initials": null,
+            "medication": "simvastatin",
+            "route": "10",
+            "second_verifier": "HIGH-ALERT MEDS",
+            "time_given": "10:21"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-008",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "15"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "losartan"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "dose",
+          "value": "01 mg"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "10"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "22:45"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "BZ"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "BS"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "15",
+            "dose": "0.1 mg",
+            "initials": "BZ",
+            "medication": "losartan",
+            "route": "10",
+            "second_verifier": "BS",
+            "time_given": "22:45"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "dose": 0.97,
+            "initials": 0.86,
+            "medication": 0.98,
+            "route": 1.0,
+            "second_verifier": 0.85,
+            "time_given": 0.98
+          },
+          "fields": {
+            "bed": "15",
+            "dose": "01 mg",
+            "initials": "BZ",
+            "medication": "losartan",
+            "route": "10",
+            "second_verifier": "BS",
+            "time_given": "22:45"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-009",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "18"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "lisinopril"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "dose",
+          "value": "01 mg"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "10"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "09:15"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "BBZ"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "BS"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "18",
+            "dose": "0.1 mg",
+            "initials": "BBZ",
+            "medication": "lisinopril",
+            "route": "10",
+            "second_verifier": "BS",
+            "time_given": "09:15"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.98,
+            "initials": 0.91,
+            "medication": 0.88,
+            "route": 1.0,
+            "second_verifier": 0.94,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "18",
+            "dose": "01 mg",
+            "initials": "BBZ",
+            "medication": "lisinopril",
+            "route": "10",
+            "second_verifier": "BS",
+            "time_given": "09:15"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-010",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "5"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "isosorbide"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "50 mg"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.934,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "route",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "15:22"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "SB"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "ZZZ"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.9,
+            "initials": 0.95,
+            "medication": 0.9,
+            "route": 0.0,
+            "second_verifier": 0.9,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "5",
+            "dose": "50 mg",
+            "initials": "SB",
+            "medication": "Isosorbide",
+            "route": null,
+            "second_verifier": "ZZZ",
+            "time_given": "15:22"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "dose": 0.99,
+            "initials": 0.95,
+            "medication": 0.97,
+            "route": 0.934,
+            "second_verifier": 0.41,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "5",
+            "dose": "50 mg",
+            "initials": "SB",
+            "medication": "isosorbide",
+            "route": null,
+            "second_verifier": "ZZZ",
+            "time_given": "15:22"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-011",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "18"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "medication",
+          "value": "Insulen"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "15 units"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "10"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.3,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "time_given",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "SZ"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "OB"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.95,
+            "medication": 0.95,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.0
+          },
+          "fields": {
+            "bed": "18",
+            "dose": "15 units",
+            "initials": "SZ",
+            "medication": "Insulin",
+            "route": "10",
+            "second_verifier": "OB",
+            "time_given": null
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.96,
+            "initials": 0.91,
+            "medication": 1.0,
+            "route": 1.0,
+            "second_verifier": 0.79,
+            "time_given": 0.3
+          },
+          "fields": {
+            "bed": "18",
+            "dose": "15 units",
+            "initials": "SZ",
+            "medication": "Insulen",
+            "route": "10",
+            "second_verifier": "OB",
+            "time_given": "24  H"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-downtime_mar-012",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "19"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "medication",
+          "value": "1.5 mg"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "1.5 mg"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "10"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time_given",
+          "value": "07:55"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.878,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "initials",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "second_verifier",
+          "value": "ZZZ"
+        }
+      ],
+      "form_type": "downtime_mar",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "dose": 0.95,
+            "initials": 0.0,
+            "medication": 0.0,
+            "route": 0.95,
+            "second_verifier": 0.95,
+            "time_given": 0.95
+          },
+          "fields": {
+            "bed": "19",
+            "dose": "1.5 mg",
+            "initials": null,
+            "medication": null,
+            "route": "10",
+            "second_verifier": "ZZZ",
+            "time_given": "07.55"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "dose": 0.98,
+            "initials": 0.878,
+            "medication": 0.98,
+            "route": 1.0,
+            "second_verifier": 0.49,
+            "time_given": 0.99
+          },
+          "fields": {
+            "bed": "19",
+            "dose": "1.5 mg",
+            "initials": null,
+            "medication": "1.5 mg",
+            "route": "10",
+            "second_verifier": "ZZZ",
+            "time_given": "07:55"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-001",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "11"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time",
+          "value": "07.03"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "53"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "17"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "129"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "74"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "100"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "1"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "DT"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 1.0,
+            "bp_systolic": 1.0,
+            "heart_rate": 1.0,
+            "initials": 1.0,
+            "pain_score": 1.0,
+            "resp_rate": 1.0,
+            "spo2": 1.0,
+            "temp_c": 1.0,
+            "time": 1.0
+          },
+          "fields": {
+            "bed": "11",
+            "bp_diastolic": "74",
+            "bp_systolic": "129",
+            "heart_rate": "53",
+            "initials": "DT",
+            "pain_score": "1",
+            "resp_rate": "17",
+            "spo2": "100",
+            "temp_c": "37.4",
+            "time": "07.03"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.99,
+            "bp_systolic": 1.0,
+            "heart_rate": 0.99,
+            "initials": 0.99,
+            "pain_score": 1.0,
+            "resp_rate": 0.98,
+            "spo2": 0.99,
+            "temp_c": 0.91,
+            "time": 0.98
+          },
+          "fields": {
+            "bed": "11",
+            "bp_diastolic": "74",
+            "bp_systolic": "129",
+            "heart_rate": "53",
+            "initials": "DT",
+            "pain_score": "1",
+            "resp_rate": "17",
+            "spo2": "100",
+            "temp_c": "37.4",
+            "time": "07:03"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-002",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "8"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "14:04"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.3"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "96"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "13"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.931,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "bp_systolic",
+          "value": null
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "50"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "97"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "2"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "EZ"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.0,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "8",
+            "bp_diastolic": "50",
+            "bp_systolic": null,
+            "heart_rate": "96",
+            "initials": "EZ",
+            "pain_score": "2",
+            "resp_rate": "13",
+            "spo2": "97",
+            "temp_c": "37.3",
+            "time": "14:04"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.99,
+            "bp_systolic": 0.931,
+            "heart_rate": 0.99,
+            "initials": 0.97,
+            "pain_score": 1.0,
+            "resp_rate": 0.97,
+            "spo2": 0.97,
+            "temp_c": 0.73,
+            "time": 0.97
+          },
+          "fields": {
+            "bed": "8",
+            "bp_diastolic": "50",
+            "bp_systolic": null,
+            "heart_rate": "96",
+            "initials": "EZ",
+            "pain_score": "2",
+            "resp_rate": "13",
+            "spo2": "97",
+            "temp_c": "37.3",
+            "time": "14:04"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-003",
+    "record": {
+      "fields": [
+        {
+          "agreement": "disagree",
+          "confidence": 0.42,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "bed",
+          "value": "5"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time",
+          "value": "19:08"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "36.3"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "heart_rate",
+          "value": "10"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "resp_rate",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "137"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "81"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "spo2",
+          "value": "97"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "3"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "LNB"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "5",
+            "bp_diastolic": "81",
+            "bp_systolic": "137",
+            "heart_rate": "110",
+            "initials": "LNB",
+            "pain_score": "3",
+            "resp_rate": "102",
+            "spo2": "94",
+            "temp_c": "36.3",
+            "time": "19.08"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.42,
+            "bp_diastolic": 0.99,
+            "bp_systolic": 0.96,
+            "heart_rate": 0.96,
+            "initials": 0.96,
+            "pain_score": 0.99,
+            "resp_rate": 0.99,
+            "spo2": 0.99,
+            "temp_c": 0.8,
+            "time": 0.98
+          },
+          "fields": {
+            "bed": "10",
+            "bp_diastolic": "81",
+            "bp_systolic": "137",
+            "heart_rate": "10",
+            "initials": "LNB",
+            "pain_score": "3",
+            "resp_rate": "12",
+            "spo2": "97",
+            "temp_c": "36.3",
+            "time": "19:08"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-004",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "6"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "00:32"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "38.0"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "74"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "142"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "59"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "93"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "3"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "ARO"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 1.0,
+            "bp_systolic": 1.0,
+            "heart_rate": 1.0,
+            "initials": 1.0,
+            "pain_score": 1.0,
+            "resp_rate": 1.0,
+            "spo2": 1.0,
+            "temp_c": 1.0,
+            "time": 1.0
+          },
+          "fields": {
+            "bed": "6",
+            "bp_diastolic": "59",
+            "bp_systolic": "142",
+            "heart_rate": "74",
+            "initials": "ARO",
+            "pain_score": "3",
+            "resp_rate": "12",
+            "spo2": "93",
+            "temp_c": "38.0",
+            "time": "00:32"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.99,
+            "bp_systolic": 0.96,
+            "heart_rate": 0.98,
+            "initials": 0.93,
+            "pain_score": 0.99,
+            "resp_rate": 0.99,
+            "spo2": 0.99,
+            "temp_c": 0.74,
+            "time": 0.96
+          },
+          "fields": {
+            "bed": "6",
+            "bp_diastolic": "59",
+            "bp_systolic": "142",
+            "heart_rate": "74",
+            "initials": "ARO",
+            "pain_score": "3",
+            "resp_rate": "12",
+            "spo2": "93",
+            "temp_c": "38.0",
+            "time": "00:32"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-005",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "9"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time",
+          "value": "04:58"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "36.1"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "81"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.78,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "resp_rate",
+          "value": "13"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "112"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "99"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "96"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "10"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "initials",
+          "value": "NY"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "9",
+            "bp_diastolic": "99",
+            "bp_systolic": "112",
+            "heart_rate": "81",
+            "initials": "NV",
+            "pain_score": "10",
+            "resp_rate": "13",
+            "spo2": "96",
+            "temp_c": "36.1",
+            "time": "04.58"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.98,
+            "bp_systolic": 0.99,
+            "heart_rate": 0.99,
+            "initials": 1.0,
+            "pain_score": 1.0,
+            "resp_rate": 0.78,
+            "spo2": 0.99,
+            "temp_c": 0.64,
+            "time": 0.98
+          },
+          "fields": {
+            "bed": "9",
+            "bp_diastolic": "99",
+            "bp_systolic": "112",
+            "heart_rate": "81",
+            "initials": "NY",
+            "pain_score": "10",
+            "resp_rate": "3",
+            "spo2": "96",
+            "temp_c": "36.1",
+            "time": "04:58"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-006",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "7"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time",
+          "value": "17:24"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.3"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "93"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "20"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "147"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "56"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "99"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "8"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.934,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "initials",
+          "value": null
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.0,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "7",
+            "bp_diastolic": "56",
+            "bp_systolic": "147",
+            "heart_rate": "93",
+            "initials": null,
+            "pain_score": "8",
+            "resp_rate": "20",
+            "spo2": "99",
+            "temp_c": "37.3",
+            "time": "17.24"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.88,
+            "bp_systolic": 1.0,
+            "heart_rate": 0.99,
+            "initials": 0.934,
+            "pain_score": 0.99,
+            "resp_rate": 0.99,
+            "spo2": 0.99,
+            "temp_c": 0.77,
+            "time": 0.98
+          },
+          "fields": {
+            "bed": "7",
+            "bp_diastolic": "56",
+            "bp_systolic": "147",
+            "heart_rate": "93",
+            "initials": null,
+            "pain_score": "8",
+            "resp_rate": "20",
+            "spo2": "99",
+            "temp_c": "37.3",
+            "time": "17:24"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-007",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "18"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "time",
+          "value": "18:18"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.9"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "95"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "21"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "117"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "95"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "92"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "pain_score",
+          "value": "(0-10)"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "BB"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 1.0,
+            "bp_systolic": 1.0,
+            "heart_rate": 1.0,
+            "initials": 1.0,
+            "pain_score": 0.0,
+            "resp_rate": 1.0,
+            "spo2": 1.0,
+            "temp_c": 1.0,
+            "time": 1.0
+          },
+          "fields": {
+            "bed": "18",
+            "bp_diastolic": "95",
+            "bp_systolic": "117",
+            "heart_rate": "95",
+            "initials": "BB",
+            "pain_score": null,
+            "resp_rate": "21",
+            "spo2": "92",
+            "temp_c": "37.9",
+            "time": "18:18"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.91,
+            "bp_systolic": 0.99,
+            "heart_rate": 0.99,
+            "initials": 1.0,
+            "pain_score": 0.82,
+            "resp_rate": 0.97,
+            "spo2": 0.98,
+            "temp_c": 0.91,
+            "time": 0.97
+          },
+          "fields": {
+            "bed": "18",
+            "bp_diastolic": "95",
+            "bp_systolic": "117",
+            "heart_rate": "95",
+            "initials": "BB",
+            "pain_score": "(0-10)",
+            "resp_rate": "21",
+            "spo2": "92",
+            "temp_c": "37.9",
+            "time": "18:118"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-008",
+    "record": {
+      "fields": [
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "bed",
+          "value": "19"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "07:02"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.9"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "90"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "120"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "52"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "98"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "8"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "initials",
+          "value": "BSB"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "17",
+            "bp_diastolic": "52",
+            "bp_systolic": "120",
+            "heart_rate": "90",
+            "initials": "B5B",
+            "pain_score": "8",
+            "resp_rate": "12",
+            "spo2": "98",
+            "temp_c": "37.9",
+            "time": "07:02"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.93,
+            "bp_systolic": 1.0,
+            "heart_rate": 0.99,
+            "initials": 0.99,
+            "pain_score": 0.99,
+            "resp_rate": 0.99,
+            "spo2": 0.97,
+            "temp_c": 0.93,
+            "time": 0.99
+          },
+          "fields": {
+            "bed": "19",
+            "bp_diastolic": "52",
+            "bp_systolic": "120",
+            "heart_rate": "90",
+            "initials": "BSB",
+            "pain_score": "8",
+            "resp_rate": "12",
+            "spo2": "98",
+            "temp_c": "37.9",
+            "time": "07:02"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-009",
+    "record": {
+      "fields": [
+        {
+          "agreement": "disagree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "bed",
+          "value": "11"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "18:54"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "38.0"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "92"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "21"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "141"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "85"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "95"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "10"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "S2"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 1.0,
+            "bp_systolic": 1.0,
+            "heart_rate": 1.0,
+            "initials": 1.0,
+            "pain_score": 1.0,
+            "resp_rate": 1.0,
+            "spo2": 1.0,
+            "temp_c": 1.0,
+            "time": 1.0
+          },
+          "fields": {
+            "bed": "II",
+            "bp_diastolic": "85",
+            "bp_systolic": "141",
+            "heart_rate": "92",
+            "initials": "S2",
+            "pain_score": "10",
+            "resp_rate": "21",
+            "spo2": "95",
+            "temp_c": "38.0",
+            "time": "18:54"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.96,
+            "bp_systolic": 1.0,
+            "heart_rate": 0.99,
+            "initials": 0.96,
+            "pain_score": 1.0,
+            "resp_rate": 0.98,
+            "spo2": 0.98,
+            "temp_c": 0.57,
+            "time": 0.98
+          },
+          "fields": {
+            "bed": "11",
+            "bp_diastolic": "85",
+            "bp_systolic": "141",
+            "heart_rate": "92",
+            "initials": "S2",
+            "pain_score": "10",
+            "resp_rate": "21",
+            "spo2": "95",
+            "temp_c": "38.0",
+            "time": "18:54"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-010",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "9"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "18:19"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "37.4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "71"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "22"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "116"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "57"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": "out_of_range",
+          "name": "spo2",
+          "value": "81"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "6"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.96,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "uo"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "9",
+            "bp_diastolic": "57",
+            "bp_systolic": "116",
+            "heart_rate": "71",
+            "initials": "uo",
+            "pain_score": "6",
+            "resp_rate": "22",
+            "spo2": "81",
+            "temp_c": "37.4",
+            "time": "18:19"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.99,
+            "bp_systolic": 1.0,
+            "heart_rate": 0.99,
+            "initials": 0.96,
+            "pain_score": 0.99,
+            "resp_rate": 0.94,
+            "spo2": 0.99,
+            "temp_c": 0.88,
+            "time": 0.97
+          },
+          "fields": {
+            "bed": "9",
+            "bp_diastolic": "57",
+            "bp_systolic": "116",
+            "heart_rate": "71",
+            "initials": "uo",
+            "pain_score": "6",
+            "resp_rate": "22",
+            "spo2": "81",
+            "temp_c": "37.4",
+            "time": "18:19"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-011",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "5"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "22:12"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "36.2"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "83"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.98,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "13"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "154"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "99"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": "out_of_range",
+          "name": "spo2",
+          "value": "78"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "0"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "XQA"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.95,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "5",
+            "bp_diastolic": "99",
+            "bp_systolic": "154",
+            "heart_rate": "83",
+            "initials": "XQA",
+            "pain_score": "0",
+            "resp_rate": "13",
+            "spo2": "78",
+            "temp_c": "36.2",
+            "time": "22:12"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 1.0,
+            "bp_diastolic": 0.91,
+            "bp_systolic": 0.99,
+            "heart_rate": 0.99,
+            "initials": 0.99,
+            "pain_score": 1.0,
+            "resp_rate": 0.98,
+            "spo2": 0.97,
+            "temp_c": 0.84,
+            "time": 0.98
+          },
+          "fields": {
+            "bed": "5",
+            "bp_diastolic": "99",
+            "bp_systolic": "154",
+            "heart_rate": "83",
+            "initials": "XQA",
+            "pain_score": "0",
+            "resp_rate": "13",
+            "spo2": "78",
+            "temp_c": "36.2",
+            "time": "22:12"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  },
+  {
+    "fixture": "hw-vitals_flowsheet-012",
+    "record": {
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "16"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "05:41"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": "out_of_range",
+          "name": "temp_c",
+          "value": "40.6"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "heart_rate",
+          "value": "89"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "21"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "134"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "88"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.99,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "96"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 1.0,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "0"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.934,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "initials",
+          "value": null
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.95,
+            "bp_diastolic": 0.95,
+            "bp_systolic": 0.95,
+            "heart_rate": 0.95,
+            "initials": 0.0,
+            "pain_score": 0.95,
+            "resp_rate": 0.95,
+            "spo2": 0.95,
+            "temp_c": 0.95,
+            "time": 0.95
+          },
+          "fields": {
+            "bed": "16",
+            "bp_diastolic": "88",
+            "bp_systolic": "134",
+            "heart_rate": "89",
+            "initials": null,
+            "pain_score": "0",
+            "resp_rate": "21",
+            "spo2": "96",
+            "temp_c": "40.6",
+            "time": "05:41"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.99,
+            "bp_diastolic": 0.99,
+            "bp_systolic": 0.99,
+            "heart_rate": 0.99,
+            "initials": 0.934,
+            "pain_score": 1.0,
+            "resp_rate": 0.97,
+            "spo2": 0.99,
+            "temp_c": 0.86,
+            "time": 0.97
+          },
+          "fields": {
+            "bed": "16",
+            "bp_diastolic": "88",
+            "bp_systolic": "134",
+            "heart_rate": "89",
+            "initials": null,
+            "pain_score": "0",
+            "resp_rate": "21",
+            "spo2": "96",
+            "temp_c": "40.6",
+            "time": "05:41"
+          }
+        }
+      }
+    },
+    "set": "photographed",
+    "unparseable": null
+  }
+]

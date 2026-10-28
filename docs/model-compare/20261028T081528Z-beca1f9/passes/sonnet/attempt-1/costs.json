@@ -1,0 +1,704 @@
+{
+  "calls": [
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 4857,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 906,
+      "tokens_out": 770,
+      "ts": "2026-10-24T03:00:04.861919+00:00",
+      "usd": 0.015695
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 653,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 826,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:05.521017+00:00",
+      "usd": 0.000336
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 5518,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 976,
+      "tokens_out": 821,
+      "ts": "2026-10-24T03:00:11.046663+00:00",
+      "usd": 0.016767
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 739,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 847,
+      "tokens_out": 86,
+      "ts": "2026-10-24T03:00:11.791495+00:00",
+      "usd": 0.000516
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 5817,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 975,
+      "tokens_out": 915,
+      "ts": "2026-10-24T03:00:17.613016+00:00",
+      "usd": 0.018315
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 1394,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 856,
+      "tokens_out": 157,
+      "ts": "2026-10-24T03:00:19.009269+00:00",
+      "usd": 0.000714
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 6206,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1011,
+      "tokens_out": 1030,
+      "ts": "2026-10-24T03:00:25.218040+00:00",
+      "usd": 0.020331
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 607,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 995,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:25.827027+00:00",
+      "usd": 0.000392
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 4721,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 970,
+      "tokens_out": 768,
+      "ts": "2026-10-24T03:00:30.555603+00:00",
+      "usd": 0.015873
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 618,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 808,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:31.175400+00:00",
+      "usd": 0.00033
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 4790,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 932,
+      "tokens_out": 737,
+      "ts": "2026-10-24T03:00:35.969970+00:00",
+      "usd": 0.015236
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 778,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 818,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:36.750457+00:00",
+      "usd": 0.000333
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 3937,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 972,
+      "tokens_out": 686,
+      "ts": "2026-10-24T03:00:40.694351+00:00",
+      "usd": 0.014527
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 501,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 784,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:41.201832+00:00",
+      "usd": 0.000322
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 5508,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1101,
+      "tokens_out": 937,
+      "ts": "2026-10-24T03:00:46.716326+00:00",
+      "usd": 0.019094
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 514,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 1016,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:47.232377+00:00",
+      "usd": 0.000399
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 5083,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 966,
+      "tokens_out": 796,
+      "ts": "2026-10-24T03:00:52.319854+00:00",
+      "usd": 0.016322
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 505,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 860,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:52.830934+00:00",
+      "usd": 0.000347
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 4593,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 881,
+      "tokens_out": 727,
+      "ts": "2026-10-24T03:00:57.427152+00:00",
+      "usd": 0.014903
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 493,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 758,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:57.923490+00:00",
+      "usd": 0.000313
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 4781,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 887,
+      "tokens_out": 768,
+      "ts": "2026-10-24T03:01:02.707576+00:00",
+      "usd": 0.015599
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 491,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 770,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:01:03.203044+00:00",
+      "usd": 0.000317
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 6092,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 922,
+      "tokens_out": 942,
+      "ts": "2026-10-24T03:01:09.299205+00:00",
+      "usd": 0.018586
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 760,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 844,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:01:10.060795+00:00",
+      "usd": 0.000342
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 3186,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 2167,
+      "tokens_out": 443,
+      "ts": "2026-10-24T03:01:13.262702+00:00",
+      "usd": 0.014461
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 2661,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 2171,
+      "tokens_out": 348,
+      "ts": "2026-10-24T03:01:16.296680+00:00",
+      "usd": 0.012906
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 2875,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 2164,
+      "tokens_out": 452,
+      "ts": "2026-10-24T03:01:19.568062+00:00",
+      "usd": 0.014599
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 2412,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 2165,
+      "tokens_out": 307,
+      "ts": "2026-10-24T03:01:22.359302+00:00",
+      "usd": 0.01221
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 2734,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 2168,
+      "tokens_out": 380,
+      "ts": "2026-10-24T03:01:25.452697+00:00",
+      "usd": 0.013424
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3882,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 657,
+      "ts": "2026-10-24T03:01:29.769503+00:00",
+      "usd": 0.016124
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2955,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 419,
+      "ts": "2026-10-24T03:01:32.732045+00:00",
+      "usd": 0.012124
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2752,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 351,
+      "ts": "2026-10-24T03:01:35.489737+00:00",
+      "usd": 0.010976
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2773,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 343,
+      "ts": "2026-10-24T03:01:38.269296+00:00",
+      "usd": 0.010844
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2417,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 309,
+      "ts": "2026-10-24T03:01:40.692659+00:00",
+      "usd": 0.010283
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2516,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 342,
+      "ts": "2026-10-24T03:01:43.215714+00:00",
+      "usd": 0.010827
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2729,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 346,
+      "ts": "2026-10-24T03:01:45.948268+00:00",
+      "usd": 0.010893
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2619,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 342,
+      "ts": "2026-10-24T03:01:48.574605+00:00",
+      "usd": 0.010827
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2763,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 303,
+      "ts": "2026-10-24T03:01:51.343780+00:00",
+      "usd": 0.010184
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2790,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 304,
+      "ts": "2026-10-24T03:01:54.140886+00:00",
+      "usd": 0.0102
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2877,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 345,
+      "ts": "2026-10-24T03:01:57.025973+00:00",
+      "usd": 0.010877
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2508,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 346,
+      "ts": "2026-10-24T03:01:59.539874+00:00",
+      "usd": 0.010893
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2647,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 305,
+      "ts": "2026-10-24T03:02:02.194259+00:00",
+      "usd": 0.010217
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2558,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 307,
+      "ts": "2026-10-24T03:02:04.759073+00:00",
+      "usd": 0.01025
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2287,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1571,
+      "tokens_out": 260,
+      "ts": "2026-10-24T03:02:07.052393+00:00",
+      "usd": 0.009474
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3141,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 457,
+      "ts": "2026-10-24T03:02:10.200152+00:00",
+      "usd": 0.012751
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2872,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 413,
+      "ts": "2026-10-24T03:02:13.073843+00:00",
+      "usd": 0.012025
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3163,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 457,
+      "ts": "2026-10-24T03:02:16.238357+00:00",
+      "usd": 0.012751
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3076,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 458,
+      "ts": "2026-10-24T03:02:19.315897+00:00",
+      "usd": 0.012768
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3017,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 457,
+      "ts": "2026-10-24T03:02:22.338685+00:00",
+      "usd": 0.012751
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3094,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 417,
+      "ts": "2026-10-24T03:02:25.439687+00:00",
+      "usd": 0.012091
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3613,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 419,
+      "ts": "2026-10-24T03:02:29.058745+00:00",
+      "usd": 0.012124
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3223,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 457,
+      "ts": "2026-10-24T03:02:32.289044+00:00",
+      "usd": 0.012751
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3099,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 458,
+      "ts": "2026-10-24T03:02:35.395394+00:00",
+      "usd": 0.012768
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3058,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 419,
+      "ts": "2026-10-24T03:02:38.461262+00:00",
+      "usd": 0.012124
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3160,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 414,
+      "ts": "2026-10-24T03:02:41.627967+00:00",
+      "usd": 0.012042
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2889,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1579,
+      "tokens_out": 379,
+      "ts": "2026-10-24T03:02:44.521444+00:00",
+      "usd": 0.011464
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3934,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:02:48.462650+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 4112,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 618,
+      "ts": "2026-10-24T03:02:52.579316+00:00",
+      "usd": 0.01548
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 4025,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 655,
+      "ts": "2026-10-24T03:02:56.606449+00:00",
+      "usd": 0.016091
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3856,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:03:00.470320+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3965,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:03:04.442017+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3829,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:03:08.277919+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3721,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 617,
+      "ts": "2026-10-24T03:03:12.000345+00:00",
+      "usd": 0.015464
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3883,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:03:15.891346+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3993,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:03:19.890519+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 4274,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:03:24.172826+00:00",
+      "usd": 0.016074
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3959,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 655,
+      "ts": "2026-10-24T03:03:28.138041+00:00",
+      "usd": 0.016091
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3546,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 1601,
+      "tokens_out": 616,
+      "ts": "2026-10-24T03:03:31.691285+00:00",
+      "usd": 0.015447
+    }
+  ],
+  "dry_run": false,
+  "models": {
+    "us.amazon.nova-2-lite-v1:0": {
+      "calls": 12,
+      "tokens_in": 10182,
+      "tokens_out": 473,
+      "usd": 0.004661
+    },
+    "us.anthropic.claude-sonnet-4-6": {
+      "calls": 56,
+      "tokens_in": 84097,
+      "tokens_out": 30050,
+      "usd": 0.773342
+    }
+  },
+  "outage_hours": 0.75,
+  "tokens_in": 94279,
+  "tokens_out": 30523,
+  "total_usd": 0.778003,
+  "usd_per_outage_hour": 1.037337
+}

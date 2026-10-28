@@ -1,0 +1,132 @@
+[
+  {
+    "answer": "To obtain a stat lab while the order system is down, complete a red downtime requisition marked 'STAT' with the patient label, the test, the ordering provider, and the collection time, then call the laboratory at extension 4-5227 to announce the stat specimen before sending it by hand delivery.",
+    "citations": [
+      {
+        "quote": "To obtain a stat lab while the order system is down, the RN completes a red downtime requisition marked \"STAT\", including the patient label, the test, the ordering provider, and the collection time.",
+        "section_id": "4.2",
+        "title": "Stat labs"
+      },
+      {
+        "quote": "The RN or unit clerk calls the laboratory at extension 4-5227 to announce the stat specimen before sending it, then sends the specimen by hand delivery; do not use the pneumatic tube for stat specimens during downtime.",
+        "section_id": "4.2",
+        "title": "Stat labs"
+      }
+    ],
+    "cost": {
+      "tokens_in": 1884,
+      "tokens_out": 221,
+      "usd": 0.001229
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "question": "How do I get a stat lab with the order system down?"
+  },
+  {
+    "answer": "Write the verbal order on the Verbal Order Read-Back form (DT-40), read the complete order back to the provider, and record 'read back and confirmed', the provider name, the date, and the time.",
+    "citations": [
+      {
+        "quote": "The receiving nurse writes the order on the Verbal Order Read-Back form (DT-40), reads the complete order back to the provider, and records \"read back and confirmed\", the provider name, the date, and the time.",
+        "section_id": "6.2",
+        "title": "Verbal orders and read-back"
+      }
+    ],
+    "cost": {
+      "tokens_in": 1886,
+      "tokens_out": 143,
+      "usd": 0.001016
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "question": "How do I take a verbal order and do the read-back during downtime?"
+  },
+  {
+    "answer": "Without barcode scanning, verify the five rights against the paper Downtime MAR and the most recent BCA medication list before each dose, and have high-alert medications double-checked by another licensed nurse.",
+    "citations": [
+      {
+        "quote": "Without barcode scanning, the RN verifies the five rights against the paper Downtime MAR (DT-20) and the most recent BCA medication list before every dose.",
+        "section_id": "5.1",
+        "title": "Medications without scanning"
+      },
+      {
+        "quote": "High-alert medications (insulin, heparin and other anticoagulants, opioids, concentrated electrolytes) require an independent double-check by a second licensed nurse before administration. Both nurses initial the Downtime MAR entry.",
+        "section_id": "5.2",
+        "title": "Medications without scanning"
+      }
+    ],
+    "cost": {
+      "tokens_in": 1880,
+      "tokens_out": 187,
+      "usd": 0.001135
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "question": "How do I give medications without barcode scanning?"
+  },
+  {
+    "answer": "The house supervisor declares downtime by overhead page and text to charge nurses.",
+    "citations": [
+      {
+        "quote": "The house supervisor declares downtime by overhead page (\"Code Gray, EHR downtime\") and by text to all charge nurses.",
+        "section_id": "1.2",
+        "title": "Downtime is declared when the electronic health record (EHR), barcode medication administration (BCMA), or computerized order entry is unavailable to a nursing unit for more than 15 minutes, or immediately when Information Security isolates the EHR (for example after a ransomware alert)."
+      }
+    ],
+    "cost": {
+      "tokens_in": 1881,
+      "tokens_out": 136,
+      "usd": 0.000995
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "question": "Who declares downtime, and how is it announced?"
+  },
+  {
+    "answer": "During recovery, each RN backloads their own medication administrations, vital signs, and intake and output from paper forms. The unit clerk backloads allergies, history, height, weight, and any admissions, discharges, and transfers. Pharmacy backloads all orders written or received during downtime and reconciles medication profiles.",
+    "citations": [
+      {
+        "quote": "each RN enters the medication administrations, vital signs, and intake and output they documented on paper during their own shift.",
+        "section_id": "7.2",
+        "title": "Nursing backload"
+      },
+      {
+        "quote": "the unit clerk enters allergies, history, height and weight, and admissions, discharges, and transfers that occurred during downtime.",
+        "section_id": "7.4",
+        "title": "Unit backload"
+      },
+      {
+        "quote": "pharmacy enters all orders written or received during downtime and reconciles the medication profile for every patient.",
+        "section_id": "7.3",
+        "title": "Pharmacy backload"
+      }
+    ],
+    "cost": {
+      "tokens_in": 1883,
+      "tokens_out": 235,
+      "usd": 0.001268
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.amazon.nova-2-lite-v1:0",
+    "question": "What does each role backload when the EHR comes back?"
+  }
+]
