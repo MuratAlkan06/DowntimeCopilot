@@ -66,13 +66,23 @@ digits printed by hand on NIST's sample forms and cut out one character at a tim
 block handprint, not cursive, joined or rushed bedside writing, and it is not a set of forms a person filled in by
 hand. Every fixture uses one real writer's characters throughout, and no two fixtures share a writer.
 
+The mix departs from the plan frozen in #67 in one place. The plan called for 6 nominal, 3 ambiguous-heavy and 3
+out-of-range fixtures per form, but only the vitals flowsheet has normal ranges, so the set holds 3 out-of-range
+fixtures in total, all vitals flowsheets. The admission note and the MAR wrote their out-of-range slots as
+ambiguous-heavy fixtures with one extra blank box each. The tag counts were disclosed in #70, and the owner's QA
+pass accepted all 36. All three out-of-range values (SpO2 81 and 78, temperature 40.6) were read correctly by both
+readers and flagged out_of_range.
+
 Words are composed letter by letter: each value is pasted one character image at a time, with letter and word
 gaps set by the generator, not by the writer's own hand. Scoring is the same exact match as sections 3 and 4
 (lowercase, whitespace collapsed, no synonyms), and it was declared before the run that spacing-only reader errors
 count as misses: "ast hma" for "asthma" is a miss. The same rule makes a time read with a dot or without its colon
 ("07.03" for "07:03", "1740" for "17:40") a miss. The most frequent combined misses are the route "IO" read as
 "10" by both readers, and blank boxes where Textract returned text (such as the printed label "(0-10)") that the
-combined record kept.
+combined record kept. The clinically sharper misses are three numbers that both readers got wrong the same way, so
+the combined record kept them with no flag: weight 89.9 read as 84.9 (`hw-admission_note-008`), and height 159 read
+as 169 and weight 50.8 read as 60.8 (`hw-admission_note-010`). When both readers agree on a wrong number, the
+agreement check has nothing to flag, and weight and height have no normal range to trip.
 
 `hw-admission_note-006` carries a small ink speck that came with one of its source character images: authentic
 ink from NIST's scan, not something the generator drew. It can read as a decimal point. The owner reviewed the

@@ -4,8 +4,9 @@ evals/baseline/<run-id>/) plus evals/NOTES.md. The timestamp and git SHA come fr
 
     python -m evals.report [BUNDLE] [--notes evals/NOTES.md] [--out RESULTS.md]   (`make results`)
 
-A bundle with outputs/photographed.json (forms built from public handwriting samples, #67) gets its own headline rows
-and section 8, scored exactly like the synthetic set; a bundle without it renders exactly as before.
+A bundle with outputs/photographed.json (forms built from public handwriting samples, #67) gets its own inputs-line
+clause, headline rows and section 8, scored exactly like the synthetic set; a bundle without it renders exactly as
+before.
 
 Refuses (nonzero, nothing written) a bundle with dry-run/mock calls, /costs sums that do not reconcile, a null
 cost per outage-hour, or a NOTES.md section keyed by an unknown metric.
@@ -272,10 +273,12 @@ def render(bundle: Path, notes_path: Path = NOTES) -> str:
     add(f"- Git SHA at run time: `{meta['git_sha']}`{' (working tree dirty)' if meta['git_dirty'] else ''}")
     add(f"- Artifact bundle: `{label}/`")
     add(f"- Artifact digest (sha256 over the bundle, `evals.run.digest`): `{digest(bundle)}`")
+    # Same condition as section 8: only a bundle with a scored photographed set lists it; older bundles stay as before.
+    ph_in = f", photographed fixtures: {len(manifest['photographed_fixtures'])} ({pub})" if ph is not None else ""
     add(f"- Inputs fixed before the run (`evals/manifest.json`): {manifest['seed_patients']} seeded patients, "
-        f"{len(manifest['questions'])} DEMO.md policy questions, form fixtures: {len(manifest['form_fixtures'])}, "
-        f"speech fixtures: 1, simulated clock +{manifest['clock_advance_minutes']['before_downtime']} min then "
-        f"+{manifest['clock_advance_minutes']['before_costs']} min")
+        f"{len(manifest['questions'])} DEMO.md policy questions, form fixtures: {len(manifest['form_fixtures'])}"
+        f"{ph_in}, speech fixtures: 1, simulated clock +{manifest['clock_advance_minutes']['before_downtime']} min "
+        f"then +{manifest['clock_advance_minutes']['before_costs']} min")
     add("")
     add("## Headline")
     add("")
