@@ -8,7 +8,7 @@ GENERATED - DO NOT EDIT. Every number below is computed from one recorded live r
 - Git SHA at run time: `0000000000000000000000000000000000000000`
 - Artifact bundle: `tests/fixtures/eval_bundle_photographed/`
 - Artifact digest (sha256 over the bundle, `evals.run.digest`): `d73818e27d798fff85618e39fd36f402cdd07eca9b2ebe8a3177297c22f93f78`
-- Inputs fixed before the run (`evals/manifest.json`): 12 seeded patients, 2 DEMO.md policy questions, form fixtures: 1, speech fixtures: 1, simulated clock +15 min then +45 min
+- Inputs fixed before the run (`evals/manifest.json`): 12 seeded patients, 2 DEMO.md policy questions, form fixtures: 1, photographed fixtures: 2 (forms built from public handwriting samples), speech fixtures: 1, simulated clock +15 min then +45 min
 
 ## Headline
 
