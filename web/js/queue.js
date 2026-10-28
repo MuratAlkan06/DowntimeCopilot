@@ -106,12 +106,14 @@ export async function counts(store) {
   return { active: items.length - dead, dead };
 }
 
-/** Put dead items back in the queue with a fresh attempt budget: one id, or every dead item. Returns how many. */
+/** Put dead items back in the queue with a fresh attempt budget: one id, or every dead item. Returns how many.
+ *  The refusal evidence goes too (#59): server_status (during.js: a first submit the server refused) would
+ *  otherwise call the item refused before the server has answered it again. */
 export async function retryDead(store, id) {
   let n = 0;
   for (const item of await store.list()) {
     if (!isDead(item) || (id != null && item.id !== id)) continue;
-    const { status: _s, attempts: _a, ...rest } = item;
+    const { status: _s, attempts: _a, server_status: _r, ...rest } = item;
     await store.put(rest);
     n += 1;
   }
