@@ -1,8 +1,8 @@
 # Eval notes
 
 Commentary for RESULTS.md, keyed by metric (`## <metric>`). `make results` copies each section verbatim under its
-metric. Keys: faithfulness, grounding, extraction, false_flags, speech, latency_cost, outage_cost. Numbers are
-never typed here; they come from the bundle.
+metric. Keys: faithfulness, grounding, extraction, false_flags, speech, latency_cost, outage_cost, photographed.
+Numbers are never typed here; they come from the bundle.
 
 ## faithfulness
 
@@ -25,7 +25,8 @@ real-world accuracy. All Textract misses are blank boxes where Textract returned
 flowsheet and `second_verifier` on the MAR. Nova 2 Lite left both blank. The combined vitals miss is the
 `pain_score` disagreement: the merged record keeps Textract's value with confidence 0 and flags it for review, so
 it shows up under "flags that caught a wrong value", not as a silent error. Scoring is exact match after lowercasing
-and collapsing whitespace, with no synonym mapping. Photographed handwritten forms are still pending.
+and collapsing whitespace, with no synonym mapping. Values in real people's handprint are measured in section 8
+(forms built from public handwriting samples); see its notes for what that set is and is not.
 
 ## false_flags
 
@@ -45,13 +46,46 @@ four misses field for field. Verbal-order structuring is still the weakest measu
 `checker` is the packet guardrail. Packets send grounding without a query, so `BedrockGuardrail` routes them to
 the Nova 2 Lite checker, which is metered here. ApplyGuardrail runs only for policy answers (one per answer). USD
 comes from the app's `PRICING` table at the `us.` geographic-profile rates, which list 10% above the `global.`
-rates — the same rates as the previous baseline (`90d316a`), so this bundle's spend matches it almost exactly;
-the residual difference is token-count variance.
+rates — the same rates as the previous baselines (`90d316a`, `b1f74cb`). This bundle spends more than they do
+because `form_read` also reads every fixture of section 8, one Nova 2 Lite call each; the other call types match
+them up to token-count variance.
 Latency comes from `/costs` and covers the model call only (no HTTP, no Textract or Transcribe time); medians move
 run to run.
 
 ## outage_cost
 
 Simulated hours run from the outage declaration (clock 03:00) to the `/costs` read (clock 03:45). Only Bedrock
-model calls are counted. Textract, Transcribe and ApplyGuardrail are billed by AWS outside the app; see the
-decisions entry for this run.
+model calls are counted. Textract, Transcribe and ApplyGuardrail are billed by AWS outside the app; section 6
+lists how many of each ran.
+
+## photographed
+
+What the set is: the three synthetic form templates, filled in with values the generator chose
+(`tools/hw_fixtures.py`) and written in characters from NIST Special Database 19. SD19 is handprint: letters and
+digits printed by hand on NIST's sample forms and cut out one character at a time. So this set measures careful
+block handprint, not cursive, joined or rushed bedside writing, and it is not a set of forms a person filled in by
+hand. Every fixture uses one real writer's characters throughout, and no two fixtures share a writer.
+
+Words are composed letter by letter: each value is pasted one character image at a time, with letter and word
+gaps set by the generator, not by the writer's own hand. Scoring is the same exact match as sections 3 and 4
+(lowercase, whitespace collapsed, no synonyms), and it was declared before the run that spacing-only reader errors
+count as misses: "ast hma" for "asthma" is a miss. The same rule makes a time read with a dot or without its colon
+("07.03" for "07:03", "1740" for "17:40") a miss. The most frequent combined misses are the route "IO" read as
+"10" by both readers, and blank boxes where Textract returned text (such as the printed label "(0-10)") that the
+combined record kept.
+
+`hw-admission_note-006` carries a small ink speck that came with one of its source character images: authentic
+ink from NIST's scan, not something the generator drew. It can read as a decimal point. The owner reviewed the
+fixture and accepted it as is. In this run neither reader returned a stray decimal point on that form.
+
+The photo look is software only. Each image is the composited page put through a perspective tilt, a lighting
+gradient, a slight rotation, sensor noise, blur and JPEG compression, at one of three strengths (L0, L1, L2; L0
+is exactly the synthetic set's effect, with no perspective or lighting change). No camera took these pictures,
+and no image-generation model was used anywhere in making them. The images stay out of git and are rebuilt
+byte-for-byte from the seed; licensing and privacy are in `docs/handwriting-datasets.md`.
+
+Handwriting samples: NIST Special Database 19, Handprinted Forms and Characters, 2nd edition, National Institute
+of Standards and Technology, https://doi.org/10.18434/T4H01C. NIST is the source of the data. Changed by
+DowntimeCopilot in 2026: individual character images were cropped, scaled, recolored and composited onto
+synthetic form templates, then distorted to resemble phone photos (`tools/hw_fixtures.py`). NIST does not endorse
+this project.
