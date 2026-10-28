@@ -57,7 +57,7 @@ jobs:
   durability:
     name: Durability harness
     # docs/durability.md: server cycles against DynamoDB Local, then browser-queue cycles in node, then the
-    # report; fails on any violation. Not a required check during burn-in (#51).
+    # report; fails on any violation. A required check on main since 2026-10-28, after a zero-failure burn-in (#51).
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
