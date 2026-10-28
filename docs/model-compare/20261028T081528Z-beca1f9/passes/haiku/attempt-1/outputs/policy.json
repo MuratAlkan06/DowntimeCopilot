@@ -1,0 +1,147 @@
+[
+  {
+    "answer": "Complete a red downtime requisition marked \"STAT\" with the patient label, test name, ordering provider, and collection time, then call the laboratory at extension 4-5227 to announce the specimen before hand-delivering it. The laboratory will phone results back to the unit within 60 minutes.",
+    "citations": [
+      {
+        "quote": "To obtain a stat lab while the order system is down, the RN completes a red downtime requisition marked \"STAT\", including the patient label, the test, the ordering provider, and the collection time.",
+        "section_id": "4.2.1",
+        "title": "Stat labs"
+      },
+      {
+        "quote": "The RN or unit clerk calls the laboratory at extension 4-5227 to announce the stat specimen before sending it, then sends the specimen by hand delivery; do not use the pneumatic tube for stat specimens during downtime.",
+        "section_id": "4.2.2",
+        "title": "Stat labs"
+      },
+      {
+        "quote": "The laboratory phones critical and stat results to the unit within 60 minutes.",
+        "section_id": "4.2.3",
+        "title": "Stat labs"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2166,
+      "tokens_out": 308,
+      "usd": 0.004077
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "question": "How do I get a stat lab with the order system down?"
+  },
+  {
+    "answer": "Write the complete verbal order on the Verbal Order Read-Back form (DT-40), then read the entire order back to the provider and record 'read back and confirmed' along with the provider's name, date, and time on the form. The provider must co-sign the order within 24 hours.",
+    "citations": [
+      {
+        "quote": "The receiving nurse writes the order on the Verbal Order Read-Back form (DT-40), reads the complete order back to the provider, and records \"read back and confirmed\", the provider name, the date, and the time.",
+        "section_id": "6.2",
+        "title": "Verbal orders and read-back"
+      },
+      {
+        "quote": "The provider co-signs every verbal order within 24 hours.",
+        "section_id": "6.3",
+        "title": "Verbal orders and read-back"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2170,
+      "tokens_out": 233,
+      "usd": 0.003669
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "question": "How do I take a verbal order and do the read-back during downtime?"
+  },
+  {
+    "answer": "Verify the five rights against the paper Downtime MAR (DT-20) and the most recent BCA medication list before every dose. High-alert medications (insulin, heparin and other anticoagulants, opioids, concentrated electrolytes) require an independent double-check by a second licensed nurse before administration, with both nurses initialing the Downtime MAR entry.",
+    "citations": [
+      {
+        "quote": "Without barcode scanning, the RN verifies the five rights against the paper Downtime MAR (DT-20) and the most recent BCA medication list before every dose.",
+        "section_id": "5.1",
+        "title": "Medications without scanning"
+      },
+      {
+        "quote": "High-alert medications (insulin, heparin and other anticoagulants, opioids, concentrated electrolytes) require an independent double-check by a second licensed nurse before administration. Both nurses initial the Downtime MAR entry.",
+        "section_id": "5.2",
+        "title": "Medications without scanning"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2163,
+      "tokens_out": 272,
+      "usd": 0.003875
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "question": "How do I give medications without barcode scanning?"
+  },
+  {
+    "answer": "The house supervisor declares downtime by overhead page (\"Code Gray, EHR downtime\") and by text to all charge nurses. Each charge nurse confirms activation on their unit and records the start time on the Downtime Log.",
+    "citations": [
+      {
+        "quote": "The house supervisor declares downtime by overhead page (\"Code Gray, EHR downtime\") and by text to all charge nurses. Each charge nurse confirms activation on their unit and records the start time on the Downtime Log (form DT-01).",
+        "section_id": "1.2",
+        "title": "Activation"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2164,
+      "tokens_out": 164,
+      "usd": 0.003282
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "question": "Who declares downtime, and how is it announced?"
+  },
+  {
+    "answer": "Each role backloads different data during recovery: RNs enter medication administrations, vital signs, and intake/output from their shift; pharmacy enters all orders written or received during downtime and reconciles medication profiles; and unit clerks enter allergies, history, height/weight, and admissions/discharges/transfers. Each person verifies their entries against the paper forms before the end of shift.",
+    "citations": [
+      {
+        "quote": "each RN enters the medication administrations, vital signs, and intake and output they documented on paper during their own shift",
+        "section_id": "7.2",
+        "title": "Nursing backload"
+      },
+      {
+        "quote": "pharmacy enters all orders written or received during downtime and reconciles the medication profile for every patient",
+        "section_id": "7.3",
+        "title": "Pharmacy backload"
+      },
+      {
+        "quote": "the unit clerk enters allergies, history, height and weight, and admissions, discharges, and transfers that occurred during downtime",
+        "section_id": "7.4",
+        "title": "Unit backload"
+      },
+      {
+        "quote": "Each backloaded entry is verified against the paper form by the person entering it",
+        "section_id": "7.5",
+        "title": "Recovery and backload by role"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2167,
+      "tokens_out": 343,
+      "usd": 0.00427
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "question": "What does each role backload when the EHR comes back?"
+  }
+]

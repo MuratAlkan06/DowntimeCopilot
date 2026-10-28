@@ -1,0 +1,704 @@
+{
+  "calls": [
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2087,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 905,
+      "tokens_out": 560,
+      "ts": "2026-10-24T03:00:02.091991+00:00",
+      "usd": 0.004076
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 633,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 693,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:02.729723+00:00",
+      "usd": 0.000292
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2860,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 975,
+      "tokens_out": 661,
+      "ts": "2026-10-24T03:00:05.592788+00:00",
+      "usd": 0.004708
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 597,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 738,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:06.195188+00:00",
+      "usd": 0.000307
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2645,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 974,
+      "tokens_out": 666,
+      "ts": "2026-10-24T03:00:08.844752+00:00",
+      "usd": 0.004734
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 488,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 732,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:09.338057+00:00",
+      "usd": 0.000305
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2622,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1010,
+      "tokens_out": 698,
+      "ts": "2026-10-24T03:00:11.963039+00:00",
+      "usd": 0.00495
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 675,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 813,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:12.644107+00:00",
+      "usd": 0.000332
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2233,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 969,
+      "tokens_out": 595,
+      "ts": "2026-10-24T03:00:14.879635+00:00",
+      "usd": 0.004338
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 605,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 713,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:15.491217+00:00",
+      "usd": 0.000299
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2241,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 931,
+      "tokens_out": 627,
+      "ts": "2026-10-24T03:00:17.735112+00:00",
+      "usd": 0.004473
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 515,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 722,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:18.257388+00:00",
+      "usd": 0.000302
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2492,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 971,
+      "tokens_out": 640,
+      "ts": "2026-10-24T03:00:20.757491+00:00",
+      "usd": 0.004588
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 486,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 722,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:21.249017+00:00",
+      "usd": 0.000302
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2811,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1100,
+      "tokens_out": 820,
+      "ts": "2026-10-24T03:00:24.068017+00:00",
+      "usd": 0.00572
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 591,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 881,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:24.665728+00:00",
+      "usd": 0.000354
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 2868,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 965,
+      "tokens_out": 776,
+      "ts": "2026-10-24T03:00:27.537161+00:00",
+      "usd": 0.00533
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 563,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 765,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:28.106131+00:00",
+      "usd": 0.000316
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1939,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 880,
+      "tokens_out": 488,
+      "ts": "2026-10-24T03:00:30.053659+00:00",
+      "usd": 0.003652
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 522,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 611,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:30.582362+00:00",
+      "usd": 0.000265
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1940,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 886,
+      "tokens_out": 524,
+      "ts": "2026-10-24T03:00:32.527600+00:00",
+      "usd": 0.003857
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 463,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 654,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:32.995074+00:00",
+      "usd": 0.000279
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 1973,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 921,
+      "tokens_out": 530,
+      "ts": "2026-10-24T03:00:34.974899+00:00",
+      "usd": 0.003928
+    },
+    {
+      "dry_run": false,
+      "job": "checker",
+      "latency_ms": 553,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 689,
+      "tokens_out": 23,
+      "ts": "2026-10-24T03:00:35.532160+00:00",
+      "usd": 0.000291
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 2326,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 2166,
+      "tokens_out": 308,
+      "ts": "2026-10-24T03:00:37.867762+00:00",
+      "usd": 0.004077
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1290,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 2170,
+      "tokens_out": 233,
+      "ts": "2026-10-24T03:00:39.628747+00:00",
+      "usd": 0.003669
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1953,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 2163,
+      "tokens_out": 272,
+      "ts": "2026-10-24T03:00:41.950156+00:00",
+      "usd": 0.003875
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1395,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 2164,
+      "tokens_out": 164,
+      "ts": "2026-10-24T03:00:43.725731+00:00",
+      "usd": 0.003282
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 1686,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 2167,
+      "tokens_out": 343,
+      "ts": "2026-10-24T03:00:45.775394+00:00",
+      "usd": 0.00427
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2790,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 723,
+      "ts": "2026-10-24T03:00:48.949587+00:00",
+      "usd": 0.005737
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2331,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 491,
+      "ts": "2026-10-24T03:00:51.284559+00:00",
+      "usd": 0.004436
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2028,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 406,
+      "ts": "2026-10-24T03:00:53.319913+00:00",
+      "usd": 0.00396
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1952,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 398,
+      "ts": "2026-10-24T03:00:55.277302+00:00",
+      "usd": 0.003916
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1894,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 362,
+      "ts": "2026-10-24T03:00:57.177466+00:00",
+      "usd": 0.003718
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1917,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 397,
+      "ts": "2026-10-24T03:00:59.098549+00:00",
+      "usd": 0.003911
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1975,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 401,
+      "ts": "2026-10-24T03:01:01.081464+00:00",
+      "usd": 0.003933
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1955,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 397,
+      "ts": "2026-10-24T03:01:03.044104+00:00",
+      "usd": 0.003911
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1837,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 353,
+      "ts": "2026-10-24T03:01:04.883094+00:00",
+      "usd": 0.003669
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1815,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 354,
+      "ts": "2026-10-24T03:01:06.700351+00:00",
+      "usd": 0.003674
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1979,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 400,
+      "ts": "2026-10-24T03:01:08.681924+00:00",
+      "usd": 0.003927
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1917,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 401,
+      "ts": "2026-10-24T03:01:10.604355+00:00",
+      "usd": 0.003933
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1832,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 355,
+      "ts": "2026-10-24T03:01:12.442293+00:00",
+      "usd": 0.00368
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1936,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 360,
+      "ts": "2026-10-24T03:01:14.380492+00:00",
+      "usd": 0.003707
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 1703,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1570,
+      "tokens_out": 307,
+      "ts": "2026-10-24T03:01:16.085710+00:00",
+      "usd": 0.003416
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2356,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 533,
+      "ts": "2026-10-24T03:01:18.448185+00:00",
+      "usd": 0.004667
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2338,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 487,
+      "ts": "2026-10-24T03:01:20.788694+00:00",
+      "usd": 0.004414
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2340,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 534,
+      "ts": "2026-10-24T03:01:23.136416+00:00",
+      "usd": 0.004673
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2468,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 535,
+      "ts": "2026-10-24T03:01:25.607616+00:00",
+      "usd": 0.004678
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2295,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 534,
+      "ts": "2026-10-24T03:01:27.905879+00:00",
+      "usd": 0.004673
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2327,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 492,
+      "ts": "2026-10-24T03:01:30.235627+00:00",
+      "usd": 0.004442
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2292,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 491,
+      "ts": "2026-10-24T03:01:32.530612+00:00",
+      "usd": 0.004436
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2388,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 534,
+      "ts": "2026-10-24T03:01:34.925317+00:00",
+      "usd": 0.004673
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2272,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 534,
+      "ts": "2026-10-24T03:01:37.199237+00:00",
+      "usd": 0.004673
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2394,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 494,
+      "ts": "2026-10-24T03:01:39.597004+00:00",
+      "usd": 0.004453
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2235,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 489,
+      "ts": "2026-10-24T03:01:41.837017+00:00",
+      "usd": 0.004425
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2404,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1578,
+      "tokens_out": 448,
+      "ts": "2026-10-24T03:01:44.245261+00:00",
+      "usd": 0.0042
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2759,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 764,
+      "ts": "2026-10-24T03:01:47.011122+00:00",
+      "usd": 0.005962
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3007,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 774,
+      "ts": "2026-10-24T03:01:50.024623+00:00",
+      "usd": 0.006017
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2848,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 764,
+      "ts": "2026-10-24T03:01:52.874690+00:00",
+      "usd": 0.005962
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2521,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 654,
+      "ts": "2026-10-24T03:01:55.403580+00:00",
+      "usd": 0.005357
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2868,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 764,
+      "ts": "2026-10-24T03:01:58.274175+00:00",
+      "usd": 0.005962
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2759,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 721,
+      "ts": "2026-10-24T03:02:01.039659+00:00",
+      "usd": 0.005725
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2760,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 722,
+      "ts": "2026-10-24T03:02:03.806834+00:00",
+      "usd": 0.005731
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2767,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 763,
+      "ts": "2026-10-24T03:02:06.579865+00:00",
+      "usd": 0.005956
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2903,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 764,
+      "ts": "2026-10-24T03:02:09.489064+00:00",
+      "usd": 0.005962
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2914,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 764,
+      "ts": "2026-10-24T03:02:12.405596+00:00",
+      "usd": 0.005962
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2497,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 655,
+      "ts": "2026-10-24T03:02:14.910272+00:00",
+      "usd": 0.005363
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 2671,
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "tokens_in": 1600,
+      "tokens_out": 721,
+      "ts": "2026-10-24T03:02:17.585051+00:00",
+      "usd": 0.005725
+    }
+  ],
+  "dry_run": false,
+  "models": {
+    "us.amazon.nova-2-lite-v1:0": {
+      "calls": 12,
+      "tokens_in": 8733,
+      "tokens_out": 276,
+      "usd": 0.003644
+    },
+    "us.anthropic.claude-haiku-4-5-20251001-v1:0": {
+      "calls": 56,
+      "tokens_in": 84041,
+      "tokens_out": 29945,
+      "usd": 0.257146
+    }
+  },
+  "outage_hours": 0.75,
+  "tokens_in": 92774,
+  "tokens_out": 30221,
+  "total_usd": 0.26079,
+  "usd_per_outage_hour": 0.34772
+}

@@ -1,0 +1,828 @@
+{
+  "baseline": {
+    "bundle": "evals/baseline/20261028T060034Z-609f90e",
+    "digest": "137d625b84c377968f726d05183782112c845922ad8a9c97412113de6a2e6150",
+    "textract_reads": 39,
+    "vital_ranges": {
+      "bp_diastolic": [
+        50,
+        100
+      ],
+      "bp_systolic": [
+        90,
+        160
+      ],
+      "heart_rate": [
+        50,
+        110
+      ],
+      "resp_rate": [
+        10,
+        24
+      ],
+      "spo2": [
+        92,
+        100
+      ],
+      "temp_c": [
+        36.0,
+        38.0
+      ]
+    }
+  },
+  "budget": {
+    "limit_usd": 5.0,
+    "max_projected_usd": 2.951649,
+    "spent": {
+      "abandoned_usd": 0,
+      "guardrail_allowance_usd": 0.15,
+      "guardrail_apply": 15,
+      "metered_usd": 1.126026,
+      "probes_usd": 0.000114,
+      "total_usd": 1.27614
+    },
+    "step_estimates_usd": {
+      "haiku:forms": 0.32175,
+      "haiku:packets": 0.27324,
+      "haiku:policy": 0.0885,
+      "nova:forms": 0.139425,
+      "nova:packets": 0.13068,
+      "nova:policy": 0.06595,
+      "sonnet:forms": 0.96525,
+      "sonnet:packets": 0.80124,
+      "sonnet:policy": 0.1655
+    }
+  },
+  "counterfactual": {
+    "all_sonnet": {
+      "form_read": 0.504494,
+      "packet": 0.201248,
+      "policy": 0.0676
+    },
+    "all_sonnet_usd": 0.773342,
+    "available": true,
+    "difference_usd": 0.444714,
+    "routed": {
+      "form_read": {
+        "model": "us.amazon.nova-2-lite-v1:0",
+        "usd": 0.05978
+      },
+      "packet": {
+        "model": "us.anthropic.claude-sonnet-4-6",
+        "usd": 0.201248
+      },
+      "policy": {
+        "model": "us.anthropic.claude-sonnet-4-6",
+        "usd": 0.0676
+      }
+    },
+    "routed_share": 0.4249,
+    "routed_usd": 0.328628
+  },
+  "counterfactual_rule": "\"all-Sonnet\" = form_read + packet + policy on Sonnet; the Nova checker and ApplyGuardrail are identical in both arms and excluded from the difference; stated on the fixed eval workload, not production.",
+  "finished_at": "2026-10-28T08:23:55+00:00",
+  "git_dirty": false,
+  "git_sha": "beca1f99e83816f8d55ba4f919dd1c7d28459e15",
+  "lifecycle": {
+    "app": "in-process TestClient, no lifespan (no scheduler, no sync worker)",
+    "aws_region": "us-east-1",
+    "checker_model": "us.amazon.nova-2-lite-v1:0",
+    "guardrail_mode": "bedrock",
+    "packet_concurrency": 1,
+    "production_packet_concurrency": 4,
+    "snapshots_compared": 3,
+    "snapshots_identical": true,
+    "store": "fresh empty scratch store per attempt"
+  },
+  "metrics": {
+    "haiku": {
+      "forms": {
+        "photographed": {
+          "caught": 14,
+          "clean": 243,
+          "false_flags": 23,
+          "latency_ms": {
+            "model_call": {
+              "n": 36,
+              "p50": 2339.0,
+              "p95": 2914
+            },
+            "wall_clock": {
+              "n": 36,
+              "p50": 2343.0,
+              "p95": 2919
+            }
+          },
+          "misses": 71,
+          "n": 36,
+          "per": {
+            "combined": [
+              244,
+              264
+            ],
+            "model": [
+              243,
+              264
+            ],
+            "textract": [
+              234,
+              264
+            ]
+          },
+          "silent": 6,
+          "unparseable": 0,
+          "usd": 0.169486,
+          "usd_per_job": 0.004708
+        },
+        "synthetic": {
+          "caught": 1,
+          "clean": 19,
+          "false_flags": 0,
+          "latency_ms": {
+            "model_call": {
+              "n": 3,
+              "p50": 2331,
+              "p95": 2790
+            },
+            "wall_clock": {
+              "n": 3,
+              "p50": 2337,
+              "p95": 2793
+            }
+          },
+          "misses": 3,
+          "n": 3,
+          "per": {
+            "combined": [
+              21,
+              22
+            ],
+            "model": [
+              22,
+              22
+            ],
+            "textract": [
+              20,
+              22
+            ]
+          },
+          "silent": 0,
+          "unparseable": 0,
+          "usd": 0.014133,
+          "usd_per_job": 0.004711
+        }
+      },
+      "packets": {
+        "checker": {
+          "calls": 12,
+          "latency_ms": {
+            "n": 12,
+            "p50": 558.0,
+            "p95": 675
+          },
+          "models": [
+            "us.amazon.nova-2-lite-v1:0"
+          ],
+          "usd": 0.003644
+        },
+        "final": [
+          130,
+          130
+        ],
+        "first": [
+          130,
+          130
+        ],
+        "latency_ms": {
+          "model_call": {
+            "n": 12,
+            "p50": 2366.5,
+            "p95": 2868
+          },
+          "wall_clock": {
+            "n": 12,
+            "p50": 2917.5,
+            "p95": 3465
+          }
+        },
+        "misses": 0,
+        "n": 12,
+        "omitted": 0,
+        "regenerated": 0,
+        "unparseable": 0,
+        "usd": 0.054354,
+        "usd_per_job": 0.004529
+      },
+      "policy": {
+        "correct": 5,
+        "grounded": 5,
+        "interventions": 0,
+        "latency_ms": {
+          "model_call": {
+            "n": 5,
+            "p50": 1686,
+            "p95": 2326
+          },
+          "wall_clock": {
+            "n": 5,
+            "p50": 2073,
+            "p95": 2796
+          }
+        },
+        "n": 5,
+        "rows": [
+          {
+            "cited": [
+              "4.2.1",
+              "4.2.2",
+              "4.2.3"
+            ],
+            "correct": true,
+            "expected": "4.2",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "6.2",
+              "6.3"
+            ],
+            "correct": true,
+            "expected": "6",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "5.1",
+              "5.2"
+            ],
+            "correct": true,
+            "expected": "5",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "1.2"
+            ],
+            "correct": true,
+            "expected": "1",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "7.2",
+              "7.3",
+              "7.4",
+              "7.5"
+            ],
+            "correct": true,
+            "expected": "7",
+            "grounded": true,
+            "guardrail": "passed"
+          }
+        ],
+        "usd": 0.019173,
+        "usd_per_job": 0.003835
+      }
+    },
+    "nova": {
+      "forms": {
+        "photographed": {
+          "caught": 13,
+          "clean": 243,
+          "false_flags": 25,
+          "latency_ms": {
+            "model_call": {
+              "n": 36,
+              "p50": 2068.0,
+              "p95": 2841
+            },
+            "wall_clock": {
+              "n": 36,
+              "p50": 2071.5,
+              "p95": 2843
+            }
+          },
+          "misses": 81,
+          "n": 36,
+          "per": {
+            "combined": [
+              242,
+              264
+            ],
+            "model": [
+              235,
+              264
+            ],
+            "textract": [
+              234,
+              264
+            ]
+          },
+          "silent": 9,
+          "unparseable": 0,
+          "usd": 0.055112,
+          "usd_per_job": 0.001531
+        },
+        "synthetic": {
+          "caught": 1,
+          "clean": 19,
+          "false_flags": 0,
+          "latency_ms": {
+            "model_call": {
+              "n": 3,
+              "p50": 2498,
+              "p95": 32907
+            },
+            "wall_clock": {
+              "n": 3,
+              "p50": 2501,
+              "p95": 32910
+            }
+          },
+          "misses": 3,
+          "n": 3,
+          "per": {
+            "combined": [
+              21,
+              22
+            ],
+            "model": [
+              22,
+              22
+            ],
+            "textract": [
+              20,
+              22
+            ]
+          },
+          "silent": 0,
+          "unparseable": 0,
+          "usd": 0.004668,
+          "usd_per_job": 0.001556
+        }
+      },
+      "packets": {
+        "checker": {
+          "calls": 12,
+          "latency_ms": {
+            "n": 12,
+            "p50": 554.5,
+            "p95": 762
+          },
+          "models": [
+            "us.amazon.nova-2-lite-v1:0"
+          ],
+          "usd": 0.003567
+        },
+        "final": [
+          108,
+          108
+        ],
+        "first": [
+          108,
+          108
+        ],
+        "latency_ms": {
+          "model_call": {
+            "n": 12,
+            "p50": 2062.5,
+            "p95": 2419
+          },
+          "wall_clock": {
+            "n": 12,
+            "p50": 2602.0,
+            "p95": 3000
+          }
+        },
+        "misses": 0,
+        "n": 12,
+        "omitted": 0,
+        "regenerated": 0,
+        "unparseable": 0,
+        "usd": 0.018243,
+        "usd_per_job": 0.00152
+      },
+      "policy": {
+        "correct": 5,
+        "grounded": 5,
+        "interventions": 0,
+        "latency_ms": {
+          "model_call": {
+            "n": 5,
+            "p50": 1120,
+            "p95": 1222
+          },
+          "wall_clock": {
+            "n": 5,
+            "p50": 1500,
+            "p95": 1609
+          }
+        },
+        "n": 5,
+        "rows": [
+          {
+            "cited": [
+              "4.2",
+              "4.2"
+            ],
+            "correct": true,
+            "expected": "4.2",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "6.2"
+            ],
+            "correct": true,
+            "expected": "6",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "5.1",
+              "5.2"
+            ],
+            "correct": true,
+            "expected": "5",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "1.2"
+            ],
+            "correct": true,
+            "expected": "1",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "7.2",
+              "7.4",
+              "7.3"
+            ],
+            "correct": true,
+            "expected": "7",
+            "grounded": true,
+            "guardrail": "passed"
+          }
+        ],
+        "usd": 0.005643,
+        "usd_per_job": 0.001129
+      }
+    },
+    "sonnet": {
+      "forms": {
+        "photographed": {
+          "caught": 10,
+          "clean": 243,
+          "false_flags": 15,
+          "latency_ms": {
+            "model_call": {
+              "n": 36,
+              "p50": 3096.5,
+              "p95": 4112
+            },
+            "wall_clock": {
+              "n": 36,
+              "p50": 3102.0,
+              "p95": 4114
+            }
+          },
+          "misses": 106,
+          "n": 36,
+          "per": {
+            "combined": [
+              242,
+              264
+            ],
+            "model": [
+              210,
+              264
+            ],
+            "textract": [
+              234,
+              264
+            ]
+          },
+          "silent": 12,
+          "unparseable": 8,
+          "usd": 0.46527,
+          "usd_per_job": 0.012924
+        },
+        "synthetic": {
+          "caught": 1,
+          "clean": 19,
+          "false_flags": 0,
+          "latency_ms": {
+            "model_call": {
+              "n": 3,
+              "p50": 2955,
+              "p95": 3882
+            },
+            "wall_clock": {
+              "n": 3,
+              "p50": 2959,
+              "p95": 3888
+            }
+          },
+          "misses": 3,
+          "n": 3,
+          "per": {
+            "combined": [
+              21,
+              22
+            ],
+            "model": [
+              22,
+              22
+            ],
+            "textract": [
+              20,
+              22
+            ]
+          },
+          "silent": 0,
+          "unparseable": 0,
+          "usd": 0.039224,
+          "usd_per_job": 0.013075
+        }
+      },
+      "packets": {
+        "checker": {
+          "calls": 12,
+          "latency_ms": {
+            "n": 12,
+            "p50": 612.5,
+            "p95": 1394
+          },
+          "models": [
+            "us.amazon.nova-2-lite-v1:0"
+          ],
+          "usd": 0.004661
+        },
+        "final": [
+          193,
+          193
+        ],
+        "first": [
+          193,
+          193
+        ],
+        "latency_ms": {
+          "model_call": {
+            "n": 12,
+            "p50": 4970.0,
+            "p95": 6206
+          },
+          "wall_clock": {
+            "n": 12,
+            "p50": 5585.5,
+            "p95": 7216
+          }
+        },
+        "misses": 0,
+        "n": 12,
+        "omitted": 0,
+        "regenerated": 0,
+        "unparseable": 0,
+        "usd": 0.201248,
+        "usd_per_job": 0.016771
+      },
+      "policy": {
+        "correct": 5,
+        "grounded": 5,
+        "interventions": 0,
+        "latency_ms": {
+          "model_call": {
+            "n": 5,
+            "p50": 2734,
+            "p95": 3186
+          },
+          "wall_clock": {
+            "n": 5,
+            "p50": 3169,
+            "p95": 3558
+          }
+        },
+        "n": 5,
+        "rows": [
+          {
+            "cited": [
+              "4.2.1",
+              "4.2.2",
+              "4.2.3",
+              "4.2.4"
+            ],
+            "correct": true,
+            "expected": "4.2",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "6.1",
+              "6.2",
+              "6.3"
+            ],
+            "correct": true,
+            "expected": "6",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "5.1",
+              "5.2",
+              "5.3",
+              "5.5"
+            ],
+            "correct": true,
+            "expected": "5",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "1.1",
+              "1.2"
+            ],
+            "correct": true,
+            "expected": "1",
+            "grounded": true,
+            "guardrail": "passed"
+          },
+          {
+            "cited": [
+              "7.2",
+              "7.3",
+              "7.4",
+              "7.5"
+            ],
+            "correct": true,
+            "expected": "7",
+            "grounded": true,
+            "guardrail": "passed"
+          }
+        ],
+        "usd": 0.0676,
+        "usd_per_job": 0.01352
+      }
+    }
+  },
+  "mode": "live",
+  "models": {
+    "haiku": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "nova": "us.amazon.nova-2-lite-v1:0",
+    "sonnet": "us.anthropic.claude-sonnet-4-6"
+  },
+  "order": [
+    "nova",
+    "haiku",
+    "sonnet"
+  ],
+  "passes": {
+    "haiku": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "calls": 68,
+          "dir": "passes/haiku/attempt-1",
+          "guardrail": {
+            "mode": "bedrock",
+            "version": "1"
+          },
+          "guardrail_apply": 5,
+          "metered_usd": 0.26079,
+          "reasons": [],
+          "retries": [],
+          "status": "ok"
+        }
+      ],
+      "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "published_attempt": "passes/haiku/attempt-1",
+      "status": "ok"
+    },
+    "nova": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "calls": 68,
+          "dir": "passes/nova/attempt-1",
+          "guardrail": {
+            "mode": "bedrock",
+            "version": "1"
+          },
+          "guardrail_apply": 5,
+          "metered_usd": 0.087233,
+          "reasons": [],
+          "retries": [],
+          "status": "ok"
+        }
+      ],
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "published_attempt": "passes/nova/attempt-1",
+      "status": "ok"
+    },
+    "sonnet": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "calls": 68,
+          "dir": "passes/sonnet/attempt-1",
+          "guardrail": {
+            "mode": "bedrock",
+            "version": "1"
+          },
+          "guardrail_apply": 5,
+          "metered_usd": 0.778003,
+          "reasons": [],
+          "retries": [],
+          "status": "ok"
+        }
+      ],
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "published_attempt": "passes/sonnet/attempt-1",
+      "status": "ok"
+    }
+  },
+  "pricing": {
+    "source": "app/ai/client.py PRICING (us. geographic profiles)",
+    "usd_per_1m_tokens": {
+      "us.amazon.nova-2-lite-v1:0": {
+        "input": 0.33,
+        "output": 2.75
+      },
+      "us.anthropic.claude-haiku-4-5-20251001-v1:0": {
+        "input": 1.1,
+        "output": 5.5
+      },
+      "us.anthropic.claude-sonnet-4-6": {
+        "input": 3.3,
+        "output": 16.5
+      }
+    },
+    "verified": "2026-10-24"
+  },
+  "problems": [],
+  "rule": {
+    "frozen_in": "#76",
+    "inputs": [
+      {
+        "candidate": "haiku",
+        "combined_fields_delta": 2,
+        "incumbent": "nova",
+        "p50_model_call_ratio": 1.131,
+        "route": "form_read",
+        "silent_errors": {
+          "candidate": 6,
+          "incumbent": 9
+        },
+        "usd_per_job_ratio": 3.075,
+        "verdict": null
+      },
+      {
+        "candidate": "sonnet",
+        "combined_fields_delta": 0,
+        "incumbent": "nova",
+        "p50_model_call_ratio": 1.497,
+        "route": "form_read",
+        "silent_errors": {
+          "candidate": 12,
+          "incumbent": 9
+        },
+        "usd_per_job_ratio": 8.442,
+        "verdict": null
+      }
+    ],
+    "text": "A route changes only via its own slice, and only if: forms (primary dataset: the photographed set, combined-with-fixed-Textract accuracy): candidate strictly better by >=3 fields, no worse on silent errors, p50 model latency <=1.5x incumbent; or equal-within-3-fields AND >=40% cheaper per job with the same guards. Packets (n=12) and policy (n=5) are UNDER-POWERED: this run may recommend but never auto-trigger a packet/policy route change; that requires the owner's recorded sign-off.",
+    "verdicts": {
+      "form_read": null,
+      "packet": null,
+      "policy": null
+    }
+  },
+  "run_id": "20261028T081528Z-beca1f9",
+  "schema": 1,
+  "started_at": "2026-10-28T08:15:28+00:00",
+  "status": "complete",
+  "workload": {
+    "clock_advance_minutes": {
+      "before_costs": 45,
+      "before_downtime": 15
+    },
+    "form_reads": {
+      "photographed": 36,
+      "synthetic": 3
+    },
+    "packets": 12,
+    "policy_questions": 5
+  }
+}

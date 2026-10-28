@@ -1,0 +1,571 @@
+{
+  "pt-02": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "High fall risk"
+        },
+        {
+          "source_path": "pending_labs[0],pending_labs[1]",
+          "text": "Pending BMP 05:00, BNP 05:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].next_due",
+          "text": "Furosemide 40 mg IV q12h next due 06:00"
+        },
+        {
+          "source_path": "medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].next_due",
+          "text": "Metoprolol tartrate 25 mg PO q12h next due 08:00"
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "PIV 20G left forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 61.2 kg"
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "bed,admitting_dx,code_status,isolation,allergies",
+          "text": "Bed 2, Heart failure exacerbation, DNR/DNI, no isolation, no allergies"
+        }
+      ]
+    }
+  ],
+  "pt-03": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: low"
+        },
+        {
+          "source_path": "pending_labs[0],pending_labs[1]",
+          "text": "Pending labs: blood cultures x2, procalcitonin 06:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].next_due",
+          "text": "Active medication: ampicillin-sulbactam 3 g IV q6h, next due 2026-10-24T03:30:00Z"
+        },
+        {
+          "source_path": "medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].last_given",
+          "text": "Active medication: acetaminophen 650 mg PO q6h PRN fever, last given 2026-10-23T22:10:00Z"
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "Line: PIV 18G right antecubital"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight: 88.0 kg"
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "patient_id,mrn,name,dob,age,sex,bed",
+          "text": "Patient: Bram Synthetic, MRN: SYN-100203, Bed 3, DOB 1972-07-02, Age 54, Male"
+        },
+        {
+          "source_path": "admitting_dx",
+          "text": "Admitting diagnosis: Community-acquired pneumonia"
+        },
+        {
+          "source_path": "code_status",
+          "text": "Code status: Full code"
+        },
+        {
+          "source_path": "isolation",
+          "text": "Isolation: droplet"
+        },
+        {
+          "source_path": "allergies[0]",
+          "text": "Allergies: penicillin - anaphylaxis, severe"
+        }
+      ]
+    }
+  ],
+  "pt-05": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: moderate"
+        },
+        {
+          "source_path": "pending_labs",
+          "text": "Pending labs: urine culture, lactate 04:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name, medications[0].dose, medications[0].route, medications[0].frequency, medications[0].next_due",
+          "text": "Medication: sulfamethoxazole-trimethoprim 800-160 mg PO q12h, next due 2026-10-24T09:00:00Z"
+        },
+        {
+          "source_path": "medications[1].name, medications[1].dose, medications[1].route, medications[1].frequency, medications[1].next_due",
+          "text": "Medication: ondansetron 4 mg IV q6h PRN nausea, next due not scheduled"
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Lines/drains: PIV 20G left hand, Foley catheter"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight: 70.5 kg"
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "bed, name, dob, age, sex, admitting_dx",
+          "text": "Bed 5, Cleo Mockridge, DOB 1960-11-19, 65F, admitting diagnosis: Urinary tract infection with sepsis"
+        },
+        {
+          "source_path": "code_status",
+          "text": "Code status: Full code"
+        },
+        {
+          "source_path": "isolation",
+          "text": "Isolation: contact"
+        },
+        {
+          "source_path": "allergies[0]",
+          "text": "Allergy: sulfonamide antibiotics - rash, moderate"
+        }
+      ]
+    }
+  ],
+  "pt-07": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Moderate fall risk"
+        },
+        {
+          "source_path": "pending_labs",
+          "text": "Pending labs: TSH, magnesium 05:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].next_due,medications[0].high_alert,medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].next_due,medications[1].high_alert,medications[2].name,medications[2].dose,medications[2].route,medications[2].frequency,medications[2].next_due,medications[2].high_alert",
+          "text": "HIGH-ALERT enoxaparin 80 mg SC q12h next due 06:00, HIGH-ALERT apixaban 5 mg PO q12h next due 09:00, diltiazem 30 mg PO q6h next due 06:00"
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Lines/drains: PIV 20G right forearm, telemetry"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 84.3 kg"
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].high_alert,medications[1].high_alert",
+          "text": "Independent double-check before HIGH-ALERT enoxaparin and apixaban doses"
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "bed,admitting_dx,code_status,isolation,allergies",
+          "text": "Bed 7, Atrial fibrillation with rapid ventricular response, Full code, no isolation, no allergies"
+        }
+      ]
+    }
+  ],
+  "pt-08": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Moderate fall risk"
+        },
+        {
+          "source_path": "pending_labs[0]",
+          "text": "Pending lab: CBC 05:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name, medications[0].dose, medications[0].route, medications[0].frequency, medications[0].next_due, medications[0].high_alert",
+          "text": "HIGH-ALERT hydromorphone 0.5 mg IV q3h PRN pain due 03:15"
+        },
+        {
+          "source_path": "medications[1].name, medications[1].dose, medications[1].route, medications[1].frequency, medications[1].last_given",
+          "text": "ondansetron 4 mg IV q6h PRN nausea last given 23:40"
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Lines/drains: PIV 20G left forearm, JP drain right upper quadrant"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 66 kg"
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].next_due, medications[0].high_alert",
+          "text": "Independent double-check before giving hydromorphone 0.5 mg IV due 03:15"
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "bed, admitting_dx, code_status, isolation, allergies[0].substance, allergies[0].reaction",
+          "text": "Bed 8, Post-op day 1 laparoscopic cholecystectomy, Full code, no isolation, allergic to codeine (nausea)"
+        }
+      ]
+    }
+  ],
+  "pt-09": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "High fall risk."
+        },
+        {
+          "source_path": "pending_labs",
+          "text": "Pending labs: type and screen, INR 05:00 (critical)."
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].next_due,medications[0].last_given,medications[0].high_alert",
+          "text": "HIGH-ALERT: Morphine 2 mg IV q4h PRN pain, next due 2026-10-24T04:30:00Z, last given 2026-10-24T00:30:00Z."
+        },
+        {
+          "source_path": "medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].next_due,medications[1].last_given",
+          "text": "Acetaminophen 1 g PO q6h, next due 2026-10-24T06:00:00Z, last given 2026-10-24T00:00:00Z."
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Lines/drains: PIV 20G right hand, Foley catheter."
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 72.8 kg."
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].high_alert",
+          "text": "Independent double-check before giving HIGH-ALERT morphine."
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "bed,admitting_dx,code_status,isolation,allergies[0].substance,allergies[0].reaction,allergies[0].severity",
+          "text": "Patient in Bed 9, Left hip fracture, pre-op, DNR, no isolation precautions, allergic to latex with mild contact dermatitis."
+        }
+      ]
+    }
+  ],
+  "pt-11": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk low"
+        },
+        {
+          "source_path": "pending_labs",
+          "text": "Pending labs: BMP q2h next 04:00, POC glucose hourly"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].next_due,medications[0].high_alert",
+          "text": "HIGH-ALERT insulin regular infusion per DKA protocol IV titrate hourly due 03:00"
+        },
+        {
+          "source_path": "medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].next_due,medications[1].high_alert",
+          "text": "HIGH-ALERT potassium chloride 20 mEq IV q4h per protocol due 05:00"
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Lines/drains: PIV 18G left antecubital, PIV 20G right forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 58.4 kg"
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].next_due,medications[0].high_alert",
+          "text": "Independent double-check before HIGH-ALERT insulin regular infusion due 03:00"
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "bed,admitting_dx,code_status,isolation,allergies",
+          "text": "Bed 11, Gita Dummyworth, DOB 1967-02-11, age 59, female, Diabetic ketoacidosis, resolving, Full code, no isolation, no allergies"
+        }
+      ]
+    }
+  ],
+  "pt-12": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: moderate"
+        },
+        {
+          "source_path": "pending_labs[0]",
+          "text": "Pending lab: vancomycin trough 05:30"
+        },
+        {
+          "source_path": "pending_labs[1]",
+          "text": "Pending lab: POC glucose 04:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name, medications[0].dose, medications[0].route, medications[0].frequency, medications[0].next_due, medications[0].high_alert",
+          "text": "Medication: insulin lispro sliding scale SC due 04:00 HIGH-ALERT"
+        },
+        {
+          "source_path": "medications[1].name, medications[1].dose, medications[1].route, medications[1].frequency, medications[1].next_due, medications[1].high_alert",
+          "text": "Medication: heparin 5000 units SC due 03:30 HIGH-ALERT"
+        },
+        {
+          "source_path": "medications[2].name, medications[2].dose, medications[2].route, medications[2].frequency, medications[2].next_due",
+          "text": "Medication: vancomycin 1250 mg IV due 06:00"
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "Line: PIV 20G right forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight: 92.4 kg"
+        }
+      ],
+      "recommendation": [
+        {
+          "source_path": "medications[0].next_due, medications[0].high_alert",
+          "text": "Independent double-check before giving high-alert insulin lispro sliding scale SC due 04:00"
+        },
+        {
+          "source_path": "medications[1].next_due, medications[1].high_alert",
+          "text": "Independent double-check before giving high-alert heparin 5000 units SC due 03:30"
+        }
+      ],
+      "situation": [
+        {
+          "source_path": "bed",
+          "text": "Bed: Bed 12"
+        },
+        {
+          "source_path": "admitting_dx",
+          "text": "Diagnosis: Left lower leg cellulitis; type 2 diabetes"
+        },
+        {
+          "source_path": "code_status",
+          "text": "Code status: Full code"
+        },
+        {
+          "source_path": "allergies[0]",
+          "text": "Allergies: penicillin - hives, moderate"
+        }
+      ]
+    }
+  ],
+  "pt-14": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: low."
+        },
+        {
+          "source_path": "pending_labs[0]",
+          "text": "Pending lab: peak flow at 06:00."
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].next_due",
+          "text": "Methylprednisolone 40 mg IV q8h next due 06:00."
+        },
+        {
+          "source_path": "medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].next_due",
+          "text": "Albuterol 2.5 mg nebulized q4h next due 04:00."
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "Line: PIV 22G left hand."
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight: 63.1 kg."
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "bed,admitting_dx,code_status,isolation",
+          "text": "Patient in Bed 14, diagnosed with Asthma exacerbation, full code, no isolation precautions."
+        },
+        {
+          "source_path": "allergies[0].substance,allergies[0].reaction,allergies[0].severity",
+          "text": "Allergy: aspirin - severe bronchospasm."
+        }
+      ]
+    }
+  ],
+  "pt-16": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Moderate fall risk"
+        },
+        {
+          "source_path": "pending_labs",
+          "text": "Pending labs: ABG 04:00, CBC 05:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name, medications[0].dose, medications[0].route, medications[0].frequency, medications[0].next_due",
+          "text": "Prednisone 40 mg PO daily due 0900"
+        },
+        {
+          "source_path": "medications[1].name, medications[1].dose, medications[1].route, medications[1].frequency, medications[1].next_due",
+          "text": "Azithromycin 500 mg PO daily due 0900"
+        },
+        {
+          "source_path": "lines_drains[0]",
+          "text": "PIV saline lock right forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight 68.9 kg"
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "bed, name, sex, age, admitting_dx, code_status, isolation, allergies",
+          "text": "Bed 16, Jory Simms-Sim, 76M, COPD exacerbation, full code, no isolation, no allergies"
+        }
+      ]
+    }
+  ],
+  "pt-19": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: high"
+        },
+        {
+          "source_path": "pending_labs[0]",
+          "text": "Pending lab: magnesium 05:00"
+        },
+        {
+          "source_path": "pending_labs[1]",
+          "text": "Pending lab: CMP 05:00"
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name, medications[0].dose, medications[0].route, medications[0].frequency, medications[0].next_due",
+          "text": "Medication: lorazepam 1 mg IV q4h PRN per CIWA, next due 2026-10-24T04:15:00Z"
+        },
+        {
+          "source_path": "medications[1].name, medications[1].dose, medications[1].route, medications[1].frequency, medications[1].next_due",
+          "text": "Medication: thiamine 100 mg IV daily, next due 2026-10-24T09:00:00Z"
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Line: PIV 20G left forearm"
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight: 79.6 kg"
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "bed",
+          "text": "Bed: Bed 19"
+        },
+        {
+          "source_path": "admitting_dx",
+          "text": "Diagnosis: Alcohol withdrawal"
+        },
+        {
+          "source_path": "code_status",
+          "text": "Code status: Full code"
+        },
+        {
+          "source_path": "isolation",
+          "text": "Isolation: none"
+        },
+        {
+          "source_path": "allergies",
+          "text": "Allergies: none"
+        }
+      ]
+    }
+  ],
+  "pt-21": [
+    {
+      "assessment": [
+        {
+          "source_path": "fall_risk",
+          "text": "Fall risk: moderate."
+        },
+        {
+          "source_path": "pending_labs",
+          "text": "Pending labs: H&H 04:00 (critical), type and crossmatch 2 units."
+        }
+      ],
+      "background": [
+        {
+          "source_path": "medications[0].name,medications[0].dose,medications[0].route,medications[0].frequency,medications[0].last_given",
+          "text": "Pantoprazole infusion 8 mg/h IV continuous, last given 02:00Z."
+        },
+        {
+          "source_path": "medications[1].name,medications[1].dose,medications[1].route,medications[1].frequency,medications[1].last_given",
+          "text": "Octreotide infusion 50 mcg/h IV continuous, last given 02:00Z."
+        },
+        {
+          "source_path": "lines_drains",
+          "text": "Lines/drains: PIV 18G right antecubital, PIV 18G left antecubital."
+        },
+        {
+          "source_path": "weight_kg",
+          "text": "Weight: 74.0 kg."
+        }
+      ],
+      "recommendation": [],
+      "situation": [
+        {
+          "source_path": "bed,admitting_dx,code_status,isolation",
+          "text": "Patient in Bed 21, diagnosed with Upper GI bleed, full code, no isolation precautions."
+        },
+        {
+          "source_path": "allergies[0].substance,allergies[0].reaction,allergies[0].severity",
+          "text": "Allergy: iodinated contrast - hives (moderate severity)."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,427 @@
+{
+  "forms": [
+    {
+      "fixture": "vitals_flowsheet-01",
+      "model_ms": [
+        2790
+      ],
+      "set": "synthetic",
+      "usd": 0.005737,
+      "wall_ms": 2793
+    },
+    {
+      "fixture": "downtime_mar-01",
+      "model_ms": [
+        2331
+      ],
+      "set": "synthetic",
+      "usd": 0.004436,
+      "wall_ms": 2337
+    },
+    {
+      "fixture": "admission_note-01",
+      "model_ms": [
+        2028
+      ],
+      "set": "synthetic",
+      "usd": 0.00396,
+      "wall_ms": 2033
+    },
+    {
+      "fixture": "hw-admission_note-001",
+      "model_ms": [
+        1952
+      ],
+      "set": "photographed",
+      "usd": 0.003916,
+      "wall_ms": 1957
+    },
+    {
+      "fixture": "hw-admission_note-002",
+      "model_ms": [
+        1894
+      ],
+      "set": "photographed",
+      "usd": 0.003718,
+      "wall_ms": 1897
+    },
+    {
+      "fixture": "hw-admission_note-003",
+      "model_ms": [
+        1917
+      ],
+      "set": "photographed",
+      "usd": 0.003911,
+      "wall_ms": 1923
+    },
+    {
+      "fixture": "hw-admission_note-004",
+      "model_ms": [
+        1975
+      ],
+      "set": "photographed",
+      "usd": 0.003933,
+      "wall_ms": 1982
+    },
+    {
+      "fixture": "hw-admission_note-005",
+      "model_ms": [
+        1955
+      ],
+      "set": "photographed",
+      "usd": 0.003911,
+      "wall_ms": 1956
+    },
+    {
+      "fixture": "hw-admission_note-006",
+      "model_ms": [
+        1837
+      ],
+      "set": "photographed",
+      "usd": 0.003669,
+      "wall_ms": 1839
+    },
+    {
+      "fixture": "hw-admission_note-007",
+      "model_ms": [
+        1815
+      ],
+      "set": "photographed",
+      "usd": 0.003674,
+      "wall_ms": 1816
+    },
+    {
+      "fixture": "hw-admission_note-008",
+      "model_ms": [
+        1979
+      ],
+      "set": "photographed",
+      "usd": 0.003927,
+      "wall_ms": 1983
+    },
+    {
+      "fixture": "hw-admission_note-009",
+      "model_ms": [
+        1917
+      ],
+      "set": "photographed",
+      "usd": 0.003933,
+      "wall_ms": 1923
+    },
+    {
+      "fixture": "hw-admission_note-010",
+      "model_ms": [
+        1832
+      ],
+      "set": "photographed",
+      "usd": 0.00368,
+      "wall_ms": 1833
+    },
+    {
+      "fixture": "hw-admission_note-011",
+      "model_ms": [
+        1936
+      ],
+      "set": "photographed",
+      "usd": 0.003707,
+      "wall_ms": 1937
+    },
+    {
+      "fixture": "hw-admission_note-012",
+      "model_ms": [
+        1703
+      ],
+      "set": "photographed",
+      "usd": 0.003416,
+      "wall_ms": 1708
+    },
+    {
+      "fixture": "hw-downtime_mar-001",
+      "model_ms": [
+        2356
+      ],
+      "set": "photographed",
+      "usd": 0.004667,
+      "wall_ms": 2358
+    },
+    {
+      "fixture": "hw-downtime_mar-002",
+      "model_ms": [
+        2338
+      ],
+      "set": "photographed",
+      "usd": 0.004414,
+      "wall_ms": 2343
+    },
+    {
+      "fixture": "hw-downtime_mar-003",
+      "model_ms": [
+        2340
+      ],
+      "set": "photographed",
+      "usd": 0.004673,
+      "wall_ms": 2343
+    },
+    {
+      "fixture": "hw-downtime_mar-004",
+      "model_ms": [
+        2468
+      ],
+      "set": "photographed",
+      "usd": 0.004678,
+      "wall_ms": 2470
+    },
+    {
+      "fixture": "hw-downtime_mar-005",
+      "model_ms": [
+        2295
+      ],
+      "set": "photographed",
+      "usd": 0.004673,
+      "wall_ms": 2297
+    },
+    {
+      "fixture": "hw-downtime_mar-006",
+      "model_ms": [
+        2327
+      ],
+      "set": "photographed",
+      "usd": 0.004442,
+      "wall_ms": 2329
+    },
+    {
+      "fixture": "hw-downtime_mar-007",
+      "model_ms": [
+        2292
+      ],
+      "set": "photographed",
+      "usd": 0.004436,
+      "wall_ms": 2297
+    },
+    {
+      "fixture": "hw-downtime_mar-008",
+      "model_ms": [
+        2388
+      ],
+      "set": "photographed",
+      "usd": 0.004673,
+      "wall_ms": 2390
+    },
+    {
+      "fixture": "hw-downtime_mar-009",
+      "model_ms": [
+        2272
+      ],
+      "set": "photographed",
+      "usd": 0.004673,
+      "wall_ms": 2274
+    },
+    {
+      "fixture": "hw-downtime_mar-010",
+      "model_ms": [
+        2394
+      ],
+      "set": "photographed",
+      "usd": 0.004453,
+      "wall_ms": 2398
+    },
+    {
+      "fixture": "hw-downtime_mar-011",
+      "model_ms": [
+        2235
+      ],
+      "set": "photographed",
+      "usd": 0.004425,
+      "wall_ms": 2238
+    },
+    {
+      "fixture": "hw-downtime_mar-012",
+      "model_ms": [
+        2404
+      ],
+      "set": "photographed",
+      "usd": 0.0042,
+      "wall_ms": 2409
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-001",
+      "model_ms": [
+        2759
+      ],
+      "set": "photographed",
+      "usd": 0.005962,
+      "wall_ms": 2764
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-002",
+      "model_ms": [
+        3007
+      ],
+      "set": "photographed",
+      "usd": 0.006017,
+      "wall_ms": 3009
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-003",
+      "model_ms": [
+        2848
+      ],
+      "set": "photographed",
+      "usd": 0.005962,
+      "wall_ms": 2854
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-004",
+      "model_ms": [
+        2521
+      ],
+      "set": "photographed",
+      "usd": 0.005357,
+      "wall_ms": 2523
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-005",
+      "model_ms": [
+        2868
+      ],
+      "set": "photographed",
+      "usd": 0.005962,
+      "wall_ms": 2872
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-006",
+      "model_ms": [
+        2759
+      ],
+      "set": "photographed",
+      "usd": 0.005725,
+      "wall_ms": 2764
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-007",
+      "model_ms": [
+        2760
+      ],
+      "set": "photographed",
+      "usd": 0.005731,
+      "wall_ms": 2765
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-008",
+      "model_ms": [
+        2767
+      ],
+      "set": "photographed",
+      "usd": 0.005956,
+      "wall_ms": 2772
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-009",
+      "model_ms": [
+        2903
+      ],
+      "set": "photographed",
+      "usd": 0.005962,
+      "wall_ms": 2905
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-010",
+      "model_ms": [
+        2914
+      ],
+      "set": "photographed",
+      "usd": 0.005962,
+      "wall_ms": 2919
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-011",
+      "model_ms": [
+        2497
+      ],
+      "set": "photographed",
+      "usd": 0.005363,
+      "wall_ms": 2500
+    },
+    {
+      "fixture": "hw-vitals_flowsheet-012",
+      "model_ms": [
+        2671
+      ],
+      "set": "photographed",
+      "usd": 0.005725,
+      "wall_ms": 2677
+    }
+  ],
+  "packets": [
+    {
+      "patient_id": "pt-02",
+      "wall_ms": 2726
+    },
+    {
+      "patient_id": "pt-03",
+      "wall_ms": 3465
+    },
+    {
+      "patient_id": "pt-05",
+      "wall_ms": 3141
+    },
+    {
+      "patient_id": "pt-07",
+      "wall_ms": 3305
+    },
+    {
+      "patient_id": "pt-08",
+      "wall_ms": 2846
+    },
+    {
+      "patient_id": "pt-09",
+      "wall_ms": 2769
+    },
+    {
+      "patient_id": "pt-11",
+      "wall_ms": 2989
+    },
+    {
+      "patient_id": "pt-12",
+      "wall_ms": 3411
+    },
+    {
+      "patient_id": "pt-14",
+      "wall_ms": 3443
+    },
+    {
+      "patient_id": "pt-16",
+      "wall_ms": 2472
+    },
+    {
+      "patient_id": "pt-19",
+      "wall_ms": 2412
+    },
+    {
+      "patient_id": "pt-21",
+      "wall_ms": 2532
+    }
+  ],
+  "policy": [
+    {
+      "question": 1,
+      "wall_ms": 2796
+    },
+    {
+      "question": 2,
+      "wall_ms": 1658
+    },
+    {
+      "question": 3,
+      "wall_ms": 2334
+    },
+    {
+      "question": 4,
+      "wall_ms": 1756
+    },
+    {
+      "question": 5,
+      "wall_ms": 2073
+    }
+  ]
+}
