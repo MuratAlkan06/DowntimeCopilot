@@ -3,7 +3,7 @@ import { api, isOffline, policyReplayKey } from './api.js';
 import { h, mount, stateBox, chip, usd } from './dom.js';
 import { store, on } from './state.js';
 import { renderRecord } from './records.js';
-import { idbStore, drain, counts, retryDead, migrateLegacy, newId, MAX_ATTEMPTS, SYNC_TAG } from './queue.js';
+import { idbStore, drain, isDead, retryDead, migrateLegacy, newId, MAX_ATTEMPTS, SYNC_TAG } from './queue.js';
 import { createRecorder, typedOverridesAudio } from './recorder.js';
 
 const $ = (id) => document.getElementById(id);
@@ -132,14 +132,38 @@ const sendQueued = (item) => api('/capture', {
   form: buildForm(item, item.blob ? new File([item.blob], item.name || 'capture.jpg', { type: item.blob.type }) : null),
 });
 
-async function queueCounts() {
-  try { return await counts(queue); } catch { return { active: 0, dead: 0 }; }
+// Live and dead items, the live ids, and whether the server has refused a live item: a first submit queued on a
+// 5xx/408/429 (server_status) or an answered failure on a drain (attempts). `ids` is null when the store is
+// unreadable, so nothing is concluded about an item from a failed read.
+async function queueState() {
+  try {
+    const items = await queue.list();
+    const live = items.filter((it) => !isDead(it));
+    return { active: live.length, dead: items.length - live.length, ids: new Set(live.map((it) => it.id)),
+      refused: live.some((it) => Number(it.attempts) > 0 || it.server_status) };
+  } catch { return { active: 0, dead: 0, ids: null, refused: false }; }
 }
 
 const captures = (n) => `${n} capture${n === 1 ? '' : 's'}`;
 
+// Why live items are still waiting (#59): no connection, the server refusing them, or no drain has reached them
+// yet. "Will upload when connected" is said only when the connection is the problem.
+function waitingBox(n, refused) {
+  const [kind, why] = isOffline() ? ['offline', 'will upload when connected.']
+    : refused ? ['warn', 'the server is not accepting uploads right now; retrying automatically.']
+      : ['queued', 'waiting to upload.'];
+  return stateBox(kind, `${captures(n)} queued on this device — ${why}`, { label: 'Upload now', onClick: flushQueue });
+}
+
+// The submit notice of the capture last queued here ({ id, el } in #capture-result). It promises a retry, so it is
+// withdrawn once its item leaves the live queue without a record on this page: dead-lettered (the failed box
+// says so instead) or uploaded by another tab. When this tab uploads it, onSent replaces it with the record.
+let queuedNote = null;
+
 async function renderPending() {
-  const { active: n, dead } = await queueCounts();
+  const note = queuedNote; // read before the store: an item queued after this read is not in the list below
+  const { active: n, dead, ids, refused } = await queueState();
+  if (note && note === queuedNote && ids && !ids.has(note.id)) { note.el.hidden = true; queuedNote = null; }
   const badge = $('queue-count'); // header, next to "Simulate offline"; counts down as the queue drains
   badge.hidden = !n;
   badge.textContent = `${n} queued`;
@@ -151,10 +175,7 @@ async function renderPending() {
   const deadBox = dead ? stateBox('error', `${captures(dead)} could not upload after ${MAX_ATTEMPTS} tries and stopped `
     + 'retrying. Kept on this device; keep the paper original.', { label: 'Retry failed', onClick: retryFailed }) : null;
   deadBox?.removeAttribute('role'); // #capture-pending is the live region; role=alert here would re-announce on every redraw
-  mount($('capture-pending'), n
-    ? stateBox('offline', `${n} capture${n > 1 ? 's' : ''} queued on this device — will upload when connected.`,
-      { label: 'Upload now', onClick: flushQueue })
-    : null, deadBox);
+  mount($('capture-pending'), n ? waitingBox(n, refused) : null, deadBox);
 }
 
 async function retryFailed() {
@@ -221,7 +242,9 @@ async function submitCapture(e) {
   if (r.offline || serverError) {
     let queued = false;
     try {
-      await queue.put({ ...meta, blob: file, name: file?.name, queued_at: new Date().toISOString() });
+      // server_status only tells renderPending the server refused this item; it never counts toward MAX_ATTEMPTS.
+      await queue.put({ ...meta, blob: file, name: file?.name, queued_at: new Date().toISOString(),
+        ...(serverError ? { server_status: r.status } : {}) });
       queued = true;
       requestBackgroundSync();
       // Stored safely: clear the form so the same paper is not queued twice under a new id.
@@ -231,11 +254,13 @@ async function submitCapture(e) {
       syncFormType();
     } catch { queued = false; }
     const why = serverError ? `Server error (${r.status})` : 'Offline';
-    mount(out, stateBox(serverError ? 'warn' : 'offline', queued
+    const note = stateBox(serverError ? 'warn' : 'offline', queued
       ? (serverError
         ? `${why} — form saved on this device and will be retried automatically. Keep the paper original.`
         : `${why} — form saved on this device and queued for reading when connected. Keep the paper original.`)
-      : `${why} and this device could not store the form. Keep the paper original for backload.`), prev);
+      : `${why} and this device could not store the form. Keep the paper original for backload.`);
+    queuedNote = queued ? { id: meta.id, el: note } : null;
+    mount(out, note, prev);
     renderPending();
     return;
   }

@@ -294,3 +294,67 @@ console.log(JSON.stringify({ dead, label, sentWhileDead, after: view(), posts })
     assert got["after"]["failed"] is None and got["after"]["queued"] is None
     ids = {c for c, _ in got["posts"]}
     assert len(ids) == 1 and got["posts"][-1][1] == 201  # the same id all the way through
+
+
+# What a sighted user sees: skips nodes the page hid (the fake DOM keeps them in the tree, as the real one does).
+VISIBLE = "const visible = (el) => (el.hidden ? '' : el.t ?? (el.kids || []).map(visible).join(''));\n"
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+@pytest.mark.parametrize("first", [500, "'throw'"])
+def test_dead_letter_withdraws_the_submit_notice(tmp_path, first):
+    """#59 M1: the submit notice promises a retry ("will be retried automatically" after a server error, "queued for
+    reading when connected" offline). It stays while its item is live and is withdrawn once the item dead-letters;
+    the failed box says what happened instead."""
+    got = run_during(tmp_path, VISIBLE + f"""
+await submit({first});
+A.setSimulatedOffline(false);  // back online (a thrown fetch left the page offline)
+const queued = visible($('capture-result'));
+answer = 422;
+for (let i = 0; i < 3; i++) await D.flushQueue();
+const live = visible($('capture-result'));
+for (let i = 3; i < 8; i++) await D.flushQueue();
+console.log(JSON.stringify({{ queued, live, dead: {{ ...view(), result: visible($('capture-result')),
+  pending: visible($('capture-pending')) }} }}));
+""")
+    promise = "will be retried automatically" if first == 500 else "queued for reading when connected"
+    assert promise in got["queued"] and promise in got["live"]  # still true while the item is live
+    dead = got["dead"]
+    assert dead["failed"] == "1 failed" and dead["queued"] is None
+    assert promise not in dead["result"] and "form saved on this device" not in dead["result"]
+    assert "Read fields appear here" in dead["result"]  # what was there before the submit stays
+    assert "could not upload after 8 tries" in dead["pending"]
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_queued_notice_names_the_cause(tmp_path):
+    """#59 M1: the queued box says "will upload when connected" only when the connection is the problem. A server
+    that refuses the upload (a 5xx/408/429 first submit, or an answered failure on a drain) gets its own copy."""
+    got = run_during(tmp_path, VISIBLE + """
+const pending = () => visible($('capture-pending'));
+const kind = () => $('capture-pending').kids[0]?.className;
+const seen = {};
+await submit('throw');  // network down: queued offline
+seen.offline = [pending(), kind()];
+A.setSimulatedOffline(false);
+answer = 503;
+await D.flushQueue();  // online again, and the server answers 503
+seen.refusedOnDrain = [pending(), kind()];
+A.setSimulatedOffline(true);
+await D.flushQueue();  // the connection drops: that is the problem again
+seen.offlineAgain = [pending(), kind()];
+A.setSimulatedOffline(false);
+answer = 201;
+await D.flushQueue();
+seen.drained = pending();
+await submit(429);  // a refused first submit, before any drain
+seen.refusedOnSubmit = [pending(), kind()];
+console.log(JSON.stringify(seen));
+""")
+    offline = "1 capture queued on this device — will upload when connected."
+    refused = "1 capture queued on this device — the server is not accepting uploads right now; retrying automatically."
+    assert got["offline"][0].startswith(offline) and "state-offline" in got["offline"][1]
+    assert got["refusedOnDrain"][0].startswith(refused) and "state-warn" in got["refusedOnDrain"][1]
+    assert got["offlineAgain"][0].startswith(offline)
+    assert got["drained"] == ""
+    assert got["refusedOnSubmit"][0].startswith(refused) and "when connected" not in got["refusedOnSubmit"][0]
