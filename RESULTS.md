@@ -85,7 +85,8 @@ Notes (evals/NOTES.md, `grounding`):
 
 Five questions, all from the DEMO.md table. Citations are paragraph-level (for example 4.2.1 under 4.2), and the
 correctness check accepts a citation at or under the expected section. The safe-refusal beat (dosing question) is
-not part of the manifest, so the guardrail's intervention path is not measured here.
+not among them. The guardrail's intervention path is measured by the pre-registered refusal set of section 9, in
+a bundle that has one.
 
 ## 3. Form extraction (synthetic fixtures)
 
