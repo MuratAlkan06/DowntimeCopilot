@@ -1,0 +1,51 @@
+{
+  "calls": [
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 9000,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 4000,
+      "tokens_out": 900,
+      "ts": "2026-10-24T03:00:01+00:00",
+      "usd": 0.0255
+    },
+    {
+      "dry_run": false,
+      "job": "packet",
+      "latency_ms": 11000,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 4200,
+      "tokens_out": 950,
+      "ts": "2026-10-24T03:00:12+00:00",
+      "usd": 0.026775
+    },
+    {
+      "dry_run": false,
+      "job": "policy",
+      "latency_ms": 6000,
+      "model_id": "us.anthropic.claude-sonnet-4-6",
+      "tokens_in": 6000,
+      "tokens_out": 300,
+      "ts": "2026-10-24T03:00:20+00:00",
+      "usd": 0.0225
+    },
+    {
+      "dry_run": false,
+      "job": "form_read",
+      "latency_ms": 3000,
+      "model_id": "us.amazon.nova-2-lite-v1:0",
+      "tokens_in": 2000,
+      "tokens_out": 400,
+      "ts": "2026-10-24T03:00:25+00:00",
+      "usd": 0.0016
+    }
+  ],
+  "dry_run": false,
+  "models": {},
+  "outage_hours": 0.75,
+  "tokens_in": 16200,
+  "tokens_out": 2550,
+  "total_usd": 0.076375,
+  "usd_per_outage_hour": 0.101833
+}

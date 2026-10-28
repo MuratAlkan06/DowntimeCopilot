@@ -1,0 +1,253 @@
+[
+  {
+    "fixture": "sd19-vitals_flowsheet-01",
+    "record": {
+      "audio_ref": null,
+      "backload_group": "nursing_vitals",
+      "captured_at": "2026-10-24T03:01:00Z",
+      "captured_by_role": "charge_nurse",
+      "entered_at": null,
+      "fields": [
+        {
+          "agreement": "agree",
+          "confidence": 0.97,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "4"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.93,
+          "crop": null,
+          "flag": null,
+          "name": "time",
+          "value": "01:40"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "temp_c",
+          "value": "36.9"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.64,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "heart_rate",
+          "value": "88"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.92,
+          "crop": null,
+          "flag": null,
+          "name": "resp_rate",
+          "value": "18"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "bp_systolic",
+          "value": "122"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.88,
+          "crop": null,
+          "flag": null,
+          "name": "bp_diastolic",
+          "value": "71"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "spo2",
+          "value": "97"
+        },
+        {
+          "agreement": "agree",
+          "confidence": 0.86,
+          "crop": null,
+          "flag": null,
+          "name": "pain_score",
+          "value": "3"
+        },
+        {
+          "agreement": "disagree",
+          "confidence": 0.7,
+          "crop": null,
+          "flag": "disagreement",
+          "name": "initials",
+          "value": "KN"
+        }
+      ],
+      "form_type": "vitals_flowsheet",
+      "image_ref": "blob:5d0f3a9be2c14e7fa1b6c8d2e4f7a9b3",
+      "patient_id": "pt-04",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.97,
+            "bp_diastolic": 0.88,
+            "bp_systolic": 0.9,
+            "heart_rate": 0.64,
+            "initials": 0.9,
+            "pain_score": 0.86,
+            "resp_rate": 0.92,
+            "spo2": 0.95,
+            "temp_c": 0.9,
+            "time": 0.93
+          },
+          "fields": {
+            "bed": "4",
+            "bp_diastolic": "71",
+            "bp_systolic": "122",
+            "heart_rate": "86",
+            "initials": "KN",
+            "pain_score": "3",
+            "resp_rate": "18",
+            "spo2": "97",
+            "temp_c": "36.9",
+            "time": "01:40"
+          }
+        },
+        "textract": {
+          "confidence": {
+            "bed": 0.97,
+            "bp_diastolic": 0.88,
+            "bp_systolic": 0.9,
+            "heart_rate": 0.81,
+            "initials": 0.7,
+            "pain_score": 0.86,
+            "resp_rate": 0.92,
+            "spo2": 0.95,
+            "temp_c": 0.9,
+            "time": 0.93
+          },
+          "fields": {
+            "bed": "4",
+            "bp_diastolic": "71",
+            "bp_systolic": "122",
+            "heart_rate": "88",
+            "initials": "KM",
+            "pain_score": "3",
+            "resp_rate": "18",
+            "spo2": "97",
+            "temp_c": "36.9",
+            "time": "01:40"
+          }
+        }
+      },
+      "record_id": "rec-b7e2f41c9a0d",
+      "status": "needs_review",
+      "verified_at": null,
+      "verified_by": null
+    }
+  },
+  {
+    "fixture": "sd19-downtime_mar-01",
+    "record": {
+      "audio_ref": null,
+      "backload_group": "nursing_med_admin",
+      "captured_at": "2026-10-24T03:02:00Z",
+      "captured_by_role": "charge_nurse",
+      "entered_at": null,
+      "fields": [
+        {
+          "agreement": "single",
+          "confidence": 0.93,
+          "crop": null,
+          "flag": null,
+          "name": "bed",
+          "value": "9"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "medication",
+          "value": "insulin"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.88,
+          "crop": null,
+          "flag": null,
+          "name": "dose",
+          "value": "4 units"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.95,
+          "crop": null,
+          "flag": null,
+          "name": "route",
+          "value": "SC"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.83,
+          "crop": null,
+          "flag": null,
+          "name": "time_given",
+          "value": "01:16"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.9,
+          "crop": null,
+          "flag": null,
+          "name": "initials",
+          "value": "RT"
+        },
+        {
+          "agreement": "single",
+          "confidence": 0.0,
+          "crop": null,
+          "flag": "unreadable",
+          "name": "second_verifier",
+          "value": null
+        }
+      ],
+      "form_type": "downtime_mar",
+      "image_ref": "blob:c3e8a1f04b7d4e2a9f6b1d8c5e0a7f2b",
+      "patient_id": "pt-09",
+      "reads": {
+        "bedrock": {
+          "confidence": {
+            "bed": 0.93,
+            "dose": 0.88,
+            "initials": 0.9,
+            "medication": 0.9,
+            "route": 0.95,
+            "second_verifier": 0.0,
+            "time_given": 0.83
+          },
+          "fields": {
+            "bed": "9",
+            "dose": "4 units",
+            "initials": "RT",
+            "medication": "insulin",
+            "route": "SC",
+            "second_verifier": null,
+            "time_given": "01:16"
+          }
+        },
+        "textract": null
+      },
+      "record_id": "rec-e4a9c2d7f1b6",
+      "status": "needs_review",
+      "verified_at": null,
+      "verified_by": null
+    }
+  }
+]
