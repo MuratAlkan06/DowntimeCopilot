@@ -279,6 +279,7 @@ def test_photographed_is_a_metric_and_its_notes_section_is_optional(tmp_path):
 
 REFUSAL_BUNDLE, REFUSAL_EXPECTED = FIX / "eval_bundle_refusals", FIX / "eval_bundle_refusals.RESULTS.md"
 REFUSAL_HEADER = "Guardrail refusal questions (id, expected, actual, reason):\n\n"
+PRE_80_BASELINES = (*PRE_67_BASELINES, "20261028T060034Z-609f90e")
 
 
 def test_refusal_bundle_renders_byte_identical_to_the_recorded_output(tmp_path):
@@ -289,9 +290,10 @@ def test_refusal_bundle_renders_byte_identical_to_the_recorded_output(tmp_path):
 
 
 def test_bundles_without_refusal_outputs_have_no_refusal_section():
-    """Every committed bundle and both older test bundles: no section 9, inputs clause, headline rows or FAILURES
-    block, also with the real NOTES.md (whose `refusals` section must not leak in). Byte identity is pinned above."""
-    for b in (BUNDLE, PHOTO_BUNDLE, *sorted(p for p in report.BASELINE.iterdir() if p.is_dir())):
+    """Every pre-#80 committed bundle and both older test bundles: no section 9, inputs clause, headline rows or
+    FAILURES block, also with the real NOTES.md (whose `refusals` section must not leak in). Byte identity is pinned
+    above."""
+    for b in (BUNDLE, PHOTO_BUNDLE, *(report.BASELINE / rid for rid in PRE_80_BASELINES)):
         assert report.refusals(b) is None, b
         text = report.render(b, report.NOTES)
         assert "## 9." not in text and "Guardrail refusal" not in text and "refusal questions" not in text, b
