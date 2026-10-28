@@ -4,9 +4,12 @@ scored separately against ground truth."""
 from __future__ import annotations
 
 import hashlib
+import io
 import json
+import random
 import re
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -16,6 +19,7 @@ from contracts import ReaderOutput
 from evals import report, run
 
 ROOT = Path(__file__).resolve().parent.parent
+COMMITTED_PHOTOS = ROOT / "evals" / "fixtures"  # run.PHOTO_FIXTURES before any monkeypatch: committed truth only
 
 
 def test_empty_fixtures_exit_nonzero(tmp_path, monkeypatch, capsys):
@@ -34,7 +38,8 @@ def test_dry_run_refuses_even_with_fixtures(tmp_path, monkeypatch, capsys):
     assert "DRY_RUN=1" in capsys.readouterr().err
 
 
-def test_textract_off_and_unset_store_refuse(monkeypatch):
+def test_textract_off_and_unset_store_refuse(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", _stub_pairs(tmp_path / "photos"))  # the declared set, stub images
     monkeypatch.setenv("DRY_RUN", "0")
     monkeypatch.setenv("TEXTRACT_ENABLED", "0")
     with pytest.raises(run.Refused, match="TEXTRACT_ENABLED"):
@@ -43,6 +48,14 @@ def test_textract_off_and_unset_store_refuse(monkeypatch):
     monkeypatch.delenv("STORE_PATH", raising=False)
     with pytest.raises(run.Refused, match="STORE_PATH"):
         run.preflight(run.FIXTURES)
+
+
+def test_preflight_passes_the_real_manifest_when_every_declared_image_is_bound_to_its_truth(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", _stub_pairs(tmp_path / "photos"))
+    monkeypatch.setenv("DRY_RUN", "0")
+    monkeypatch.setenv("TEXTRACT_ENABLED", "1")
+    monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
+    assert run.preflight(run.FIXTURES) == json.loads(run.MANIFEST.read_text())
 
 
 # ------------------------------------------------------------------ manifest fixes the inputs
@@ -64,7 +77,8 @@ def test_manifest_fixes_inputs():
     assert m["speech_fixture"] == {"stem": "verbal_order-01", "patient_id": "pt-07"}
     assert m["clock_advance_minutes"] == {"before_downtime": 15, "before_costs": 45}
     b = m["budget"]
-    assert b["limit_usd"] == 2.0 and sum(b["step_estimates_usd"].values()) < b["limit_usd"]
+    assert b["limit_usd"] == 4.0 and sum(b["step_estimates_usd"].values()) < b["limit_usd"]
+    assert b["step_estimates_usd"]["photographed_forms"] == 2.70
 
 
 def test_manifest_with_missing_fixture_refuses(tmp_path):
@@ -98,6 +112,17 @@ def test_budget_guard_passes_within_budget():
     guard = run.BudgetGuard(2.0, {"a": 0.5, "b": 0.5})
     run.execute([("a", lambda: None), ("b", lambda: None)], guard, lambda: 0.3)
     assert guard.max_projected == pytest.approx(1.3)
+
+
+def test_budget_projection_with_the_photographed_estimate_stays_under_the_limit():
+    b = run.load_manifest()["budget"]
+    est = b["step_estimates_usd"]
+    projected = run.BudgetGuard(b["limit_usd"], est).check(0.0)  # before the first step: nothing spent, all ahead
+    assert projected == pytest.approx(3.58) and projected <= b["limit_usd"] == 4.0
+    spend, guard = {"usd": 0.0}, run.BudgetGuard(b["limit_usd"], est)
+    run.execute([(name, lambda usd=usd: spend.update(usd=spend["usd"] + usd)) for name, usd in est.items()],
+                guard, lambda: spend["usd"])  # every step costs exactly its estimate: the projection stays flat
+    assert guard.max_projected == pytest.approx(projected) and guard.remaining == {}
 
 
 def test_budget_overrun_exits_nonzero_without_writing(tmp_path, monkeypatch, capsys):
@@ -140,26 +165,17 @@ def test_scrub_removes_guard_patterns():
 # ------------------------------------------------------------------ the whole flow (DRY_RUN, preflight bypassed)
 
 def test_flow_writes_a_scrubbed_bundle(tmp_path, monkeypatch):
-    """Harness wiring only: canned mocks, in-process simulator. The live refusals are tested above."""
-    from app import clock, sim_client
-    from app.store import reset_store
-    from simulator import main as sim
-
-    monkeypatch.setenv("DRY_RUN", "1")
-    monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
-    monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
-    monkeypatch.setattr(run, "preflight", lambda fixtures: run.load_manifest(fixtures=fixtures))
-    monkeypatch.setattr(run, "LIVE_TRANSCRIBE", frozenset({"mock"}))
-    monkeypatch.setattr(run, "check_costs", lambda costs: None)
-    clock.reset()
-    reset_store()
-    try:
-        bundle = run.live_run(run.FIXTURES, tmp_path / "runs")
-    finally:
-        clock.reset()
-        reset_store()
+    """Harness wiring only: canned mocks, in-process simulator, the real manifest with stub images for its declared
+    photographed set (the real ones are git-ignored). The live refusals are tested above."""
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", _stub_pairs(tmp_path / "photos"))
+    bundle, steps = _flow(tmp_path, monkeypatch, run.MANIFEST)
     meta = json.loads((bundle / "run.json").read_text())
     assert meta["manifest"] == json.loads(run.MANIFEST.read_text())
+    # every step has an estimate and every estimate a step: an estimate whose step never runs is never dropped
+    assert sorted(steps) == sorted(meta["manifest"]["budget"]["step_estimates_usd"])
+    declared = meta["manifest"]["photographed_fixtures"]
+    assert [c["fixture"] for c in json.loads((bundle / "outputs" / "photographed.json").read_text())] == declared
+    assert sorted(meta["photographed_truth"]) == sorted(declared) and meta["photographed_fixtures"] == len(declared)
     assert len(json.loads((bundle / "outputs" / "packets.json").read_text())) == 12
     assert len(json.loads((bundle / "outputs" / "packet_passes.json").read_text())) == 12
     assert len(json.loads((bundle / "outputs" / "policy.json").read_text())) == 5
@@ -169,7 +185,7 @@ def test_flow_writes_a_scrubbed_bundle(tmp_path, monkeypatch):
     costs = json.loads((bundle / "costs.json").read_text())
     assert costs["outage_hours"] == pytest.approx(0.75) and costs["usd_per_outage_hour"] == 0.0  # $0 in mock
     assert {"service": "Textract", "probe": "ALLOWED"} in meta["services"]
-    assert meta["unmetered"]["textract_analyze_document"] == 3
+    assert meta["unmetered"]["textract_analyze_document"] == 3 + len(declared)  # synthetic forms + photographed
     for f in bundle.rglob("*.json"):
         assert not run.guard_hits(f.read_text()), f
     assert len(run.digest(bundle)) == 64
@@ -233,8 +249,54 @@ def _photo_pair(photos: Path, stem: str, *, with_image: bool = True, with_truth:
         (photos / f"{stem}.json").write_text(json.dumps(doc))
 
 
-def test_manifest_declares_no_photographed_fixtures_before_the_live_run():
-    assert run.load_manifest()["photographed_fixtures"] == []
+def _stub_image(stem: str) -> bytes:
+    """A tiny decodable JPEG whose pixels are seeded by the stem: generated per test, never committed."""
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.frombytes("RGB", (8, 8), random.Random(f"stub:{stem}").randbytes(8 * 8 * 3)).save(buf, "JPEG")
+    return buf.getvalue()
+
+
+def _stub_pairs(photos: Path) -> Path:
+    """The real manifest's declared photographed set as pairs the pre-spend check accepts: each stem's committed truth
+    JSON beside a stub image, image_sha256 recomputed over the stub (the real images are git-ignored, absent in CI)."""
+    photos.mkdir(exist_ok=True)
+    for s in json.loads(run.MANIFEST.read_text())["photographed_fixtures"]:
+        img = _stub_image(s)
+        (photos / f"{s}.jpg").write_bytes(img)
+        truth = json.loads((COMMITTED_PHOTOS / f"{s}.json").read_text())
+        (photos / f"{s}.json").write_text(json.dumps(truth | {"image_sha256": hashlib.sha256(img).hexdigest()}))
+    return photos
+
+
+def _checked(manifest: Path, photos: Path, fixtures: Path = run.FIXTURES) -> dict:
+    """Both photographed halves in preflight's order: static (load_manifest), then pre-spend (images)."""
+    m = run.load_manifest(manifest, fixtures=fixtures, photos=photos)
+    run.check_photographed_images(m["photographed_fixtures"], photos)
+    return m
+
+
+def test_manifest_declares_exactly_the_committed_photographed_truth():
+    declared = run.load_manifest()["photographed_fixtures"]
+    assert declared == sorted(p.stem for p in COMMITTED_PHOTOS.glob("hw-*.json")) and len(declared) == 36
+    kinds = Counter(json.loads((COMMITTED_PHOTOS / f"{s}.json").read_text())["form_type"] for s in declared)
+    assert kinds == {"admission_note": 12, "downtime_mar": 12, "vitals_flowsheet": 12}
+
+
+def test_real_manifest_loads_with_no_photographed_image_present(tmp_path):
+    """The CI reality: the committed truth JSONs and no image (the images are git-ignored). load_manifest is the
+    static half only, so the real manifest loads; the images are preflight's (check_photographed_images)."""
+    truth_only = tmp_path / "photos"
+    truth_only.mkdir()
+    for p in COMMITTED_PHOTOS.glob("*.json"):
+        shutil.copy(p, truth_only / p.name)
+    on_disk = list(truth_only.iterdir())
+    assert on_disk and not [p for p in on_disk if p.suffix.lower() in run.IMAGE_EXT]
+    m = run.load_manifest(photos=truth_only)
+    assert m == json.loads(run.MANIFEST.read_text()) and len(m["photographed_fixtures"]) == 36
+    with pytest.raises(run.Refused, match="missing.*hw-admission_note-001"):
+        run.check_photographed_images(m["photographed_fixtures"], truth_only)
 
 
 def test_declared_photographed_pairs_pass(tmp_path):
@@ -242,22 +304,22 @@ def test_declared_photographed_pairs_pass(tmp_path):
     _photo_pair(photos, "sd19-a")
     _photo_pair(photos, "sd19-b", image_sha256=None, schema=None, seed=None, writer=None, distortion=None,
                 tags=None, source=None, image=None)  # form_type + fields only: metadata may be absent
-    m = run.load_manifest(_photo_manifest(tmp_path, ["sd19-a", "sd19-b"]), photos=photos)
-    assert m["photographed_fixtures"] == ["sd19-a", "sd19-b"]
-    assert run.load_manifest(_photo_manifest(tmp_path, []), photos=tmp_path / "none")["photographed_fixtures"] == []
+    assert _checked(_photo_manifest(tmp_path, ["sd19-a", "sd19-b"]), photos)["photographed_fixtures"] == [
+        "sd19-a", "sd19-b"]
+    assert _checked(_photo_manifest(tmp_path, []), tmp_path / "none")["photographed_fixtures"] == []
 
 
 @pytest.mark.parametrize("pairs, declared, match", [
-    ({"sd19-a": {"with_image": False}}, ["sd19-a"], "missing.*sd19-a"),
-    ({"sd19-a": {"with_truth": False}}, ["sd19-a"], "missing.*sd19-a"),
-    ({"sd19-a": {}, "sd19-b": {}}, ["sd19-a"], "not declared.*sd19-b"),
-    ({"sd19-a": {}}, [], "not declared.*sd19-a"),
-    ({"sd19-a": {"image_sha256": "0" * 64}}, ["sd19-a"], "sd19-a: image sha256 does not match"),
-    ({"sd19-a": {"schema": 2}}, ["sd19-a"], "schema 2"),
-    ({"sd19-a": {"fields": None}}, ["sd19-a"], "needs form_type"),
-    ({"sd19-a": {}}, ["sd19-a", "sd19-a"], "distinct"),
-], ids=["no-image", "no-truth", "stray", "stray-with-empty-list", "sha-mismatch", "schema", "no-fields", "repeat"])
-def test_photographed_pairs_not_matching_the_manifest_refuse(tmp_path, pairs, declared, match):
+    ({"sd19-a": {"with_truth": False}}, ["sd19-a"], "truth missing.*sd19-a"),
+    ({"sd19-a": {"with_image": False, "schema": 2}}, ["sd19-a"], "schema 2"),
+    ({"sd19-a": {"with_image": False, "fields": None}}, ["sd19-a"], "needs form_type"),
+    ({"sd19-a": {"with_image": False, "form_type": None}}, ["sd19-a"], "needs form_type"),
+    ({"sd19-a": {"with_image": False}}, ["sd19-a", "sd19-a"], "distinct"),
+    ({"hw-vitals_flowsheet-001": {"with_image": False}, "hw-vitals_flowsheet-999": {"with_image": False}},
+     ["hw-vitals_flowsheet-001"], "truth in .* not declared.*hw-vitals_flowsheet-999"),
+], ids=["no-truth", "schema", "no-fields", "no-form-type", "repeat", "stray-hw-truth"])
+def test_photographed_truth_not_matching_the_manifest_refuses_in_load_manifest(tmp_path, pairs, declared, match):
+    """Static half: refused from the committed truth alone, no image needed (most cases have none on disk)."""
     photos = tmp_path / "photos"
     for stem, kw in pairs.items():
         _photo_pair(photos, stem, **kw)
@@ -265,17 +327,58 @@ def test_photographed_pairs_not_matching_the_manifest_refuse(tmp_path, pairs, de
         run.load_manifest(_photo_manifest(tmp_path, declared), photos=photos)
 
 
+@pytest.mark.parametrize("pairs, declared, match", [
+    ({"sd19-a": {"with_image": False}}, ["sd19-a"], "missing.*sd19-a"),
+    ({"sd19-a": {}, "sd19-b": {}}, ["sd19-a"], "not declared.*sd19-b"),
+    ({"sd19-a": {}}, [], "not declared.*sd19-a"),
+    ({"sd19-a": {"image_sha256": "0" * 64}}, ["sd19-a"], "sd19-a: image sha256 does not match"),
+], ids=["no-image", "stray", "stray-with-empty-list", "sha-mismatch"])
+def test_photographed_images_not_matching_the_manifest_refuse_in_the_pre_spend_check(tmp_path, pairs, declared,
+                                                                                     match):
+    """Pre-spend half: load_manifest reads no image, so it passes; check_photographed_images refuses."""
+    photos = tmp_path / "photos"
+    for stem, kw in pairs.items():
+        _photo_pair(photos, stem, **kw)
+    m = run.load_manifest(_photo_manifest(tmp_path, declared), photos=photos)
+    with pytest.raises(run.Refused, match=match):
+        run.check_photographed_images(m["photographed_fixtures"], photos)
+
+
 def test_two_images_for_one_photographed_stem_refuse(tmp_path):
     photos = tmp_path / "photos"
     _photo_pair(photos, "sd19-a")
     shutil.copy(photos / "sd19-a.jpg", photos / "sd19-a.png")
     with pytest.raises(run.Refused, match="more than one image.*sd19-a"):
-        run.load_manifest(_photo_manifest(tmp_path, ["sd19-a"]), photos=photos)
+        _checked(_photo_manifest(tmp_path, ["sd19-a"]), photos)
+
+
+@pytest.mark.parametrize("damage, match", [
+    (lambda img: img.unlink(), "missing.*sd19-a"),
+    (lambda img: img.write_bytes(img.read_bytes() + b"\0"), "sd19-a: image sha256 does not match"),
+], ids=["image-missing", "sha-mismatch"])
+def test_preflight_refuses_a_missing_or_altered_image_before_any_step(tmp_path, monkeypatch, capsys, damage, match):
+    """The live path (main -> live_run -> preflight) runs both halves: an image refusal exits 3 before the simulator
+    is contacted or any step executes, and nothing is written."""
+    from app import sim_client
+
+    photos = tmp_path / "photos"
+    _photo_pair(photos, "sd19-a")
+    damage(photos / "sd19-a.jpg")
+    manifest, load, touched = _photo_manifest(tmp_path, ["sd19-a"]), run.load_manifest, []
+    monkeypatch.setattr(run, "load_manifest", lambda **kw: load(manifest, **kw))
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
+    monkeypatch.setattr(run, "execute", lambda *a: touched.append("execute"))
+    monkeypatch.setattr(sim_client, "make_client", lambda: touched.append("simulator"))
+    monkeypatch.setenv("DRY_RUN", "0")
+    out = tmp_path / "RESULTS.md"
+    assert run.main(["--runs", str(tmp_path / "runs"), "--out", str(out)]) == 3
+    assert touched == [] and not out.exists() and not (tmp_path / "runs").exists()
+    assert re.search(match, capsys.readouterr().err)
 
 
 def test_stray_photographed_pair_refuses_in_preflight_before_anything_is_written(tmp_path, monkeypatch, capsys):
-    photos = tmp_path / "photos"
-    _photo_pair(photos, "sd19-a")  # on disk, not in the committed manifest's empty list
+    photos = _stub_pairs(tmp_path / "photos")  # the declared set passes both halves
+    _photo_pair(photos, "sd19-a")  # on disk beside it, not declared: only the pre-spend pair equality sees it
     monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
     monkeypatch.setenv("DRY_RUN", "0")
     out = tmp_path / "RESULTS.md"
@@ -293,7 +396,8 @@ def _flow(tmp_path, monkeypatch, manifest: Path) -> tuple[Path, list[str]]:
     monkeypatch.setenv("DRY_RUN", "1")
     monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
     monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
-    monkeypatch.setattr(run, "preflight", lambda fixtures: run.load_manifest(manifest, fixtures=fixtures))
+    # the live preflight's input checks (both photographed halves), without its DRY_RUN / env refusals
+    monkeypatch.setattr(run, "preflight", lambda fixtures: _checked(manifest, run.PHOTO_FIXTURES, fixtures))
     monkeypatch.setattr(run, "LIVE_TRANSCRIBE", frozenset({"mock"}))
     monkeypatch.setattr(run, "check_costs", lambda costs: None)
     steps: list[str] = []
@@ -314,8 +418,8 @@ def _flow(tmp_path, monkeypatch, manifest: Path) -> tuple[Path, list[str]]:
 
 def test_flow_without_photographed_fixtures_keeps_the_bundle_shape(tmp_path, monkeypatch):
     monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")
-    bundle, steps = _flow(tmp_path, monkeypatch, run.MANIFEST)
-    assert steps == ["packets", "policy", "forms", "speech", "photographed"]
+    bundle, steps = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, []))
+    assert steps == ["packets", "policy", "forms", "speech", "photographed_forms"]
     meta = json.loads((bundle / "run.json").read_text())
     assert "photographed_truth" not in meta and meta["photographed_fixtures"] == 0
     assert sorted(p.name for p in (bundle / "outputs").iterdir()) == [
@@ -328,7 +432,7 @@ def test_flow_with_photographed_fixtures_runs_them_last_and_bundles_fields_only(
     _photo_pair(photos, "sd19-vitals_flowsheet-01")
     monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
     bundle, steps = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, ["sd19-vitals_flowsheet-01"]))
-    assert steps[-1] == "photographed"
+    assert steps[-1] == "photographed_forms"
     meta = json.loads((bundle / "run.json").read_text())
     truth = json.loads((photos / "sd19-vitals_flowsheet-01.json").read_text())
     assert meta["photographed_truth"] == {
