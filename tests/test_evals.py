@@ -3,15 +3,17 @@ written. The manifest fixes the inputs before the run. Per-reader scoring (S8): 
 scored separately against ground truth."""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from contracts import ReaderOutput
-from evals import run
+from evals import report, run
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -202,3 +204,143 @@ def test_missing_textract_read_is_not_scored_as_zero():
     s = run.score_reads(None, _reader({"bed": "12", "resp_rate": "22"}), TRUTH)
     assert s["textract"] is None and s["bedrock"] == (3, 4)  # pain_score None == truth None
     assert s["agreement"] == {"agree": 0, "disagree": 0, "single": 2}
+
+
+# ------------------------------------------------------------------ photographed-style fixtures (#67)
+
+def _photo_manifest(tmp_path, stems) -> Path:
+    m = json.loads(run.MANIFEST.read_text())
+    m["photographed_fixtures"] = stems
+    p = tmp_path / "manifest.json"
+    p.write_text(json.dumps(m))
+    return p
+
+
+def _photo_pair(photos: Path, stem: str, *, with_image: bool = True, with_truth: bool = True, **over) -> None:
+    """A schema-1 pair built from the synthetic vitals fixture; `over` replaces truth keys (None drops one)."""
+    photos.mkdir(exist_ok=True)
+    src = run.FIXTURES / "vitals_flowsheet-01"
+    if with_image:
+        shutil.copy(src.with_suffix(".jpg"), photos / f"{stem}.jpg")
+    if with_truth:
+        t = json.loads(src.with_suffix(".json").read_text())
+        doc = {"schema": 1, "form_type": t["form_type"], "fields": t["fields"], "image": f"{stem}.jpg",
+               "seed": 7, "writer": "f0042_17", "distortion": "L1", "tags": ["nominal"],
+               "source": "NIST Special Database 19, 2nd edition"}
+        if with_image:
+            doc["image_sha256"] = hashlib.sha256((photos / f"{stem}.jpg").read_bytes()).hexdigest()
+        doc = {k: v for k, v in (doc | over).items() if v is not None}
+        (photos / f"{stem}.json").write_text(json.dumps(doc))
+
+
+def test_manifest_declares_no_photographed_fixtures_before_the_live_run():
+    assert run.load_manifest()["photographed_fixtures"] == []
+
+
+def test_declared_photographed_pairs_pass(tmp_path):
+    photos = tmp_path / "photos"
+    _photo_pair(photos, "sd19-a")
+    _photo_pair(photos, "sd19-b", image_sha256=None, schema=None, seed=None, writer=None, distortion=None,
+                tags=None, source=None, image=None)  # form_type + fields only: metadata may be absent
+    m = run.load_manifest(_photo_manifest(tmp_path, ["sd19-a", "sd19-b"]), photos=photos)
+    assert m["photographed_fixtures"] == ["sd19-a", "sd19-b"]
+    assert run.load_manifest(_photo_manifest(tmp_path, []), photos=tmp_path / "none")["photographed_fixtures"] == []
+
+
+@pytest.mark.parametrize("pairs, declared, match", [
+    ({"sd19-a": {"with_image": False}}, ["sd19-a"], "missing.*sd19-a"),
+    ({"sd19-a": {"with_truth": False}}, ["sd19-a"], "missing.*sd19-a"),
+    ({"sd19-a": {}, "sd19-b": {}}, ["sd19-a"], "not declared.*sd19-b"),
+    ({"sd19-a": {}}, [], "not declared.*sd19-a"),
+    ({"sd19-a": {"image_sha256": "0" * 64}}, ["sd19-a"], "sd19-a: image sha256 does not match"),
+    ({"sd19-a": {"schema": 2}}, ["sd19-a"], "schema 2"),
+    ({"sd19-a": {"fields": None}}, ["sd19-a"], "needs form_type"),
+    ({"sd19-a": {}}, ["sd19-a", "sd19-a"], "distinct"),
+], ids=["no-image", "no-truth", "stray", "stray-with-empty-list", "sha-mismatch", "schema", "no-fields", "repeat"])
+def test_photographed_pairs_not_matching_the_manifest_refuse(tmp_path, pairs, declared, match):
+    photos = tmp_path / "photos"
+    for stem, kw in pairs.items():
+        _photo_pair(photos, stem, **kw)
+    with pytest.raises(run.Refused, match=match):
+        run.load_manifest(_photo_manifest(tmp_path, declared), photos=photos)
+
+
+def test_two_images_for_one_photographed_stem_refuse(tmp_path):
+    photos = tmp_path / "photos"
+    _photo_pair(photos, "sd19-a")
+    shutil.copy(photos / "sd19-a.jpg", photos / "sd19-a.png")
+    with pytest.raises(run.Refused, match="more than one image.*sd19-a"):
+        run.load_manifest(_photo_manifest(tmp_path, ["sd19-a"]), photos=photos)
+
+
+def test_stray_photographed_pair_refuses_in_preflight_before_anything_is_written(tmp_path, monkeypatch, capsys):
+    photos = tmp_path / "photos"
+    _photo_pair(photos, "sd19-a")  # on disk, not in the committed manifest's empty list
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
+    monkeypatch.setenv("DRY_RUN", "0")
+    out = tmp_path / "RESULTS.md"
+    assert run.main(["--runs", str(tmp_path / "runs"), "--out", str(out)]) == 3
+    assert not out.exists() and not (tmp_path / "runs").exists()
+    assert "not declared" in capsys.readouterr().err
+
+
+def _flow(tmp_path, monkeypatch, manifest: Path) -> tuple[Path, list[str]]:
+    """test_flow_writes_a_scrubbed_bundle's wiring with a chosen manifest; also records the step order."""
+    from app import clock, sim_client
+    from app.store import reset_store
+    from simulator import main as sim
+
+    monkeypatch.setenv("DRY_RUN", "1")
+    monkeypatch.setenv("STORE_PATH", str(tmp_path / "evals.sqlite"))
+    monkeypatch.setattr(sim_client, "make_client", lambda: TestClient(sim.app))
+    monkeypatch.setattr(run, "preflight", lambda fixtures: run.load_manifest(manifest, fixtures=fixtures))
+    monkeypatch.setattr(run, "LIVE_TRANSCRIBE", frozenset({"mock"}))
+    monkeypatch.setattr(run, "check_costs", lambda costs: None)
+    steps: list[str] = []
+    execute = run.execute
+
+    def spy(named, guard, spent):
+        steps.extend(n for n, _ in named)
+        return execute(named, guard, spent)
+    monkeypatch.setattr(run, "execute", spy)
+    clock.reset()
+    reset_store()
+    try:
+        return run.live_run(run.FIXTURES, tmp_path / "runs"), steps
+    finally:
+        clock.reset()
+        reset_store()
+
+
+def test_flow_without_photographed_fixtures_keeps_the_bundle_shape(tmp_path, monkeypatch):
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", tmp_path / "photos")
+    bundle, steps = _flow(tmp_path, monkeypatch, run.MANIFEST)
+    assert steps == ["packets", "policy", "forms", "speech", "photographed"]
+    meta = json.loads((bundle / "run.json").read_text())
+    assert "photographed_truth" not in meta and meta["photographed_fixtures"] == 0
+    assert sorted(p.name for p in (bundle / "outputs").iterdir()) == [
+        "captures.json", "packet_passes.json", "packets.json", "policy.json", "snapshot.json", "speech.json"]
+    assert report.photographed(bundle) is None
+
+
+def test_flow_with_photographed_fixtures_runs_them_last_and_bundles_fields_only(tmp_path, monkeypatch):
+    photos = tmp_path / "photos"
+    _photo_pair(photos, "sd19-vitals_flowsheet-01")
+    monkeypatch.setattr(run, "PHOTO_FIXTURES", photos)
+    bundle, steps = _flow(tmp_path, monkeypatch, _photo_manifest(tmp_path, ["sd19-vitals_flowsheet-01"]))
+    assert steps[-1] == "photographed"
+    meta = json.loads((bundle / "run.json").read_text())
+    truth = json.loads((photos / "sd19-vitals_flowsheet-01.json").read_text())
+    assert meta["photographed_truth"] == {
+        "sd19-vitals_flowsheet-01": {"form_type": truth["form_type"], "fields": truth["fields"]}}
+    assert meta["photographed_fixtures"] == 1
+    assert meta["unmetered"]["textract_analyze_document"] == 4  # 3 synthetic forms + the photographed one
+    caps = json.loads((bundle / "outputs" / "photographed.json").read_text())
+    assert [(c["fixture"], c["record"]["form_type"]) for c in caps] == [
+        ("sd19-vitals_flowsheet-01", "vitals_flowsheet")]
+    for f in bundle.rglob("*.json"):  # metadata stays in the committed truth file; the bundle stays scrubbed
+        text = f.read_text()
+        assert "image_sha256" not in text and truth["image_sha256"] not in text and truth["writer"] not in text, f
+        assert not run.guard_hits(text), f
+    ph = report.photographed(bundle)
+    assert [r["fixture"] for r in ph["rows"]] == ["sd19-vitals_flowsheet-01"] and ph["per"]["combined"][1] == 10

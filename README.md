@@ -253,6 +253,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - Durability record restated after the release-gate sweep: zero violations (not "zero lost/duplicated" — pre-fix runs recorded the two found defects by design), the aborted S4 first attempt and the excluded calibration run named (#51).
 - Pre-fix defect attribution corrected from the retained CI artifacts: 20 recorded #54 loss events and 24+ #55 duplicates across the pre-fix runs, all pre-registered by the taxonomy (#51).
 - Durability CI evidence kept in the repo: all 24 per-run `report.json` copies, byte-identical to the expiring CI artifacts, under `docs/durability/ci-runs/` with a generated per-run table in [`docs/durability/ci-runs.md`](docs/durability/ci-runs.md); the exhaustive sweep corrected the #54 pre-fix count from 10 to 20 (two server-side-only pre-fix runs had been missed) (#64).
+- Evals gained a photographed-fixture scoring path: a bundle with `outputs/photographed.json` (forms built from public handwriting samples) renders its own RESULTS.md section with the synthetic set's metrics, preflight checks the declared pairs and their image sha256 before any spend, and old bundles render byte-identically; no fixtures declared yet (#67).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 

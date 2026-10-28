@@ -1,0 +1,46 @@
+[
+  {
+    "answer": "Per section 4.2 (Stat labs): To obtain a stat lab while the order system is down, the RN completes a red downtime requisition marked \"STAT\", including the patient label, the test, the ordering provider, and the collection time. The RN or unit clerk calls the laboratory at extension 4-5227 to announce the stat specimen before sending it, then sends the specimen by hand delivery; do not use the pneumatic tube for stat specimens during downtime.",
+    "citations": [
+      {
+        "quote": "To obtain a stat lab while the order system is down, the RN completes a red downtime requisition marked \"STAT\", including the patient label, the test, the ordering provider, and the collection time.",
+        "section_id": "4.2",
+        "title": "Stat labs"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2081,
+      "tokens_out": 183,
+      "usd": 0.0
+    },
+    "grounded": true,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "dry-run:us.anthropic.claude-sonnet-4-6",
+    "question": "How do I get a stat lab with the order system down?"
+  },
+  {
+    "answer": "Per section 6 (Verbal orders and read-back): Verbal orders are limited to urgent situations where the provider cannot write the order. Telephone and verbal orders for chemotherapy are not accepted. The receiving nurse writes the order on the Verbal Order Read-Back form (DT-40), reads the complete order back to the provider, and records \"read back and confirmed\", the provider name, the date, and the time.",
+    "citations": [
+      {
+        "quote": "Verbal orders are limited to urgent situations where the provider cannot write the order. Telephone and verbal orders for chemotherapy are not accepted.",
+        "section_id": "6",
+        "title": "Verbal orders and read-back"
+      }
+    ],
+    "cost": {
+      "tokens_in": 2084,
+      "tokens_out": 166,
+      "usd": 0.0
+    },
+    "grounded": false,
+    "guardrail": {
+      "reasons": [],
+      "status": "passed"
+    },
+    "model_id": "dry-run:us.anthropic.claude-sonnet-4-6",
+    "question": "How do I take a verbal order and do the read-back during downtime?"
+  }
+]
