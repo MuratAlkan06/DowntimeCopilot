@@ -88,7 +88,7 @@ console.log(`plan: ${planned.toFixed(2)} s after ${cuts.length} cuts (${cuts.fil
 
 if (!tools.ffmpeg || !tools.ffprobe) {
   const missing = Object.entries(tools).filter(([, ok]) => !ok).map(([k]) => k).join(' and ');
-  console.error(`\npostprocess: ${missing} not found. Install it with \`brew install ffmpeg\` (or set FFMPEG / FFPROBE), then run`);
+  console.error(`\npostprocess: ${missing} not found. Install it with \`brew install ffmpeg-full\` (plain ffmpeg has no libass, so no subtitles filter) and pass the keg binaries, FFMPEG=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg FFPROBE=/opt/homebrew/opt/ffmpeg-full/bin/ffprobe, then run`);
   console.error(`  make demo-video-post RUN=${path.relative(path.resolve(DIR, '..', '..'), RUN)}`);
   console.error('The encoder stage is pending. It will run, from the run directory:');
   console.error(`  ${plan.commands.mp4}`);

@@ -100,7 +100,7 @@ VIDEO_APP_PORT ?= 8800
 VIDEO_SIM_PORT ?= 8801
 export VIDEO_APP_PORT VIDEO_SIM_PORT FFMPEG FFPROBE
 VIDEO_DEPS   = @test -d $(VIDEO_DIR)/node_modules/playwright || { echo "demo video: node dependencies missing; run \`make demo-video-setup\` (npm ci, then npx playwright install chromium)"; exit 1; }
-FFMPEG_CHECK = @command -v $(FFMPEG) >/dev/null 2>&1 && command -v $(FFPROBE) >/dev/null 2>&1 || { echo "demo video: $(FFMPEG) / $(FFPROBE) not found. Install them with \`brew install ffmpeg\` (or set FFMPEG=... FFPROBE=...)."; exit 1; }
+FFMPEG_CHECK = @command -v $(FFMPEG) >/dev/null 2>&1 && command -v $(FFPROBE) >/dev/null 2>&1 || { echo "demo video: $(FFMPEG) / $(FFPROBE) not found. Install them with \`brew install ffmpeg-full\` (plain ffmpeg has no libass, so no subtitles filter), then pass the keg binaries: FFMPEG=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg FFPROBE=/opt/homebrew/opt/ffmpeg-full/bin/ffprobe"; exit 1; }
 
 demo-video-setup:  ## demo video node deps: npm ci --ignore-scripts (Playwright pinned in tools/demo_video/package-lock.json; no install scripts run), then npx playwright install chromium
 	cd $(VIDEO_DIR) && $(NPM) ci --ignore-scripts && npx playwright install chromium
