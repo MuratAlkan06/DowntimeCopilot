@@ -506,7 +506,7 @@ A "Durability harness" CI job now runs on every push and PR: 25 server cycles ag
   - Status: the install-hint follow-up is closed by the #91 fix; both hints now say `brew install ffmpeg-full` and name its keg binaries.
 - **Tests.** No test changed. The suite is 666 passed and 1 skipped.
 
-### Take 2 evidence (2026-10-28, #87 S5, #TBD)
+### Take 2 evidence (2026-10-28, #87 S5, #93)
 
 - **Why a second take.** In take 1's final beat every digest open item ended in a dangling `Source:` (#91). Take 2 was recorded on the #91 fix (`018d683`, #92), so the published video shows the fixed digest, and `docs/demo.gif` was replaced with take 2's excerpt so that the GIF and the MP4 come from one take.
 - **The take.** Run `20261029T011109Z-live`, live mode, recorded 2026-10-29 01:11 UTC at `018d683` on a clean tree (`timeline.json` `git`). Every gate passed with no violation (`plan.json` `result`): the MP4 is 86.20 s by ffprobe (gate 85–95 s) and 4,070,458 bytes (gate 10 MB), the GIF 1,916,901 bytes (gate 5 MB), and every beat finished inside its budget. Six waits were cut, and all six carry the on-screen "Sped up" label: packet generation 20 s, policy answer 4 s, two readers 6 s, transcription 16 s, upload and read after reconnect 5 s, digest 11 s. Take 1's unlabelled seventh cut, at the digest's automatic load, has no counterpart in take 2.
