@@ -14,13 +14,7 @@ Built at SpartHill Hacks 2026 (AWS track: *AI-Driven Automation & Critical Servi
 
 *The 12-second offline-reload excerpt of the full 86-second demo video, recorded live against real AWS services from the [`DEMO.md`](DEMO.md) script. All data is synthetic.*
 
-<!-- DEMO-VIDEO-MP4-PLACEHOLDER
-The full 86-second MP4 (4.07 MB) is kept out of git. It is in the owner's checkout at
-tools/demo_video/out/20261029T011109Z-live/demo.mp4 (git-ignored).
-To publish it: open README.md in the GitHub web editor, drag that MP4 into the editor at this spot,
-wait for GitHub to insert its https://github.com/user-attachments/... URL on its own line,
-then delete this whole comment so only that URL line remains. Commit the edit.
--->
+https://github.com/user-attachments/assets/a2ee0a81-5ba2-458c-a623-c9d969584bb2
 
 ---
 
@@ -288,6 +282,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - Demo video recorded and embedded: the first live take, `20261029T003017Z-live`, passed every pipeline gate (MP4 86.32 s and 4,053,110 bytes, GIF 1,999,373 bytes), with 7 waits cut and 6 "Sped up" labels on screen (the seventh removed 1.8 s, under the 2 s label threshold) and an on-screen AI cost of $0.2170. Its 12-second offline-reload excerpt heads this README as `docs/demo.gif`; the MP4 stays out of git, and a marked comment under the GIF holds the owner's upload steps. ffmpeg is Homebrew's keg-only `ffmpeg-full`, because the plain `ffmpeg` formula lacks libass (the `subtitles` filter). DEMO.md's clean-state banner check now notes that it holds only with `SNAPSHOT_INTERVAL_SECONDS=0`, and `make demo-video-setup` runs `npm ci --ignore-scripts` (#87, #90). (Superseded by take 2, #93: the GIF and the MP4 path now come from take 2; the figures above are take 1's.)
 - Digest prose no longer ends in a dangling `Source:`, as every open item did in the live demo's final beat: `display()` now drops a bare `Source:` / `Sources:` label together with the refs that follow it, and only when a ref follows. The ffmpeg install hints in the Makefile and `postprocess.mjs` now say `brew install ffmpeg-full` and name its keg binaries (#91, #92).
 - Demo video re-taken on the #91 fix: take 2, `20261029T011109Z-live`, passed every pipeline gate (MP4 86.20 s and 4,070,458 bytes, GIF 1,916,901 bytes), with 6 waits cut and 6 "Sped up" labels on screen. An independent, evidenced frame-by-frame check passed, including the #91 regression (no open item ends in a dangling `Source:`); its matrix of 32 tabulated frames and the take's metered spend are recorded in `docs/decisions.md`. `docs/demo.gif` is replaced with take 2's excerpt and the MP4 placeholder points at take 2's file, so all published artifacts come from one take (#87, #93).
+- Demo MP4 published: the owner uploaded take 2's `demo.mp4` as a GitHub user-attachments asset from the #87 tracking issue, and the README's marked placeholder comment is replaced by the bare asset URL on its own line, which GitHub renders as an inline player above (#87, #94).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
