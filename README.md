@@ -10,6 +10,18 @@ An offline-first companion for hospital staff during an EHR outage. It briefs th
 
 Built at SpartHill Hacks 2026 (AWS track: *AI-Driven Automation & Critical Service Continuity*). All patient data is synthetic. Not for clinical use. Measured results from one recorded live run: [`RESULTS.md`](RESULTS.md). Timed demo: [`DEMO.md`](DEMO.md). Pitch: [`PITCH.md`](PITCH.md).
 
+![Demo excerpt: with the network off, a photographed Downtime MAR is queued on the device, the page reloads offline from the cache with the queue intact, and back online the queue drains by itself and both readers read the form](docs/demo.gif)
+
+*The 12-second offline-reload excerpt of the full 86-second demo video, recorded live against real AWS services from the [`DEMO.md`](DEMO.md) script. All data is synthetic.*
+
+<!-- DEMO-VIDEO-MP4-PLACEHOLDER
+The full 86-second MP4 (4.05 MB) is kept out of git. It is in the owner's checkout at
+tools/demo_video/out/20261029T003017Z-live/demo.mp4 (git-ignored).
+To publish it: open README.md in the GitHub web editor, drag that MP4 into the editor at this spot,
+wait for GitHub to insert its https://github.com/user-attachments/... URL on its own line,
+then delete this whole comment so only that URL line remains. Commit the edit.
+-->
+
 ---
 
 ## The persona
@@ -273,6 +285,7 @@ Everything after tag `sparthill-final` (`fac20b0`) is post-event. One line per c
 - Release-gate fixes for the refusal evals, docs only: the #83 line now records the three DRAFT iterations, the delegated applies, the runtime role's widening and the version 2 publish; the thresholds sentence says grounding was derived and relevance kept after a check; the README and PITCH scope the patient-notice check to version 2, the PITCH topic paraphrase follows the version 2 wording, and the README Limitations add the guardrail caveat (never tested against a dose the model wrote, 8 of 20 should-refuse answers shown on version 2, false refusals 20.0% (3/15)); `docs/decisions.md` records the version 2 notice check, points to `ece5281` for the first run's section 9 and its NOTES commentary, and marks the S3a "Change" bullet as superseded. `RESULTS.md` and `evals/NOTES.md` are unchanged (#80, #85).
 - `DEMO.md` re-verified against the shipped app for the video script. Four things had drifted. The flowsheet footer reads "8 agree · 2 flagged for review", because SpO2 89 is flagged out of range though both readers agree. The offline-queue strings now quote the shipped app: the offline Downtime MAR capture's notice, the "N queued" chip, which disappears when the queue empties, and the waiting box. The sync status is a chip in the Recovery "AI cost" card. The digest loads by itself on "Systems restored". Docs only (#87, #88).
 - Scripted demo video pipeline (`tools/demo_video/`; frozen design in `docs/decisions.md`). `make demo-video` records DEMO.md's 90-second cut with Playwright (pinned 1.64.1) from `beats.json` against its own scratch app. ffmpeg then cuts waits only inside still windows, with a burned "sped up" label past 2 s. It burns captions that may quote only allowlisted UI strings, each asserted on screen, and encodes an MP4 and a GIF under mechanical gates: 85–95 s, at most 10 MB, GIF at most 5 MB. No-mock guards work in both directions, and `make demo-video-dryrun` marks every frame DRY RUN. ffmpeg is pending on the build machine, and there is no live recording yet (#87, #89).
+- Demo video recorded and embedded: the first live take, `20261029T003017Z-live`, passed every pipeline gate (MP4 86.32 s and 4,053,110 bytes, GIF 1,999,373 bytes), with 7 waits cut and 6 "Sped up" labels on screen (the seventh removed 1.8 s, under the 2 s label threshold) and an on-screen AI cost of $0.2170. Its 12-second offline-reload excerpt heads this README as `docs/demo.gif`; the MP4 stays out of git, and a marked comment under the GIF holds the owner's upload steps. ffmpeg is Homebrew's keg-only `ffmpeg-full`, because the plain `ffmpeg` formula lacks libass (the `subtitles` filter). DEMO.md's clean-state banner check now notes that it holds only with `SNAPSHOT_INTERVAL_SECONDS=0`, and `make demo-video-setup` runs `npm ci --ignore-scripts` (#87, #90).
 
 Session rules for AI-assisted work live in a machine-local `CLAUDE.md`, excluded via `.git/info/exclude`, deliberately not in the repo (owner's design; noted here so nothing important is invisibly local-only).
 
