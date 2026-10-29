@@ -102,8 +102,8 @@ export VIDEO_APP_PORT VIDEO_SIM_PORT FFMPEG FFPROBE
 VIDEO_DEPS   = @test -d $(VIDEO_DIR)/node_modules/playwright || { echo "demo video: node dependencies missing; run \`make demo-video-setup\` (npm ci, then npx playwright install chromium)"; exit 1; }
 FFMPEG_CHECK = @command -v $(FFMPEG) >/dev/null 2>&1 && command -v $(FFPROBE) >/dev/null 2>&1 || { echo "demo video: $(FFMPEG) / $(FFPROBE) not found. Install them with \`brew install ffmpeg\` (or set FFMPEG=... FFPROBE=...)."; exit 1; }
 
-demo-video-setup:  ## demo video node deps: npm ci (Playwright pinned in tools/demo_video/package-lock.json), then npx playwright install chromium
-	cd $(VIDEO_DIR) && $(NPM) ci && npx playwright install chromium
+demo-video-setup:  ## demo video node deps: npm ci --ignore-scripts (Playwright pinned in tools/demo_video/package-lock.json; no install scripts run), then npx playwright install chromium
+	cd $(VIDEO_DIR) && $(NPM) ci --ignore-scripts && npx playwright install chromium
 
 demo-video:  ## LIVE demo video, real AWS calls. Needs `source .env` (AWS_PROFILE) and ffmpeg (fails fast without either) -> tools/demo_video/out/<run>/demo.mp4 + demo.gif, gated 85-95 s, <=10 MB, GIF <=5 MB
 	@if [ -z "$$AWS_PROFILE" ]; then echo "demo-video: AWS_PROFILE is unset. \`source .env\` first (make infra-env writes it); development footage: make demo-video-dryrun"; exit 1; fi
