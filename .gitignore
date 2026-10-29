@@ -86,6 +86,7 @@ infra/backend.hcl
 # Durability harness runs (make durability)
 durability-runs/
 
-# Demo video recordings and encodes (make demo-video; runs live in tools/demo_video/out/). GIFs are not ignored.
+# Demo video recordings and encodes (make demo-video). Run outputs, GIFs included, live in tools/demo_video/out/,
+# which the out/ rule above ignores. GIFs are not ignored repo-wide, so the README's docs/demo.gif can be committed.
 *.mp4
 *.webm
