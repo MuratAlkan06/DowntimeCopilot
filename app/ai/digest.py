@@ -39,7 +39,12 @@ HIDDEN_FIELDS = {"bed", "initials"}
 SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 _REF = r"(?:snapshot|captured|discrepancy|audit)\.[A-Za-z0-9_:-]+(?:\.[A-Za-z0-9_:-]+)*"
-_REFS_PAREN = re.compile(rf"\s*[(\[]\s*(?:(?:source|ref)s?:\s*)?{_REF}(?:\s*,\s*{_REF})*\s*[)\]]")
+_LABEL = r"(?i:(?:source|ref)s?):"
+_REFS_PAREN = re.compile(rf"\s*[(\[]\s*(?:{_LABEL}\s*)?{_REF}(?:\s*,\s*{_REF})*\s*[)\]]")
+# A bare "Source: <refs>" label goes with its refs (live Sonnet ended open items with it), never without one. After a
+# sentence end a stop that follows the refs goes too; before the label a "," or ";" does, so no doubled stop remains.
+_LABELED = rf"\s*\b{_LABEL}\s*{_REF}(?:\s*,\s*{_REF})*"
+_REFS_LABELED = re.compile(rf"(?:^|(?<=[.!?])){_LABELED}(?:\s*[.!?])?|(?:\s*[,;])?{_LABELED}")
 _REFS_BARE = re.compile(rf"\b{_REF}")
 _PID = re.compile(r"\bpt-\d+\b")
 _RECORD = re.compile(r"\brec-[0-9a-f]{6,}\b")
@@ -52,10 +57,10 @@ _ROLE = re.compile(r"\b(charge_nurse|unit_clerk|rn)\b")
 
 
 def display(text: str, beds: dict[str, str]) -> str:
-    """Raw ids -> display names: provenance refs are dropped from prose (they belong in source_path; live
-    Sonnet appended "(discrepancy.d-…)" to open items), patient ids -> bed, field keys, form types and
-    roles -> labels."""
-    text = _REFS_BARE.sub("", _REFS_PAREN.sub("", text))
+    """Raw ids -> display names: provenance refs, with any "Source:" label, are dropped from prose (they belong
+    in source_path; live Sonnet appended "(discrepancy.d-…)" or "Source: discrepancy.d-…" to open items), patient
+    ids -> bed, field keys, form types and roles -> labels."""
+    text = _REFS_BARE.sub("", _REFS_LABELED.sub("", _REFS_PAREN.sub("", text)))
     text = re.sub(r"\s{2,}", " ", re.sub(r"\s+([.,;:])", r"\1", text)).strip()
     text = _PID.sub(lambda m: beds.get(m.group(0), "a patient"), text)
     text = _RECORD.sub("a paper record", text)

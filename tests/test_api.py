@@ -493,6 +493,17 @@ def test_digest_verified_only_display_names_and_provenance(api):
     ("VERIFY: MAR for pt-02 awaits verification (audit.24)", "VERIFY: MAR for Bed 2 awaits verification"),
     ("Bed 12 vitals [source: captured.rec-077b971694aa, snapshot.pt-12.admitting_dx].", "Bed 12 vitals."),
     ("see audit.7 and the audit log.", "see and the audit log."),
+    # a bare "Source:" label goes with its refs (#91: the live demo's open items ended "... Source: discrepancy.d-…")
+    ("Bed 12 SpO2 89. Source: discrepancy.d-7045e5ab3c76", "Bed 12 SpO2 89."),
+    ("VERIFY: MAR for pt-02 awaits verification. Sources: audit.24, captured.rec-077b971694aa",
+     "VERIFY: MAR for Bed 2 awaits verification."),
+    ("SAFETY: Bed 12 SpO2 89, no response. Source: discrepancy.d-7045e5ab3c76.",
+     "SAFETY: Bed 12 SpO2 89, no response."),
+    ("Bed 12 SpO2 89; source: discrepancy.d-7045e5ab3c76.", "Bed 12 SpO2 89."),
+    ("Bed 12 SpO2 89 (Source: discrepancy.d-7045e5ab3c76).", "Bed 12 SpO2 89."),
+    # prose that says "source" without a ref is left alone
+    ("Bed 12: confirm the source of the alarm.", "Bed 12: confirm the source of the alarm."),
+    ("Source: the bedside monitor, not the EHR.", "Source: the bedside monitor, not the EHR."),
 ])
 def test_display_strips_provenance_refs_from_prose(raw, shown):
     """Live Sonnet (S6) appended refs to open items; refs belong in source_path, never in prose."""
