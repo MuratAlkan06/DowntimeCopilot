@@ -7,6 +7,7 @@ This project was built as a gated, single-developer overnight build for SpartHil
 - Every change lands through a pull request into `main`, squash-merged with `--delete-branch`. `main` must always run `make demo`.
 - Merges to `main` require a pull request with the three required CI checks — Secret and probe guard, Tests, Terraform validate — green on the exact head. No approving review is required (the one-review ruleset was lifted on 2026-10-24; see `docs/decisions.md`).
 - Commits are Conventional Commits: lowercase, imperative, ≤72-character subject, no trailing period. No AI-attribution trailers of any kind (owner ruling, 2026-10-09).
+- Every release must attach `downtime-copilot-demo.mp4` (the current demo video), because the README links to `releases/latest/download/downtime-copilot-demo.mp4`; a release without it breaks that link, so otherwise re-pin the README link to a release that has the asset.
 
 ## Credentials and honesty
 - Credentials live only in the git-ignored `.env` (`source .env`); never in code, docs, logs, or fixtures. `tools/guard.sh` runs before every commit and in CI.
